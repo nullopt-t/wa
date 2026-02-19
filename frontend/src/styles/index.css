@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* Custom styles can go here */
+body {
+  margin: 0;
+  font-family: 'Cairo', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  direction: rtl;
+  transition: background-color 0.3s ease;
+  background-color: var(--bg-primary, #f8fbfb); /* Default to light theme background */
+  color: var(--text-primary, #333333); /* Default to light theme text */
+}
+
+/* Light theme */
+.light {
+  --bg-primary: #f8fbfb;
+  --bg-secondary: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --primary-color: #3d5a5a;
+  --secondary-color: #4a5d5e;
+  --primary-hover: #2c4a4a;
+  --secondary-hover: #3a4d4d;
+  --accent-amber: #c5a98e;
+}
+
+/* Dark theme */
+.dark {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --border-color: #444444;
+  --card-bg: rgba(45, 45, 45, 0.8);
+  --primary-color: #4a5d5e;
+  --secondary-color: #5a6d6d;
+  --primary-hover: #3a4d4d;
+  --secondary-hover: #4a5d5e;
+  --accent-amber: #a88c6e;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

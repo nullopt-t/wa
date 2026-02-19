@@ -1,0 +1,94 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from '../api.js';
+
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+
+  useEffect(() => {
+    // Check if user is logged in on initial load
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        setToken(storedToken);
+        try {
+          // Attempt to get user profile to verify token validity
+          const profile = await authAPI.getProfile();
+          setUser(profile);
+        } catch (error) {
+          // Token is invalid, clear it
+          localStorage.removeItem('token');
+          setToken(null);
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
+  }, []);
+
+  const login = async (email, password) => {
+    try {
+      const response = await authAPI.login({ email, password });
+      const { access_token, user: userData } = response;
+      
+      localStorage.setItem('token', access_token);
+      setToken(access_token);
+      setUser(userData);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      const response = await authAPI.register(userData);
+      // Auto-login after registration if token is provided
+      if (response.access_token) {
+        localStorage.setItem('token', response.access_token);
+        setToken(response.access_token);
+        setUser(response.user || { email: userData.email, firstName: userData.firstName, lastName: userData.lastName });
+      }
+      return { success: true, user: response };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+  };
+
+  const value = {
+    user,
+    token,
+    login,
+    register,
+    logout,
+    loading,
+    isAuthenticated: !!user
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

@@ -1,0 +1,579 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import AnimatedItem from '../components/AnimatedItem.jsx';
+
+const SignupPage = () => {
+  const { register } = useAuth();
+  const { success, error: showError } = useToast();
+  const navigate = useNavigate();
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [userType, setUserType] = useState('user'); // 'user' or 'therapist'
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    birthDate: '',
+    gender: '',
+  });
+
+  const [therapistData, setTherapistData] = useState({
+    licenseNumber: '',
+    specialty: '',
+    yearsOfExperience: '',
+    education: '',
+    certifications: '',
+    clinicAddress: ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const togglePasswordVisibility = (field) => {
+    if (field === 'password') {
+      setShowPassword(!showPassword);
+    } else if (field === 'confirmPassword') {
+      setShowConfirmPassword(!showConfirmPassword);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleTherapistDataChange = (field, value) => {
+    setTherapistData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Basic validation
+    if (!formData.firstName) newErrors.firstName = 'الاسم الأول مطلوب';
+    if (!formData.lastName) newErrors.lastName = 'الاسم الأخير مطلوب';
+    if (!formData.email) newErrors.email = 'البريد الإلكتروني مطلوب';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'البريد الإلكتروني غير صحيح';
+    if (!formData.password) newErrors.password = 'كلمة المرور مطلوبة';
+    else if (formData.password.length < 6) newErrors.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'كلمتا المرور غير متطابقتين';
+    }
+    if (formData.phone && formData.phone.replace(/\D/g, '').length < 10) {
+      newErrors.phone = 'رقم الهاتف غير صحيح';
+    }
+
+    // Therapist-specific validation
+    if (userType === 'therapist') {
+      if (!therapistData.licenseNumber) newErrors.licenseNumber = 'رقم الترخيص مطلوب';
+      if (!therapistData.specialty) newErrors.specialty = 'التخصص مطلوب';
+      if (!therapistData.education) newErrors.education = 'المؤهل العلمي مطلوب';
+    }
+
+    // Gender validation
+    if (!formData.gender) newErrors.gender = 'الجنس مطلوب';
+
+    // Birth date validation
+    if (!formData.birthDate) newErrors.birthDate = 'تاريخ الميلاد مطلوب';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      showError('يرجى التحقق من البيانات المدخلة');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const signupData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        birthDate: formData.birthDate,
+        gender: formData.gender,
+        role: userType,
+      };
+
+      // Add therapist-specific data
+      if (userType === 'therapist') {
+        Object.assign(signupData, {
+          licenseNumber: therapistData.licenseNumber,
+          specialty: therapistData.specialty,
+          yearsOfExperience: parseInt(therapistData.yearsOfExperience) || 0,
+          education: therapistData.education,
+          certifications: therapistData.certifications ? therapistData.certifications.split(',').map(s => s.trim()) : [],
+          clinicAddress: therapistData.clinicAddress
+        });
+      }
+
+      const result = await register(signupData);
+
+      if (result.success) {
+        if (result.emailSent) {
+          // Email already exists
+          showError('البريد الإلكتروني مستخدم مسبقاً، يرجى استخدام بريد آخر أو تسجيل الدخول');
+        } else {
+          // Success - new account created
+          success(userType === 'therapist' ? 'تم تسجيل المعالج بنجاح!' : 'تم إنشاء الحساب بنجاح!');
+          navigate('/dashboard');
+        }
+      } else {
+        showError(result.message || 'حدث خطأ أثناء إنشاء الحساب');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      showError(error.message || 'حدث خطأ أثناء إنشاء الحساب');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-[var(--bg-primary)] min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl mx-auto">
+        <AnimatedItem type="scale" delay={0.1}>
+          <div className="bg-[var(--card-bg)] backdrop-blur-md p-4 sm:p-6 md:p-8 lg:p-10 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
+            <div className="text-center mb-8 sm:mb-10">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-2xl mb-4">
+                <i className="fas fa-user-plus text-white text-2xl"></i>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--primary-color)] mb-2 sm:mb-4">انضم إلينا الآن!</h1>
+              <p className="text-[var(--text-secondary)] text-sm sm:text-base">الرجاء إدخال بياناتك لإنشاء حساب جديد</p>
+            </div>
+
+            {/* User Type Selection */}
+            <div className="text-right mb-6">
+              <label className="block text-lg font-medium text-[var(--text-primary)] mb-3">نوع الحساب</label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setUserType('user')}
+                  className={`px-6 py-4 rounded-xl border-2 font-medium transition-colors flex items-center justify-center ${
+                    userType === 'user'
+                      ? 'bg-[var(--accent-amber)] text-white border-[var(--accent-amber)]'
+                      : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-[var(--border-color)] hover:bg-[var(--bg-primary)]'
+                  }`}
+                >
+                  <i className="fas fa-user ml-2"></i>
+                  <span>مستخدم عادي</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setUserType('therapist')}
+                  className={`px-6 py-4 rounded-xl border-2 font-medium transition-colors flex items-center justify-center ${
+                    userType === 'therapist'
+                      ? 'bg-[var(--accent-amber)] text-white border-[var(--accent-amber)]'
+                      : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-[var(--border-color)] hover:bg-[var(--bg-primary)]'
+                  }`}
+                >
+                  <i className="fas fa-user-md ml-2"></i>
+                  <span>معالج نفسي</span>
+                </button>
+              </div>
+            </div>
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {/* Name Fields */}
+              <AnimatedItem type="slideUp" delay={0.2}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="text-right">
+                    <label htmlFor="firstName" className="block text-lg font-medium text-[var(--text-primary)] mb-3">الاسم الأول</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        placeholder="أدخل الاسم الأول"
+                        className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.firstName ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                      />
+                      <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                        <i className="fas fa-user"></i>
+                      </div>
+                    </div>
+                    {errors.firstName && <p className="text-red-500 text-sm mt-1 text-right">{errors.firstName}</p>}
+                  </div>
+
+                  <div className="text-right">
+                    <label htmlFor="lastName" className="block text-lg font-medium text-[var(--text-primary)] mb-3">اسم العائلة</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        placeholder="أدخل اسم العائلة"
+                        className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.lastName ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                      />
+                      <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                        <i className="fas fa-user"></i>
+                      </div>
+                    </div>
+                    {errors.lastName && <p className="text-red-500 text-sm mt-1 text-right">{errors.lastName}</p>}
+                  </div>
+                </div>
+              </AnimatedItem>
+
+              {/* Email */}
+              <AnimatedItem type="slideUp" delay={0.3}>
+                <div className="text-right">
+                  <label htmlFor="email" className="block text-lg font-medium text-[var(--text-primary)] mb-3">البريد الإلكتروني</label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="أدخل البريد الإلكتروني"
+                      className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.email ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                    />
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                      <i className="fas fa-envelope"></i>
+                    </div>
+                  </div>
+                  {errors.email && <p className="text-red-500 text-sm mt-1 text-right">{errors.email}</p>}
+                </div>
+              </AnimatedItem>
+
+              {/* Password */}
+              <AnimatedItem type="slideUp" delay={0.4}>
+                <div className="text-right">
+                  <label htmlFor="password" className="block text-lg font-medium text-[var(--text-primary)] mb-3">كلمة المرور</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="أدخل كلمة المرور"
+                      className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.password ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                    />
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                      <i className="fas fa-lock"></i>
+                    </div>
+                    <button
+                      type="button"
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-all duration-300"
+                      onClick={() => togglePasswordVisibility('password')}
+                    >
+                      <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-red-500 text-sm mt-1 text-right">{errors.password}</p>}
+                </div>
+              </AnimatedItem>
+
+              {/* Confirm Password */}
+              <AnimatedItem type="slideUp" delay={0.5}>
+                <div className="text-right">
+                  <label htmlFor="confirmPassword" className="block text-lg font-medium text-[var(--text-primary)] mb-3">تأكيد كلمة المرور</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      placeholder="أكد كلمة المرور"
+                      className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.confirmPassword ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                    />
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                      <i className="fas fa-lock"></i>
+                    </div>
+                    <button
+                      type="button"
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-all duration-300"
+                      onClick={() => togglePasswordVisibility('confirmPassword')}
+                    >
+                      <i className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <p className="text-red-500 text-sm mt-1 text-right">{errors.confirmPassword}</p>}
+                </div>
+              </AnimatedItem>
+
+              {/* Phone */}
+              <AnimatedItem type="slideUp" delay={0.6}>
+                <div className="text-right">
+                  <label htmlFor="phone" className="block text-lg font-medium text-[var(--text-primary)] mb-3">رقم الهاتف</label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="أدخل رقم الهاتف"
+                      className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.phone ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                      style={{ direction: 'ltr', textAlign: 'right' }}
+                      onInput={(e) => {
+                        e.target.value = e.target.value.replace(/[^0-9+\-\s()]/g, '');
+                      }}
+                    />
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                      <i className="fas fa-phone"></i>
+                    </div>
+                  </div>
+                  {errors.phone && <p className="text-red-500 text-sm mt-1 text-right">{errors.phone}</p>}
+                </div>
+              </AnimatedItem>
+
+              {/* Birth Date */}
+              <AnimatedItem type="slideUp" delay={0.7}>
+                <div className="text-right">
+                  <label htmlFor="birthDate" className="block text-lg font-medium text-[var(--text-primary)] mb-3">تاريخ الميلاد</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      id="birthDate"
+                      name="birthDate"
+                      value={formData.birthDate}
+                      onChange={handleInputChange}
+                      className={`w-full px-6 py-4 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.birthDate ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                    />
+                  </div>
+                  {errors.birthDate && <p className="text-red-500 text-sm mt-1 text-right">{errors.birthDate}</p>}
+                </div>
+              </AnimatedItem>
+
+              {/* Gender */}
+              <AnimatedItem type="slideUp" delay={0.8}>
+                <div className="text-right">
+                  <label className="block text-lg font-medium text-[var(--text-primary)] mb-3">الجنس</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange({ target: { name: 'gender', value: 'male' } })}
+                      className={`px-6 py-4 rounded-xl border-2 font-medium transition-all duration-300 flex items-center justify-center ${
+                        formData.gender === 'male'
+                          ? 'bg-[var(--accent-amber)] text-white border-[var(--accent-amber)]'
+                          : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-[var(--border-color)] hover:bg-[var(--bg-primary)]'
+                      }`}
+                    >
+                      <i className="fas fa-male ml-2"></i>
+                      <span>ذكر</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange({ target: { name: 'gender', value: 'female' } })}
+                      className={`px-6 py-4 rounded-xl border-2 font-medium transition-all duration-300 flex items-center justify-center ${
+                        formData.gender === 'female'
+                          ? 'bg-[var(--accent-amber)] text-white border-[var(--accent-amber)]'
+                          : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-[var(--border-color)] hover:bg-[var(--bg-primary)]'
+                      }`}
+                    >
+                      <i className="fas fa-female ml-2"></i>
+                      <span>أنثى</span>
+                    </button>
+                  </div>
+                  {errors.gender && <p className="text-red-500 text-sm mt-1 text-right">{errors.gender}</p>}
+                </div>
+              </AnimatedItem>
+
+              {/* Therapist Fields */}
+              {userType === 'therapist' && (
+                <AnimatedItem type="slideUp" delay={0.9}>
+                  <div className="space-y-6 pt-6 border-t border-[var(--border-color)]">
+                    <h2 className="text-2xl font-bold text-[var(--primary-color)] mb-6 text-right flex items-center gap-3">
+                      <i className="fas fa-briefcase-medical"></i>
+                      بيانات المعالج
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* License Number */}
+                      <div className="text-right">
+                        <label htmlFor="licenseNumber" className="block text-lg font-medium text-[var(--text-primary)] mb-3">رقم الترخيص المهني</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            id="licenseNumber"
+                            name="licenseNumber"
+                            value={therapistData.licenseNumber}
+                            onChange={(e) => handleTherapistDataChange('licenseNumber', e.target.value)}
+                            placeholder="أدخل رقم الترخيص المهني"
+                            className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.licenseNumber ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                          />
+                          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                            <i className="fas fa-id-card"></i>
+                          </div>
+                        </div>
+                        {errors.licenseNumber && <p className="text-red-500 text-sm mt-1 text-right">{errors.licenseNumber}</p>}
+                      </div>
+
+                      {/* Specialty */}
+                      <div className="text-right">
+                        <label htmlFor="specialty" className="block text-lg font-medium text-[var(--text-primary)] mb-3">التخصص</label>
+                        <div className="relative">
+                          <select
+                            id="specialty"
+                            name="specialty"
+                            value={therapistData.specialty}
+                            onChange={(e) => handleTherapistDataChange('specialty', e.target.value)}
+                            className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] appearance-none ${errors.specialty ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                          >
+                            <option value="" disabled>اختر تخصصك</option>
+                            <option value="العلاج السلوكي المعرفي">العلاج السلوكي المعرفي</option>
+                            <option value="العلاج النفسي الديناميكي">العلاج النفسي الديناميكي</option>
+                            <option value="العلاج الزواجي والأسري">العلاج الزواجي والأسري</option>
+                            <option value="العلاج الجماعي">العلاج الجماعي</option>
+                            <option value="الإدمان والتعافي">الإدمان والتعافي</option>
+                            <option value="الصحة النفسية للأطفال والمراهقين">الصحة النفسية للأطفال والمراهقين</option>
+                            <option value="الصدمات النفسية">الصدمات النفسية</option>
+                            <option value="القلق والاكتئاب">القلق والاكتئاب</option>
+                          </select>
+                          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
+                            <i className="fas fa-chevron-down"></i>
+                          </div>
+                        </div>
+                        {errors.specialty && <p className="text-red-500 text-sm mt-1 text-right">{errors.specialty}</p>}
+                      </div>
+                    </div>
+
+                    {/* Education */}
+                    <div className="text-right">
+                      <label htmlFor="education" className="block text-lg font-medium text-[var(--text-primary)] mb-3">المؤهل العلمي</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          id="education"
+                          name="education"
+                          value={therapistData.education}
+                          onChange={(e) => handleTherapistDataChange('education', e.target.value)}
+                          placeholder="دكتوراه في علم النفس، جامعة..."
+                          className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.education ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                        />
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                          <i className="fas fa-graduation-cap"></i>
+                        </div>
+                      </div>
+                      {errors.education && <p className="text-red-500 text-sm mt-1 text-right">{errors.education}</p>}
+                    </div>
+
+                    {/* Years of Experience */}
+                    <div className="text-right">
+                      <label htmlFor="yearsOfExperience" className="block text-lg font-medium text-[var(--text-primary)] mb-3">سنوات الخبرة</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          id="yearsOfExperience"
+                          name="yearsOfExperience"
+                          value={therapistData.yearsOfExperience}
+                          onChange={(e) => handleTherapistDataChange('yearsOfExperience', e.target.value)}
+                          placeholder="عدد السنوات"
+                          min="0"
+                          max="50"
+                          className="w-full px-6 py-4 pr-12 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)]"
+                        />
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                          <i className="fas fa-clock"></i>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Certifications */}
+                    <div className="text-right">
+                      <label htmlFor="certifications" className="block text-lg font-medium text-[var(--text-primary)] mb-3">الشهادات (اختياري)</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          id="certifications"
+                          name="certifications"
+                          value={therapistData.certifications}
+                          onChange={(e) => handleTherapistDataChange('certifications', e.target.value)}
+                          placeholder="شهادة العلاج المعرفي، شهادة التحليل النفسي..."
+                          className="w-full px-6 py-4 pr-12 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)]"
+                        />
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                          <i className="fas fa-award"></i>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Clinic Address */}
+                    <div className="text-right">
+                      <label htmlFor="clinicAddress" className="block text-lg font-medium text-[var(--text-primary)] mb-3">عنوان العيادة (اختياري)</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          id="clinicAddress"
+                          name="clinicAddress"
+                          value={therapistData.clinicAddress}
+                          onChange={(e) => handleTherapistDataChange('clinicAddress', e.target.value)}
+                          placeholder="المدينة، الشارع..."
+                          className="w-full px-6 py-4 pr-12 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)]"
+                        />
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                          <i className="fas fa-map-marker-alt"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedItem>
+              )}
+
+              {/* Submit Button */}
+              <AnimatedItem type="slideUp" delay={1.0}>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`w-full py-4 bg-[var(--primary-color)] text-white rounded-xl font-bold text-lg hover:bg-[var(--primary-hover)] transition-all duration-300 flex items-center justify-center gap-2 ${
+                    loading ? 'opacity-75 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                      جاري إنشاء الحساب...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-user-plus text-white"></i>
+                      {userType === 'therapist' ? 'تسجيل معالج' : 'إنشاء حساب'}
+                    </>
+                  )}
+                </button>
+              </AnimatedItem>
+            </form>
+
+            <div className="mt-8 text-center">
+              <p className="text-[var(--text-secondary)]">
+                لديك حساب بالفعل؟{' '}
+                <Link to="/login" className="text-[var(--accent-amber)] font-medium hover:text-[var(--accent-amber)]/80 transition-colors">
+                  تسجيل الدخول
+                </Link>
+              </p>
+            </div>
+          </div>
+        </AnimatedItem>
+      </div>
+    </div>
+  );
+};
+
+export default SignupPage;
