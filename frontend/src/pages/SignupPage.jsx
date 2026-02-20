@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -8,12 +8,37 @@ const SignupPage = () => {
   const { register } = useAuth();
   const { success, error: showError } = useToast();
   const navigate = useNavigate();
-  
+  const firstNameRef = useRef(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [userType, setUserType] = useState('user'); // 'user' or 'therapist'
+  const [userType, setUserType] = useState('user');
   const [loading, setLoading] = useState(false);
-  
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  // Prevent browser's default validation styling
+  useEffect(() => {
+    // Disable autofill yellow background
+    const style = document.createElement('style');
+    style.textContent = `
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-text-fill-color: var(--text-primary) !important;
+        transition: background-color 5000s ease-in-out 0s;
+      }
+      input:invalid,
+      input:user-invalid {
+        background-color: var(--bg-secondary) !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -21,6 +46,7 @@ const SignupPage = () => {
     password: '',
     confirmPassword: '',
     phone: '',
+    countryCode: '+20', // Egypt default
     birthDate: '',
     gender: '',
   });
@@ -35,6 +61,87 @@ const SignupPage = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false,
+  });
+
+  // Common country codes - Arabic countries only
+  const countryCodes = [
+    { code: '+20', label: '🇪🇬 مصر', name: 'مصر' },
+    { code: '+966', label: '🇸🇦 السعودية', name: 'السعودية' },
+    { code: '+971', label: '🇦🇪 الإمارات', name: 'الإمارات' },
+    { code: '+965', label: '🇰🇼 الكويت', name: 'الكويت' },
+    { code: '+974', label: '🇶🇦 قطر', name: 'قطر' },
+    { code: '+968', label: '🇴🇲 عمان', name: 'عمان' },
+    { code: '+973', label: '🇧🇭 البحرين', name: 'البحرين' },
+    { code: '+962', label: '🇯🇴 الأردن', name: 'الأردن' },
+    { code: '+961', label: '🇱🇧 لبنان', name: 'لبنان' },
+    { code: '+964', label: '🇮🇶 العراق', name: 'العراق' },
+    { code: '+963', label: '🇸🇾 سوريا', name: 'سوريا' },
+    { code: '+967', label: '🇾🇪 اليمن', name: 'اليمن' },
+    { code: '+970', label: '🇵🇸 فلسطين', name: 'فلسطين' },
+    { code: '+212', label: '🇲🇦 المغرب', name: 'المغرب' },
+    { code: '+213', label: '🇩🇿 الجزائر', name: 'الجزائر' },
+    { code: '+216', label: '🇹🇳 تونس', name: 'تونس' },
+    { code: '+218', label: '🇱🇾 ليبيا', name: 'ليبيا' },
+    { code: '+249', label: '🇸🇩 السودان', name: 'السودان' },
+    { code: '+222', label: '🇲🇷 موريتانيا', name: 'موريتانيا' },
+  ];
+
+  // Auto-focus on first name field and prevent browser validation styling
+  useEffect(() => {
+    firstNameRef.current?.focus();
+
+    // Disable autofill yellow background and fix input colors
+    const style = document.createElement('style');
+    style.textContent = `
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-text-fill-color: var(--text-primary) !important;
+        transition: background-color 5000s ease-in-out 0s;
+      }
+      input:-webkit-autofill {
+        box-shadow: 0 0 0px 1000px var(--bg-secondary) inset !important;
+      }
+      input:invalid,
+      input:user-invalid {
+        background-color: var(--bg-secondary) !important;
+      }
+      input[type="email"],
+      input[type="password"],
+      input[type="tel"] {
+        background-color: var(--bg-secondary) !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // Calculate password strength
+  useEffect(() => {
+    const password = formData.password;
+    const requirements = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      special: /[^a-zA-Z0-9]/.test(password),
+    };
+    setPasswordRequirements(requirements);
+
+    // Calculate strength score (0-5)
+    const score = Object.values(requirements).filter(Boolean).length;
+    setPasswordStrength(score);
+  }, [formData.password]);
 
   const togglePasswordVisibility = (field) => {
     if (field === 'password') {
@@ -67,12 +174,17 @@ const SignupPage = () => {
     if (!formData.lastName) newErrors.lastName = 'الاسم الأخير مطلوب';
     if (!formData.email) newErrors.email = 'البريد الإلكتروني مطلوب';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'البريد الإلكتروني غير صحيح';
+    
+    // Password validation
     if (!formData.password) newErrors.password = 'كلمة المرور مطلوبة';
-    else if (formData.password.length < 6) newErrors.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    else if (formData.password.length < 8) newErrors.password = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+    else if (passwordStrength < 3) newErrors.password = 'كلمة المرور ضعيفة جداً';
+    
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'كلمتا المرور غير متطابقتين';
     }
-    if (formData.phone && formData.phone.replace(/\D/g, '').length < 10) {
+    
+    if (formData.phone && formData.phone.replace(/\D/g, '').length < 8) {
       newErrors.phone = 'رقم الهاتف غير صحيح';
     }
 
@@ -88,6 +200,9 @@ const SignupPage = () => {
 
     // Birth date validation
     if (!formData.birthDate) newErrors.birthDate = 'تاريخ الميلاد مطلوب';
+
+    // Terms acceptance
+    if (!acceptedTerms) newErrors.terms = 'يجب الموافقة على الشروط والأحكام';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -130,12 +245,12 @@ const SignupPage = () => {
 
       if (result.success) {
         if (result.emailSent) {
-          // Email already exists
           showError('البريد الإلكتروني مستخدم مسبقاً، يرجى استخدام بريد آخر أو تسجيل الدخول');
         } else {
-          // Success - new account created
-          success(userType === 'therapist' ? 'تم تسجيل المعالج بنجاح!' : 'تم إنشاء الحساب بنجاح!');
-          navigate('/dashboard');
+          // Navigate to verify email page with user type
+          setTimeout(() => {
+            navigate('/verify-email', { state: { userType, email: formData.email } });
+          }, 2000);
         }
       } else {
         showError(result.message || 'حدث خطأ أثناء إنشاء الحساب');
@@ -146,6 +261,22 @@ const SignupPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getStrengthColor = (score) => {
+    if (score === 0) return 'bg-gray-300';
+    if (score <= 2) return 'bg-red-500';
+    if (score === 3) return 'bg-yellow-500';
+    if (score === 4) return 'bg-orange-500';
+    return 'bg-green-500';
+  };
+
+  const getStrengthText = (score) => {
+    if (score === 0) return 'الرجاء إدخال كلمة المرور';
+    if (score <= 2) return 'ضعيفة';
+    if (score === 3) return 'متوسطة';
+    if (score === 4) return 'جيدة';
+    return 'قوية جداً';
   };
 
   return (
@@ -160,6 +291,21 @@ const SignupPage = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-[var(--primary-color)] mb-2 sm:mb-4">انضم إلينا الآن!</h1>
               <p className="text-[var(--text-secondary)] text-sm sm:text-base">الرجاء إدخال بياناتك لإنشاء حساب جديد</p>
             </div>
+
+            {/* Email Verification Notice */}
+            <AnimatedItem type="slideUp" delay={0.15}>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <i className="fas fa-info-circle text-blue-500 text-xl mt-0.5"></i>
+                  <div className="text-sm text-blue-700 dark:text-blue-300">
+                    <p className="font-medium mb-1">معلومة مهمة:</p>
+                    <p className="text-xs">
+                      بعد التسجيل، سيتم إرسال رابط التحقق إلى بريدك الإلكتروني. يرجى التحقق من بريدك لتفعيل الحساب والبدء في استخدام المنصة.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </AnimatedItem>
 
             {/* User Type Selection */}
             <div className="text-right mb-6">
@@ -193,7 +339,7 @@ const SignupPage = () => {
               </div>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
               {/* Name Fields */}
               <AnimatedItem type="slideUp" delay={0.2}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -201,6 +347,7 @@ const SignupPage = () => {
                     <label htmlFor="firstName" className="block text-lg font-medium text-[var(--text-primary)] mb-3">الاسم الأول</label>
                     <div className="relative">
                       <input
+                        ref={firstNameRef}
                         type="text"
                         id="firstName"
                         name="firstName"
@@ -285,6 +432,51 @@ const SignupPage = () => {
                     </button>
                   </div>
                   {errors.password && <p className="text-red-500 text-sm mt-1 text-right">{errors.password}</p>}
+                  
+                  {/* Password Strength Indicator */}
+                  {formData.password && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-500 ${getStrengthColor(passwordStrength)}`}
+                            style={{ width: `${(passwordStrength / 5) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className={`text-xs font-medium ${
+                          passwordStrength <= 2 ? 'text-red-500' : 
+                          passwordStrength === 3 ? 'text-yellow-500' : 
+                          'text-green-500'
+                        }`}>
+                          {getStrengthText(passwordStrength)}
+                        </span>
+                      </div>
+                      
+                      {/* Password Requirements */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className={`flex items-center gap-1 ${passwordRequirements.length ? 'text-green-500' : 'text-gray-400'}`}>
+                          <i className={`fas ${passwordRequirements.length ? 'fa-check-circle' : 'fa-circle'}`}></i>
+                          <span>8 أحرف على الأقل</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${passwordRequirements.uppercase ? 'text-green-500' : 'text-gray-400'}`}>
+                          <i className={`fas ${passwordRequirements.uppercase ? 'fa-check-circle' : 'fa-circle'}`}></i>
+                          <span>حرف كبير</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${passwordRequirements.lowercase ? 'text-green-500' : 'text-gray-400'}`}>
+                          <i className={`fas ${passwordRequirements.lowercase ? 'fa-check-circle' : 'fa-circle'}`}></i>
+                          <span>حرف صغير</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${passwordRequirements.number ? 'text-green-500' : 'text-gray-400'}`}>
+                          <i className={`fas ${passwordRequirements.number ? 'fa-check-circle' : 'fa-circle'}`}></i>
+                          <span>رقم</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${passwordRequirements.special ? 'text-green-500' : 'text-gray-400'}`}>
+                          <i className={`fas ${passwordRequirements.special ? 'fa-check-circle' : 'fa-circle'}`}></i>
+                          <span>رمز خاص</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </AnimatedItem>
 
@@ -321,22 +513,46 @@ const SignupPage = () => {
               <AnimatedItem type="slideUp" delay={0.6}>
                 <div className="text-right">
                   <label htmlFor="phone" className="block text-lg font-medium text-[var(--text-primary)] mb-3">رقم الهاتف</label>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      placeholder="أدخل رقم الهاتف"
-                      className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.phone ? 'border-red-500' : 'border-[var(--border-color)]'}`}
-                      style={{ direction: 'ltr', textAlign: 'right' }}
-                      onInput={(e) => {
-                        e.target.value = e.target.value.replace(/[^0-9+\-\s()]/g, '');
-                      }}
-                    />
-                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
-                      <i className="fas fa-phone"></i>
+                  <div className="flex gap-2">
+                    {/* Phone Number Input */}
+                    <div className="relative flex-1">
+                      <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        placeholder="٥X XXX XXXX"
+                        className={`w-full px-4 py-4 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.phone ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                        style={{ direction: 'ltr', textAlign: 'left' }}
+                        onInput={(e) => {
+                          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                        }}
+                      />
+                    </div>
+
+                    {/* Country Code Dropdown */}
+                    <div className="relative w-32 flex-shrink-0">
+                      <select
+                        name="countryCode"
+                        value={formData.countryCode}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-4 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] appearance-none cursor-pointer font-medium text-sm"
+                        style={{ direction: 'ltr', textAlign: 'left' }}
+                      >
+                        {countryCodes.map((country) => (
+                          <option 
+                            key={country.code} 
+                            value={country.code}
+                            className="bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                          >
+                            {country.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none">
+                        <i className="fas fa-chevron-down text-xs"></i>
+                      </div>
                     </div>
                   </div>
                   {errors.phone && <p className="text-red-500 text-sm mt-1 text-right">{errors.phone}</p>}
@@ -537,13 +753,38 @@ const SignupPage = () => {
                 </AnimatedItem>
               )}
 
+              {/* Terms & Privacy Checkbox (Always at bottom) */}
+              <AnimatedItem type="slideUp" delay={userType === 'therapist' ? 1.0 : 0.9}>
+                <div className="text-right">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="w-5 h-5 text-[var(--accent-amber)] border-2 border-[var(--border-color)] rounded focus:ring-[var(--accent-amber)] focus:ring-offset-0 mt-1"
+                    />
+                    <span className="text-[var(--text-primary)] text-sm">
+                      أوافق على{' '}
+                      <Link to="/terms" className="text-[var(--accent-amber)] hover:underline" target="_blank">
+                        الشروط والأحكام
+                      </Link>
+                      {' '}و{' '}
+                      <Link to="/privacy" className="text-[var(--accent-amber)] hover:underline" target="_blank">
+                        سياسة الخصوصية
+                      </Link>
+                    </span>
+                  </label>
+                  {errors.terms && <p className="text-red-500 text-sm mt-1 text-right">{errors.terms}</p>}
+                </div>
+              </AnimatedItem>
+
               {/* Submit Button */}
-              <AnimatedItem type="slideUp" delay={1.0}>
+              <AnimatedItem type="slideUp" delay={userType === 'therapist' ? 1.1 : 1.0}>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !acceptedTerms}
                   className={`w-full py-4 bg-[var(--primary-color)] text-white rounded-xl font-bold text-lg hover:bg-[var(--primary-hover)] transition-all duration-300 flex items-center justify-center gap-2 ${
-                    loading ? 'opacity-75 cursor-not-allowed' : ''
+                    loading || !acceptedTerms ? 'opacity-75 cursor-not-allowed' : ''
                   }`}
                 >
                   {loading ? (

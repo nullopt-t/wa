@@ -2,7 +2,7 @@ import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '../auth.service';
-import { InvalidCredentialsException } from '../../exceptions/business.exceptions';
+import { InvalidCredentialsException, TherapistPendingApprovalException } from '../../exceptions/business.exceptions';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -19,7 +19,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
       return user;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
-      if (error instanceof InvalidCredentialsException) {
+      if (error instanceof InvalidCredentialsException || error instanceof TherapistPendingApprovalException) {
         throw error;
       }
       // Otherwise, throw a generic invalid credentials exception

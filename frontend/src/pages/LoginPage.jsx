@@ -1,21 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import { authAPI } from '../api.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const LoginPage = () => {
   const { login } = useAuth();
   const { success, error: showError } = useToast();
   const navigate = useNavigate();
+  const emailRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    rememberMe: false,
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
+
+  // Auto-focus on email field and prevent browser validation styling
+  useEffect(() => {
+    emailRef.current?.focus();
+
+    // Disable autofill yellow background and fix input colors
+    const style = document.createElement('style');
+    style.textContent = `
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-text-fill-color: var(--text-primary) !important;
+        transition: background-color 5000s ease-in-out 0s;
+      }
+      input:-webkit-autofill {
+        box-shadow: 0 0 0px 1000px var(--bg-secondary) inset !important;
+      }
+      input:invalid,
+      input:user-invalid {
+        background-color: var(--bg-secondary) !important;
+      }
+      input[type="email"],
+      input[type="password"] {
+        background-color: var(--bg-secondary) !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -66,14 +100,6 @@ const LoginPage = () => {
 
       if (result.success) {
         success('تم تسجيل الدخول بنجاح!');
-        
-        // Save remember me preference
-        if (formData.rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        } else {
-          localStorage.removeItem('rememberMe');
-        }
-
         // Navigate to dashboard
         navigate('/dashboard');
       } else {
@@ -81,6 +107,20 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
+
+      // Check if it's an email not verified error
+      if (error.message && error.message.includes('لم يتم التحقق')) {
+        setShowResendVerification(true);
+      }
+
+      // Check if it's a therapist pending approval error
+      if (error.message && error.message.includes('قيد المراجعة')) {
+        // Navigate to pending approval page with email
+        setTimeout(() => {
+          navigate('/verify-email/pending-approval', { state: { email: formData.email } });
+        }, 2000);
+      }
+
       showError(error.message || 'حدث خطأ أثناء تسجيل الدخول');
     } finally {
       setLoading(false);
@@ -100,7 +140,7 @@ const LoginPage = () => {
               <p className="text-[var(--text-secondary)]">الرجاء إدخال بياناتك لتسجيل الدخول</p>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
               {/* Email */}
               <AnimatedItem type="slideUp" delay={0.2}>
                 <div className="text-right">
@@ -109,6 +149,7 @@ const LoginPage = () => {
                   </label>
                   <div className="relative">
                     <input
+                      ref={emailRef}
                       type="email"
                       id="email"
                       name="email"
@@ -156,25 +197,58 @@ const LoginPage = () => {
                 </div>
               </AnimatedItem>
 
-              {/* Remember Me & Forgot Password */}
+              {/* Forgot Password Link */}
               <AnimatedItem type="slideUp" delay={0.4}>
-                <div className="flex justify-between items-center text-right">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="rememberMe"
-                      checked={formData.rememberMe}
-                      onChange={handleInputChange}
-                      className="w-5 h-5 text-[var(--accent-amber)] border-2 border-[var(--border-color)] rounded focus:ring-[var(--accent-amber)] focus:ring-offset-0"
-                    />
-                    <span className="text-[var(--text-primary)]">تذكرني</span>
-                  </label>
-
+                <div className="flex justify-end text-right">
                   <Link to="/forgot-password" className="text-[var(--accent-amber)] hover:text-[var(--accent-amber)]/80 transition-all duration-300">
                     نسيت كلمة المرور؟
                   </Link>
                 </div>
               </AnimatedItem>
+
+              {/* Resend Verification (shown when email not verified) */}
+              {showResendVerification && (
+                <AnimatedItem type="slideUp" delay={0.45}>
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <i className="fas fa-exclamation-triangle text-amber-500 text-xl mt-0.5"></i>
+                      <div className="flex-1">
+                        <p className="font-medium text-amber-800 dark:text-amber-200 mb-2">
+                          لم يتم التحقق من بريدك الإلكتروني
+                        </p>
+                        <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                          يرجى التحقق من بريدك الإلكتروني أو طلب رابط تحقق جديد
+                        </p>
+                        <div className="flex gap-2">
+                          <Link
+                            to="/verify-email"
+                            className="flex-1 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors text-center"
+                            onClick={() => setShowResendVerification(false)}
+                          >
+                            <i className="fas fa-envelope ml-1"></i>
+                            التحقق الآن
+                          </Link>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await authAPI.resendVerificationEmail({ email: formData.email });
+                                success('تم إرسال رابط التحقق إلى بريدك الإلكتروني');
+                                setShowResendVerification(false);
+                              } catch (error) {
+                                showError(error.message || 'حدث خطأ أثناء إرسال رابط التحقق');
+                              }
+                            }}
+                            className="flex-1 py-2 border-2 border-amber-500 text-amber-600 dark:text-amber-400 rounded-lg text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors"
+                          >
+                            <i className="fas fa-redo ml-1"></i>
+                            إعادة الإرسال
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedItem>
+              )}
 
               {/* Submit Button */}
               <AnimatedItem type="slideUp" delay={0.5}>

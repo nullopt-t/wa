@@ -21,6 +21,10 @@ import FutureMessagePage from './pages/FutureMessagePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
 import ChatbotPage from './pages/ChatbotPage.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import VerifyEmailPage from './pages/VerifyEmailPage.jsx';
+import PendingApprovalPage from './pages/PendingApprovalPage.jsx';
 import TermsPage from './pages/TermsPage.jsx';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx';
 import VideosPage from './pages/VideosPage.jsx';
@@ -127,7 +131,22 @@ function AppWrapper() {
             } />
             <Route path="/forgot-password" element={
               <AnimatedRoute>
-                <LoginPage />
+                <ForgotPasswordPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/reset-password" element={
+              <AnimatedRoute>
+                <ResetPasswordPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/verify-email" element={
+              <AnimatedRoute>
+                <VerifyEmailPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/verify-email/pending-approval" element={
+              <AnimatedRoute>
+                <PendingApprovalPage />
               </AnimatedRoute>
             } />
             <Route path="/habits" element={

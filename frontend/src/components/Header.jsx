@@ -110,7 +110,7 @@ const Header = () => {
                     <button
                       onClick={() => {
                         logout();
-                        navigate('/');
+                        navigate('/login');
                         setShowSettingsDropdown(false);
                       }}
                       className="w-full text-right px-4 py-3 text-red-500 hover:bg-red-500/10 transition-colors border-t border-[var(--border-color)]"
@@ -210,7 +210,7 @@ const Header = () => {
                       <button
                         onClick={() => {
                           logout();
-                          navigate('/');
+                          navigate('/login');
                           setIsMenuOpen(false);
                         }}
                         className="px-4 py-3 border-2 border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-500 hover:text-white transition-colors text-center"

@@ -80,7 +80,7 @@ const TherapistDashboard = () => {
                     <div className="text-[var(--text-secondary)]">التقييم</div>
                   </div>
                   <div className="bg-[var(--bg-secondary)] p-4 rounded-xl text-center">
-                    <div className="text-2xl font-bold text-[var(--primary-color)]">{yearsOfExperience || 0}</div>
+                    <div className="text-2xl font-bold text-[var(--primary-color)]">{therapist?.yearsOfExperience || 0}</div>
                     <div className="text-[var(--text-secondary)]">سنوات الخبرة</div>
                   </div>
                 </div>

@@ -38,6 +38,10 @@ export class RegisterUserDto {
   @IsOptional()
   phone?: string;
 
+  @IsString()
+  @IsOptional()
+  countryCode?: string;
+
   @IsDateString()
   @IsOptional()
   birthDate?: string;
@@ -188,4 +192,10 @@ export class ResetPasswordDto {
   @IsNotEmpty()
   @MinLength(6)
   confirmNewPassword: string;
+}
+
+export class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
 }

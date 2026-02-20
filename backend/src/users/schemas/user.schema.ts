@@ -23,6 +23,9 @@ export class User {
   @Prop()
   phone?: string;
 
+  @Prop({ default: '+20' })
+  countryCode?: string;
+
   @Prop()
   birthDate?: Date;
 
@@ -55,6 +58,9 @@ export class User {
 
   @Prop({ default: false })
   isVerified: boolean;
+
+  @Prop({ default: false })
+  isApproved: boolean; // For therapist approval by admin
 
   // Privacy settings
   @Prop({ default: true })

@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards, Get, Request, Patch } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { RegisterUserDto, RegisterTherapistDto, LoginDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import { RegisterUserDto, RegisterTherapistDto, LoginDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto, RefreshTokenDto } from './dto/auth.dto';
 import { UserService } from '../users/user.service';
 
 @Controller('auth')
@@ -62,8 +62,19 @@ export class AuthController {
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(
       resetPasswordDto.token,
-      resetPasswordDto.newPassword
+      resetPasswordDto.newPassword,
+      resetPasswordDto.confirmNewPassword
     );
+  }
+
+  @Post('verify-email')
+  async verifyEmail(@Body() verifyEmailDto: { token: string }) {
+    return this.authService.verifyEmail(verifyEmailDto.token);
+  }
+
+  @Post('resend-verification')
+  async resendVerificationEmail(@Body() body: { email: string }) {
+    return this.authService.resendVerificationEmail(body.email);
   }
 
   @Patch('privacy-settings')
@@ -73,5 +84,10 @@ export class AuthController {
     @Body() privacySettings: { isProfilePublic?: boolean; emailNotifications?: boolean; shareDataForResearch?: boolean }
   ) {
     return this.userService.update(req.user.userId, privacySettings);
+  }
+
+  @Post('refresh')
+  async refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
 }

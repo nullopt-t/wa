@@ -15,21 +15,45 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
 
   useEffect(() => {
     // Check if user is logged in on initial load
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('token');
+      const storedRefreshToken = localStorage.getItem('refreshToken');
+      
       if (storedToken) {
         setToken(storedToken);
+        setRefreshToken(storedRefreshToken);
+        
         try {
           // Attempt to get user profile to verify token validity
           const profile = await authAPI.getProfile();
           setUser(profile);
         } catch (error) {
-          // Token is invalid, clear it
-          localStorage.removeItem('token');
-          setToken(null);
+          // Token is invalid, try to refresh
+          if (storedRefreshToken) {
+            try {
+              const newToken = await authAPI.refreshToken(storedRefreshToken);
+              localStorage.setItem('token', newToken.access_token);
+              setToken(newToken.access_token);
+              
+              // Try getting profile again with new token
+              const profile = await authAPI.getProfile();
+              setUser(profile);
+            } catch (refreshError) {
+              // Refresh failed, clear tokens
+              localStorage.removeItem('token');
+              localStorage.removeItem('refreshToken');
+              setToken(null);
+              setRefreshToken(null);
+            }
+          } else {
+            // No refresh token, clear everything
+            localStorage.removeItem('token');
+            setToken(null);
+          }
         }
       }
       setLoading(false);
@@ -41,12 +65,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
-      const { access_token, user: userData } = response;
-      
+      const { access_token, refresh_token, user: userData } = response;
+
       localStorage.setItem('token', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
       setToken(access_token);
+      setRefreshToken(refresh_token);
       setUser(userData);
-      
+
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
@@ -72,7 +98,9 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     setToken(null);
+    setRefreshToken(null);
     setUser(null);
   };
 

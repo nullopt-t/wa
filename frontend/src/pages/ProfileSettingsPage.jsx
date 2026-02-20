@@ -18,6 +18,7 @@ const ProfileSettingsPage = () => {
     lastName: '',
     email: '',
     phone: '',
+    countryCode: '+20',
     birthDate: '',
     gender: '',
     avatar: '',
@@ -49,6 +50,7 @@ const ProfileSettingsPage = () => {
         lastName: user.lastName || '',
         email: user.email || '',
         phone: user.phone || '',
+        countryCode: user.countryCode || '+20',
         birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
         gender: user.gender || '',
         avatar: user.avatar || '',
@@ -268,17 +270,46 @@ const ProfileSettingsPage = () => {
                 {/* Phone */}
                 <div>
                   <label className="block text-[var(--text-primary)] font-medium mb-2">رقم الهاتف</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-colors text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.phone ? 'border-red-500' : 'border-[var(--border-color)]'}`}
-                    placeholder="+966 5X XXX XXXX"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className={`flex-1 px-4 py-3 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-colors text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.phone ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                      placeholder="٥X XXX XXXX"
+                      style={{ direction: 'ltr', textAlign: 'left' }}
+                    />
+                    <select
+                      name="countryCode"
+                      value={formData.countryCode}
+                      onChange={handleInputChange}
+                      className="w-32 px-3 py-3 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-colors text-[var(--text-primary)] bg-[var(--bg-secondary)] text-sm font-medium"
+                      style={{ direction: 'ltr', textAlign: 'left' }}
+                    >
+                      <option value="+20">🇪🇬 +20 مصر</option>
+                      <option value="+966">🇸🇦 +966 السعودية</option>
+                      <option value="+971">🇦🇪 +971 الإمارات</option>
+                      <option value="+965">🇰🇼 +965 الكويت</option>
+                      <option value="+974">🇶🇦 +974 قطر</option>
+                      <option value="+968">🇴🇲 +968 عمان</option>
+                      <option value="+973">🇧🇭 +973 البحرين</option>
+                      <option value="+962">🇯🇴 +962 الأردن</option>
+                      <option value="+961">🇱🇧 +961 لبنان</option>
+                      <option value="+964">🇮🇶 +964 العراق</option>
+                      <option value="+963">🇸🇾 +963 سوريا</option>
+                      <option value="+967">🇾🇪 +967 اليمن</option>
+                      <option value="+970">🇵🇸 +970 فلسطين</option>
+                      <option value="+212">🇲🇦 +212 المغرب</option>
+                      <option value="+213">🇩🇿 +213 الجزائر</option>
+                      <option value="+216">🇹🇳 +216 تونس</option>
+                      <option value="+218">🇱🇾 +218 ليبيا</option>
+                      <option value="+249">🇸🇩 +249 السودان</option>
+                      <option value="+222">🇲🇷 +222 موريتانيا</option>
+                    </select>
+                  </div>
                   {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                 </div>
-
                 {/* Birth Date */}
                 <div>
                   <label className="block text-[var(--text-primary)] font-medium mb-2">تاريخ الميلاد</label>

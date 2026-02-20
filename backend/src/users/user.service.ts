@@ -102,6 +102,12 @@ export class UserService {
 
         // Handle certifications array
         userObject.certifications = therapistData.certifications || [];
+        
+        // Therapists need admin approval before they can log in
+        userObject.isApproved = false;
+      } else {
+        // Regular users are auto-approved
+        userObject.isApproved = true;
       }
 
       this.logger.log('Creating user model instance...');

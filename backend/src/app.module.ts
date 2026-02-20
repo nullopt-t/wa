@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { RedisCacheModule } from './modules/redis-cache/redis-cache.module';
 import { UserModule } from './users/user.module';
 import { HealthModule } from './modules/health/health.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [

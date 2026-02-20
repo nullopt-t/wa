@@ -49,3 +49,28 @@ export class ResourceNotFoundException extends CustomHttpException {
     super(`${resource} not found`, HttpStatus.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
   }
 }
+
+// New account state exceptions
+export class EmailNotVerifiedException extends CustomHttpException {
+  constructor(email: string) {
+    super('Email not verified', HttpStatus.UNAUTHORIZED, ErrorCode.EMAIL_NOT_VERIFIED);
+  }
+}
+
+export class AccountDeactivatedException extends CustomHttpException {
+  constructor() {
+    super('Account has been deactivated', HttpStatus.FORBIDDEN, ErrorCode.ACCOUNT_DEACTIVATED);
+  }
+}
+
+export class PasswordExpiredException extends CustomHttpException {
+  constructor() {
+    super('Password has expired', HttpStatus.UNAUTHORIZED, ErrorCode.PASSWORD_EXPIRED);
+  }
+}
+
+export class TherapistPendingApprovalException extends CustomHttpException {
+  constructor() {
+    super('Therapist account pending admin approval', HttpStatus.UNAUTHORIZED, ErrorCode.ACCOUNT_PENDING_APPROVAL);
+  }
+}

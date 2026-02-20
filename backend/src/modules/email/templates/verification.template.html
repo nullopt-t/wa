@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border-radius: 10px; overflow: hidden;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #3d5a5a 0%, #4a5d5e 100%); padding: 40px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">مرحباً بك في منصة وعي! 🌟</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">أهلاً {{firstName}}! 👋</h2>
+              <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                شكراً لانضمامك إلى منصة وعي للصحة النفسية. نحن متحمسون لبدء رحلتك معنا!
+              </p>
+              <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك والبدء في استخدام جميع ميزات المنصة.
+              </p>
+              <table role="presentation" style="margin: 30px 0; border-collapse: collapse;">
+                <tr>
+                  <td align="center" style="border-radius: 5px; background: linear-gradient(135deg, #c5a98e 0%, #a88c6e 100%);">
+                    <a href="{{verificationUrl}}" style="display: inline-block; padding: 15px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 5px;">
+                      ✓ التحقق من البريد الإلكتروني
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="color: #999999; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                أو انسخ الرابط التالي والصقه في متصفحك:
+              </p>
+              <p style="color: #3d5a5a; font-size: 14px; word-break: break-all; margin: 10px 0 0 0; direction: ltr; text-align: center;">
+                {{verificationUrl}}
+              </p>
+              <p style="color: #999999; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; border-top: 1px solid #eeeeee; padding-top: 20px;">
+                <strong>ملاحظة:</strong> هذا الرابط صالح لمدة 24 ساعة فقط.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;">
+              <p style="color: #999999; font-size: 14px; margin: 0;">
+                © 2024 منصة وعي. جميع الحقوق محفوظة.
+              </p>
+              <p style="color: #999999; font-size: 12px; margin: 10px 0 0 0;">
+                تم إرسال هذا البريد الإلكتروني إلى {{email}}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

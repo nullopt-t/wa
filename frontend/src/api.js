@@ -84,6 +84,31 @@ export const authAPI = {
   getProfile: () => apiRequest('/auth/profile', {
     method: 'GET',
   }),
+
+  forgotPassword: (data) => apiRequest('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  resetPassword: (data) => apiRequest('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  refreshToken: (refreshToken) => apiRequest('/auth/refresh', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  }),
+
+  verifyEmail: (token) => apiRequest('/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  }),
+
+  resendVerificationEmail: (data) => apiRequest('/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
 };
 
 // Profile API functions

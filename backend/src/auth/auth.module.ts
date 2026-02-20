@@ -9,11 +9,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../users/user.module';
 import { HashModule } from '../modules/hash/hash.module';
+import { EmailModule } from '../modules/email/email.module';
 
 @Module({
   imports: [
     UserModule,
     HashModule,
+    EmailModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'defaultSecretKey',
