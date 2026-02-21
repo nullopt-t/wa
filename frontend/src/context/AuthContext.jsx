@@ -22,14 +22,18 @@ export const AuthProvider = ({ children }) => {
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('token');
       const storedRefreshToken = localStorage.getItem('refreshToken');
-      
+
       if (storedToken) {
         setToken(storedToken);
         setRefreshToken(storedRefreshToken);
-        
+
         try {
           // Attempt to get user profile to verify token validity
           const profile = await authAPI.getProfile();
+          // Convert relative avatar URL to full URL
+          if (profile.avatar && profile.avatar.startsWith('/')) {
+            profile.avatar = `http://localhost:4000${profile.avatar}`;
+          }
           setUser(profile);
         } catch (error) {
           // Token is invalid, try to refresh
@@ -38,9 +42,13 @@ export const AuthProvider = ({ children }) => {
               const newToken = await authAPI.refreshToken(storedRefreshToken);
               localStorage.setItem('token', newToken.access_token);
               setToken(newToken.access_token);
-              
+
               // Try getting profile again with new token
               const profile = await authAPI.getProfile();
+              // Convert relative avatar URL to full URL
+              if (profile.avatar && profile.avatar.startsWith('/')) {
+                profile.avatar = `http://localhost:4000${profile.avatar}`;
+              }
               setUser(profile);
             } catch (refreshError) {
               // Refresh failed, clear tokens
@@ -71,6 +79,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('refreshToken', refresh_token);
       setToken(access_token);
       setRefreshToken(refresh_token);
+      
+      // Convert relative avatar URL to full URL
+      if (userData.avatar && userData.avatar.startsWith('/')) {
+        userData.avatar = `http://localhost:4000${userData.avatar}`;
+      }
       setUser(userData);
 
       return { success: true };
@@ -104,14 +117,24 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateUserAvatar = (avatarUrl) => {
+    setUser(prev => prev ? { ...prev, avatar: avatarUrl } : null);
+  };
+
+  // Make updateUserAvatar available globally for profile page
+  if (typeof window !== 'undefined') {
+    window.updateUserAvatar = updateUserAvatar;
+  }
+
   const value = {
     user,
     token,
     login,
     register,
     logout,
+    updateUserAvatar,
     loading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user && !loading
   };
 
   return (

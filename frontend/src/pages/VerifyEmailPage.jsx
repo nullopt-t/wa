@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { authAPI } from '../api.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const VerifyEmailPage = () => {
+  const { user } = useAuth();
   const { success, error: showError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();

@@ -19,12 +19,15 @@ async function bootstrap() {
   });
 
   // Security middleware
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: false, // Disable CORP to allow loading images from frontend
+    crossOriginOpenerPolicy: false, // Disable COOP for static assets
+  }));
   app.use(compression());
 
-  // Serve static files for uploads
+  // Serve static files for uploads (outside API prefix)
   app.useStaticAssets(join(__dirname, '..', 'data', 'uploads'), {
-    prefix: '/uploads/',
+    prefix: '/uploads',
   });
 
   // Validation pipe

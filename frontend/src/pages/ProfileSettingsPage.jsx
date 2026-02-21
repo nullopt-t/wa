@@ -4,6 +4,10 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { profileAPI } from '../api.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
+
+const API_BASE_URL = 'http://localhost:4000';
+const API_ENDPOINT = '/api';
 
 const ProfileSettingsPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -34,17 +38,22 @@ const ProfileSettingsPage = () => {
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (ProtectedRoute handles this, but keep as backup)
   useEffect(() => {
-    if (!isAuthenticated && !loading) {
+    if (!user && !loading) {
       navigate('/login');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [user, loading, navigate]);
 
   // Load user data
   useEffect(() => {
     if (user) {
+      const fullAvatarUrl = user.avatar?.startsWith('/') ? `http://localhost:4000${user.avatar}` : user.avatar || '';
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -53,7 +62,7 @@ const ProfileSettingsPage = () => {
         countryCode: user.countryCode || '+20',
         birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
         gender: user.gender || '',
-        avatar: user.avatar || '',
+        avatar: fullAvatarUrl,
         licenseNumber: user.licenseNumber || '',
         specialty: user.specialty || '',
         yearsOfExperience: user.yearsOfExperience || '',
@@ -61,7 +70,7 @@ const ProfileSettingsPage = () => {
         certifications: user.certifications?.join(', ') || '',
         clinicAddress: user.clinicAddress || '',
       });
-      setAvatarPreview(user.avatar);
+      setAvatarPreview(fullAvatarUrl);
     }
   }, [user]);
 
@@ -112,10 +121,16 @@ const ProfileSettingsPage = () => {
         const formData = new FormData();
         formData.append('avatar', file);
 
-        const result = await profileAPI.uploadAvatar(user.id, formData);
-        
+        const result = await profileAPI.uploadAvatar(user._id, formData);
+
         if (result.success) {
-          setFormData(prev => ({ ...prev, avatar: result.avatarUrl }));
+          const fullAvatarUrl = `${API_BASE_URL}${result.avatarUrl}`;
+          setFormData(prev => ({ ...prev, avatar: fullAvatarUrl }));
+          setAvatarPreview(fullAvatarUrl);
+          // Update AuthContext user with new avatar
+          if (window.updateUserAvatar) {
+            window.updateUserAvatar(fullAvatarUrl);
+          }
           success('تم رفع الصورة الشخصية بنجاح');
         }
       } catch (error) {
@@ -126,6 +141,31 @@ const ProfileSettingsPage = () => {
       } finally {
         setSaving(false);
       }
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setShowRemoveDialog(true);
+  };
+
+  const confirmRemoveAvatar = async () => {
+    setIsRemoving(true);
+    try {
+      const result = await profileAPI.updateProfile(user._id, { avatar: '' });
+      
+      setAvatarPreview(null);
+      setFormData(prev => ({ ...prev, avatar: '' }));
+      // Update AuthContext user
+      if (window.updateUserAvatar) {
+        window.updateUserAvatar('');
+      }
+      success('تم إزالة الصورة الشخصية بنجاح');
+      setShowRemoveDialog(false);
+    } catch (error) {
+      console.error('Remove avatar error:', error);
+      showErrorToast(error.message || 'حدث خطأ أثناء إزالة الصورة');
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -164,11 +204,25 @@ const ProfileSettingsPage = () => {
   };
 
   const handleCancel = () => {
-    if (isDirty) {
-      const confirmCancel = window.confirm('هل أنت متأكد من إلغاء التغييرات؟');
-      if (!confirmCancel) return;
-    }
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
     navigate('/dashboard');
+    setShowCancelDialog(false);
+  };
+
+  const handleCopyAvatarUrl = async () => {
+    if (avatarPreview) {
+      try {
+        await navigator.clipboard.writeText(avatarPreview);
+        setCopiedUrl(true);
+        success('تم نسخ رابط الصورة');
+        setTimeout(() => setCopiedUrl(false), 2000);
+      } catch (error) {
+        showErrorToast('فشل نسخ الرابط');
+      }
+    }
   };
 
   if (loading || !user) {
@@ -192,19 +246,39 @@ const ProfileSettingsPage = () => {
 
         {/* Profile Picture */}
         <AnimatedItem type="slideUp" delay={0.2}>
-          <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30 mb-6">
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">الصورة الشخصية</h2>
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-[var(--primary-color)] flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{user.firstName?.[0]}{user.lastName?.[0]}</span>
-                  )}
+          <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 sm:p-8 rounded-2xl shadow-xl border border-[var(--border-color)]/30 mb-6">
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6 flex items-center gap-3">
+              <i className="fas fa-user-circle text-[var(--primary-color)]"></i>
+              الصورة الشخصية
+            </h2>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-8">
+              {/* Avatar Preview */}
+              <div className="relative group">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] p-1 shadow-xl">
+                  <div className="w-full h-full rounded-full bg-[var(--bg-secondary)] flex items-center justify-center overflow-hidden">
+                    {avatarPreview ? (
+                      <img 
+                        src={avatarPreview} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextElementSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    {!avatarPreview && (
+                      <span className="text-4xl sm:text-5xl font-bold text-[var(--primary-color)]">
+                        {user.firstName?.[0]}{user.lastName?.[0]}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <label className="absolute bottom-0 right-0 w-8 h-8 bg-[var(--accent-amber)] rounded-full flex items-center justify-center cursor-pointer hover:bg-[var(--accent-amber)]/80 transition-colors">
-                  <i className="fas fa-camera text-white text-sm"></i>
+                
+                {/* Change Avatar Button */}
+                <label className="absolute bottom-0 right-0 w-12 h-12 bg-[var(--accent-amber)] rounded-full flex items-center justify-center cursor-pointer hover:bg-[var(--accent-amber)]/80 transition-all duration-300 shadow-lg hover:scale-110 group-hover:bottom-2">
+                  <i className="fas fa-camera text-white text-lg"></i>
                   <input
                     type="file"
                     accept="image/*"
@@ -212,10 +286,69 @@ const ProfileSettingsPage = () => {
                     className="hidden"
                   />
                 </label>
+                
+                {/* Remove Avatar Button */}
+                {avatarPreview && (
+                  <button
+                    onClick={handleRemoveAvatar}
+                    className="absolute top-0 left-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-600 transition-all duration-300 shadow-lg opacity-0 group-hover:opacity-100"
+                    title="إزالة الصورة"
+                  >
+                    <i className="fas fa-times text-white text-sm"></i>
+                  </button>
+                )}
               </div>
-              <div>
-                <p className="text-[var(--text-primary)] font-medium mb-2">رفع صورة شخصية</p>
-                <p className="text-[var(--text-secondary)] text-sm">PNG أو JPG بحد أقصى 5 ميجابايت</p>
+              
+              {/* Upload Info */}
+              <div className="flex-1 text-center sm:text-right">
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">
+                  قم بتحديث صورتك الشخصية
+                </h3>
+                <p className="text-[var(--text-secondary)] text-sm mb-4">
+                  صورة شخصية واضحة تعكس هويتك المهنية
+                </p>
+                
+                {/* Upload Guidelines */}
+                <div className="bg-[var(--bg-secondary)] rounded-xl p-4 mb-4">
+                  <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                    <i className="fas fa-info-circle text-[var(--primary-color)]"></i>
+                    إرشادات الصورة:
+                  </h4>
+                  <ul className="text-xs text-[var(--text-secondary)] space-y-1">
+                    <li><i className="fas fa-check text-green-500 ml-1"></i>PNG أو JPG بحد أقصى 5 ميجابايت</li>
+                    <li><i className="fas fa-check text-green-500 ml-1"></i>صورة واضحة للوجه</li>
+                    <li><i className="fas fa-check text-green-500 ml-1"></i>خلفية بسيطة ومحايدة</li>
+                  </ul>
+                </div>
+                
+                {/* Current Avatar URL with Copy Button */}
+                {avatarPreview && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-[var(--text-primary)]">رابط الصورة:</span>
+                      <button
+                        onClick={handleCopyAvatarUrl}
+                        className="flex items-center gap-1 px-3 py-1 text-xs bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-all duration-300"
+                        title="نسخ الرابط"
+                      >
+                        <i className={`fas ${copiedUrl ? 'fa-check' : 'fa-copy'}`}></i>
+                        {copiedUrl ? 'تم النسخ' : 'نسخ'}
+                      </button>
+                    </div>
+                    <div className="text-xs text-[var(--text-secondary)] bg-[var(--bg-primary)] rounded-lg p-3 break-all font-mono border border-[var(--border-color)]/30">
+                      <i className="fas fa-link ml-1 text-[var(--primary-color)]"></i>
+                      {avatarPreview}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Upload Status */}
+                {saving && (
+                  <div className="flex items-center gap-2 text-sm text-[var(--primary-color)] mt-2">
+                    <i className="fas fa-spinner fa-spin"></i>
+                    جاري رفع الصورة...
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -466,6 +599,31 @@ const ProfileSettingsPage = () => {
           </div>
         </AnimatedItem>
       </div>
+
+      {/* Remove Avatar Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showRemoveDialog}
+        title="إزالة الصورة الشخصية"
+        message="هل أنت متأكد من إزالة صورتك الشخصية؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmText="إزالة"
+        cancelText="إلغاء"
+        isDanger={true}
+        isLoading={isRemoving}
+        onConfirm={confirmRemoveAvatar}
+        onCancel={() => setShowRemoveDialog(false)}
+      />
+
+      {/* Cancel Changes Dialog */}
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        title="إلغاء التغييرات"
+        message="هل أنت متأكد من إلغاء التغييرات؟ ستفقد جميع التعديلات غير المحفوظة."
+        confirmText="إلغاء"
+        cancelText="عودة"
+        isDanger={false}
+        onConfirm={confirmCancel}
+        onCancel={() => setShowCancelDialog(false)}
+      />
     </div>
   );
 };

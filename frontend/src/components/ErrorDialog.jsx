@@ -1,45 +1,64 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import AnimatedItem from './AnimatedItem.jsx';
 
 const ErrorDialog = ({ message, isVisible, onClose, title = "خطأ" }) => {
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isVisible) {
+        onClose();
+      }
+    };
+
+    if (isVisible) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isVisible, onClose]);
+
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-primary)] bg-opacity-70 backdrop-blur-sm">
-      <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-xl border border-[var(--border-color)] w-full max-w-md overflow-hidden">
-        <div className="bg-[var(--primary-color)] p-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-bold text-white">{title}</h3>
-            <button 
-              onClick={onClose}
-              className="text-white hover:text-gray-200 focus:outline-none"
-            >
-              <i className="fas fa-times"></i>
-            </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      ></div>
+
+      {/* Dialog */}
+      <AnimatedItem type="scale" delay={0.1}>
+        <div className="relative bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 max-w-md w-full p-6 sm:p-8">
+          {/* Icon */}
+          <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-times-circle text-4xl"></i>
           </div>
-        </div>
-        
-        <div className="p-6">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <i className="fas fa-exclamation-triangle text-red-500 text-xl"></i>
-              </div>
-            </div>
-            <div className="mr-4">
-              <p className="text-[var(--text-primary)] text-lg">{message}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-[var(--bg-secondary)] px-6 py-4 flex justify-end">
+
+          {/* Title */}
+          <h3 className="text-xl font-bold text-[var(--text-primary)] text-center mb-2">
+            {title}
+          </h3>
+
+          {/* Message */}
+          <p className="text-[var(--text-secondary)] text-center mb-6">
+            {message}
+          </p>
+
+          {/* Action Button */}
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-[var(--primary-color)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors"
+            className="w-full px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-all duration-300"
           >
+            <i className="fas fa-check ml-2"></i>
             حسناً
           </button>
         </div>
-      </div>
+      </AnimatedItem>
     </div>
   );
 };

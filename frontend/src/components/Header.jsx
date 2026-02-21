@@ -2,28 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import ThemeToggle from './ThemeToggle';
+import NotificationsBell from './dashboard/NotificationsBell.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Close settings dropdown when clicking outside
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = () => {
+    logout();
+    navigate('/login');
+    setShowLogoutDialog(false);
+  };
+
+  // Close account dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showSettingsDropdown && !event.target.closest('.relative')) {
-        setShowSettingsDropdown(false);
+      if (showAccountDropdown && !event.target.closest('.account-dropdown')) {
+        setShowAccountDropdown(false);
       }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [showSettingsDropdown]);
+  }, [showAccountDropdown]);
 
   // Prevent scrolling on the main page when sidebar is open
   useEffect(() => {
@@ -40,98 +53,252 @@ const Header = () => {
   }, [isMenuOpen]);
 
   return (
-    <header className="bg-[var(--bg-secondary)]/80 backdrop-blur-md shadow-md sticky top-0 z-[60] border-b border-[var(--border-color)]/30">
-      <nav className="py-4">
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <Link to="/">
-              <img src="/logo192.png" alt="منصة وعي" className="h-12 w-auto" />
+    <>
+      <header className="bg-[var(--bg-secondary)]/80 backdrop-blur-md shadow-md sticky top-0 z-[60] border-b border-[var(--border-color)]/30">
+        <nav className="py-3">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-4">
+          {/* Right Side - Logo + Desktop Navigation */}
+          <div className="flex items-center gap-6">
+            {/* Logo */}
+            <Link to="/" className="flex-shrink-0">
+              <img src="/logo192.png" alt="منصة وعي" className="h-10 w-auto" />
             </Link>
+
+            {/* Desktop Navigation */}
+            <div className="hidden xl:flex items-center gap-6">
+              <Link to="/" className={`font-medium ${location.pathname === '/' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الرئيسية</Link>
+              <Link to="/categories" className={`font-medium ${location.pathname === '/categories' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الأقسام</Link>
+              <Link to="/about" className={`font-medium ${location.pathname === '/about' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>عن وعي</Link>
+              <Link to="/contact" className={`font-medium ${location.pathname === '/contact' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>تواصل معنا</Link>
+            </div>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden xl:flex space-x-8">
-            <Link to="/" className={`font-medium ${location.pathname === '/' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الرئيسية</Link>
-            <Link to="/categories" className={`font-medium ${location.pathname === '/categories' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الأقسام</Link>
-            <Link to="/about" className={`font-medium ${location.pathname === '/about' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>عن وعي</Link>
-            <Link to="/contact" className={`font-medium ${location.pathname === '/contact' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>تواصل معنا</Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="xl:hidden flex items-center space-x-3">
-            <ThemeToggle />
+          {/* Left Side - Actions */}
+          <div className="flex items-center gap-2">
+            {/* Mobile Menu Button */}
             <button
               onClick={toggleMenu}
-              className="text-[var(--text-primary)] focus:outline-none"
+              className="xl:hidden text-[var(--text-primary)] p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-colors"
               aria-label="Toggle menu"
             >
               {isMenuOpen ? (
-                <i className="fas fa-times text-2xl"></i>
+                <i className="fas fa-times text-xl"></i>
               ) : (
-                <i className="fas fa-bars text-2xl"></i>
+                <i className="fas fa-bars text-xl"></i>
               )}
             </button>
-          </div>
 
-          <div className="hidden xl:flex space-x-3 items-center">
+            {/* Theme Toggle */}
             <ThemeToggle />
+
             {isAuthenticated ? (
-              <div className="relative">
-                <span className="text-[var(--text-primary)] ml-4">مرحباً، {user?.firstName || user?.email}</span>
-                <button
-                  onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-                  className="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors"
-                >
-                  الإعدادات <i className="fas fa-chevron-down mr-1"></i>
-                </button>
-                {showSettingsDropdown && (
-                  <div className="absolute left-0 mt-2 w-56 bg-[var(--bg-secondary)] rounded-xl shadow-xl border border-[var(--border-color)] overflow-hidden z-50">
-                    <Link
-                      to="/dashboard"
-                      className="block px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition-colors"
-                      onClick={() => setShowSettingsDropdown(false)}
-                    >
-                      <i className="fas fa-th-large ml-2"></i>لوحة التحكم
-                    </Link>
-                    <Link
-                      to="/profile-settings"
-                      className="block px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition-colors border-t border-[var(--border-color)]"
-                      onClick={() => setShowSettingsDropdown(false)}
-                    >
-                      <i className="fas fa-user ml-2"></i>الملف الشخصي
-                    </Link>
-                    <Link
-                      to="/account-settings"
-                      className="block px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition-colors border-t border-[var(--border-color)]"
-                      onClick={() => setShowSettingsDropdown(false)}
-                    >
-                      <i className="fas fa-cog ml-2"></i>إعدادات الحساب
-                    </Link>
-                    <button
-                      onClick={() => {
-                        logout();
-                        navigate('/login');
-                        setShowSettingsDropdown(false);
-                      }}
-                      className="w-full text-right px-4 py-3 text-red-500 hover:bg-red-500/10 transition-colors border-t border-[var(--border-color)]"
-                    >
-                      <i className="fas fa-sign-out-alt ml-2"></i>تسجيل خروج
-                    </button>
-                  </div>
-                )}
-              </div>
+              <>
+                {/* Notifications */}
+                <NotificationsBell />
+                
+                {/* Account Icon with Dropdown */}
+                <div className="account-dropdown relative">
+                  <button
+                    onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold hover:shadow-lg hover:scale-105 transition-all duration-300"
+                    title="الحساب"
+                  >
+                    {user?.avatar ? (
+                      <img 
+                        src={user.avatar} 
+                        alt={user.firstName}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'م'
+                    )}
+                  </button>
+                  
+                  {/* Desktop Dropdown Card */}
+                  {showAccountDropdown && (
+                    <div className="hidden xl:block absolute left-0 mt-2 w-80 bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 overflow-hidden z-50">
+                      {/* User Info Header */}
+                      <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] p-6 text-white">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white text-2xl font-bold overflow-hidden flex-shrink-0">
+                            {user?.avatar ? (
+                              <img 
+                                src={user.avatar} 
+                                alt={user.firstName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'م'
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-bold truncate">{user?.firstName} {user?.lastName}</h3>
+                            <p className="text-sm text-white/80 truncate">{user?.email}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {user?.role === 'therapist' && (
+                                <span className="text-xs bg-white/20 px-2 py-1 rounded-full">معالج</span>
+                              )}
+                              <span className="text-xs bg-white/10 px-2 py-1 rounded font-mono truncate max-w-[120px]" title="معرف المستخدم">
+                                #{user?._id?.slice(-6)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Menu Items */}
+                      <div className="p-3">
+                        <div className="space-y-1">
+                          <Link
+                            to="/dashboard"
+                            className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
+                            onClick={() => setShowAccountDropdown(false)}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
+                              <i className="fas fa-th-large text-[var(--primary-color)]"></i>
+                            </div>
+                            <span className="font-medium">لوحة التحكم</span>
+                          </Link>
+                          <Link
+                            to="/profile-settings"
+                            className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
+                            onClick={() => setShowAccountDropdown(false)}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
+                              <i className="fas fa-user text-[var(--primary-color)]"></i>
+                            </div>
+                            <span className="font-medium">الملف الشخصي</span>
+                          </Link>
+                          <Link
+                            to="/account-settings"
+                            className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
+                            onClick={() => setShowAccountDropdown(false)}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
+                              <i className="fas fa-cog text-[var(--primary-color)]"></i>
+                            </div>
+                            <span className="font-medium">إعدادات الحساب</span>
+                          </Link>
+                        </div>
+                        
+                        {/* Divider */}
+                        <div className="border-t border-[var(--border-color)]/30 my-2"></div>
+                        
+                        {/* Logout */}
+                        <button
+                          onClick={() => {
+                            setShowAccountDropdown(false);
+                            handleLogoutClick();
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-500/10 rounded-xl transition-all duration-300"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                            <i className="fas fa-sign-out-alt text-red-500"></i>
+                          </div>
+                          <span className="font-medium">تسجيل الخروج</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <>
-                <Link to="/login" className="px-4 py-2 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[#4a5d5e] hover:text-white transition-colors">
+                <Link to="/login" className="hidden sm:block px-4 py-2 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[#4a5d5e] hover:text-white transition-colors">
                   تسجيل دخول
                 </Link>
-                <Link to="/signup" className="px-4 py-2 bg-[#3d5a5a] text-white rounded-lg font-medium hover:bg-[#2c4a4a] transition-colors">
+                <Link to="/signup" className="hidden sm:block px-4 py-2 bg-[#3d5a5a] text-white rounded-lg font-medium hover:bg-[#2c4a4a] transition-colors">
                   انضم إلينا
                 </Link>
               </>
             )}
           </div>
         </div>
+
+        {/* Mobile Account Dropdown */}
+        {showAccountDropdown && (
+          <div className="xl:hidden bg-[var(--card-bg)] backdrop-blur-md border-t border-[var(--border-color)]/30 py-4 px-4">
+            {/* User Info */}
+            <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] rounded-xl p-4 text-white mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden">
+                  {user?.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.firstName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'م'
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold truncate">{user?.firstName} {user?.lastName}</h4>
+                  <p className="text-xs text-white/80 truncate">{user?.email}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {user?.role === 'therapist' && (
+                      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">معالج</span>
+                    )}
+                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded font-mono">
+                      #{user?._id?.slice(-6)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Menu Items */}
+            <div className="space-y-2">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                onClick={() => setShowAccountDropdown(false)}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                  <i className="fas fa-th-large text-[var(--primary-color)]"></i>
+                </div>
+                <span className="font-medium">لوحة التحكم</span>
+              </Link>
+              <Link
+                to="/profile-settings"
+                className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                onClick={() => setShowAccountDropdown(false)}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                  <i className="fas fa-user text-[var(--primary-color)]"></i>
+                </div>
+                <span className="font-medium">الملف الشخصي</span>
+              </Link>
+              <Link
+                to="/account-settings"
+                className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                onClick={() => setShowAccountDropdown(false)}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                  <i className="fas fa-cog text-[var(--primary-color)]"></i>
+                </div>
+                <span className="font-medium">إعدادات الحساب</span>
+              </Link>
+              
+              {/* Divider */}
+              <div className="border-t border-[var(--border-color)]/30 my-2"></div>
+
+              {/* Logout */}
+              <button
+                onClick={() => {
+                  setShowAccountDropdown(false);
+                  handleLogoutClick();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-all duration-300"
+              >
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                  <i className="fas fa-sign-out-alt text-red-500"></i>
+                </div>
+                <span className="font-medium">تسجيل الخروج</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Mobile Menu Sidebar */}
         {isMenuOpen && (
@@ -151,7 +318,7 @@ const Header = () => {
                   <i className="fas fa-times text-xl"></i>
                 </button>
               </div>
-              <div className="px-6 pb-6 flex flex-col space-y-6">
+              <div className="px-6 pb-6 flex flex-col space-y-4">
                 <Link
                   to="/"
                   className={`font-medium py-3 px-4 rounded-lg ${location.pathname === '/' ? 'text-[#c5a98e] bg-[var(--bg-primary)]/50' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] hover:bg-[var(--bg-primary)]/30 transition-colors`}
@@ -180,69 +347,25 @@ const Header = () => {
                 >
                   تواصل معنا
                 </Link>
-                <div className="pt-6 flex flex-col space-y-4">
-                  {isAuthenticated ? (
-                    <>
-                      <div className="px-4 py-3 bg-[var(--bg-primary)]/50 rounded-lg font-medium text-center">
-                        مرحباً، {user?.firstName || user?.email}
-                      </div>
-                      <Link
-                        to="/dashboard"
-                        className="px-4 py-3 bg-[var(--primary-color)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors text-center"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <i className="fas fa-th-large ml-2"></i>لوحة التحكم
-                      </Link>
-                      <Link
-                        to="/profile-settings"
-                        className="px-4 py-3 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[var(--bg-primary)] transition-colors text-center"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <i className="fas fa-user ml-2"></i>الملف الشخصي
-                      </Link>
-                      <Link
-                        to="/account-settings"
-                        className="px-4 py-3 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[var(--bg-primary)] transition-colors text-center"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <i className="fas fa-cog ml-2"></i>إعدادات الحساب
-                      </Link>
-                      <button
-                        onClick={() => {
-                          logout();
-                          navigate('/login');
-                          setIsMenuOpen(false);
-                        }}
-                        className="px-4 py-3 border-2 border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-500 hover:text-white transition-colors text-center"
-                      >
-                        <i className="fas fa-sign-out-alt ml-2"></i>تسجيل خروج
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        to="/login"
-                        className="px-4 py-3 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[#4a5d5e] hover:text-white transition-colors text-center"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        تسجيل دخول
-                      </Link>
-                      <Link
-                        to="/signup"
-                        className="px-4 py-3 bg-[#3d5a5a] text-white rounded-lg font-medium hover:bg-[#2c4a4a] transition-colors text-center"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        انضم إلينا
-                      </Link>
-                    </>
-                  )}
-                </div>
               </div>
             </div>
           </div>
         )}
       </nav>
     </header>
+
+    {/* Logout Confirmation Dialog - Rendered outside header for proper centering */}
+    <ConfirmDialog
+      isOpen={showLogoutDialog}
+      title="تسجيل الخروج"
+      message="هل أنت متأكد من تسجيل الخروج؟"
+      confirmText="تسجيل الخروج"
+      cancelText="إلغاء"
+      isDanger={true}
+      onConfirm={confirmLogout}
+      onCancel={() => setShowLogoutDialog(false)}
+    />
+    </>
   );
 };
 

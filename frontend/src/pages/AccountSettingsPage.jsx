@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { profileAPI } from '../api.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 const AccountSettingsPage = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -13,6 +14,9 @@ const AccountSettingsPage = () => {
   const [loading, setLoading] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1);
   
   // Password form state
   const [passwordForm, setPasswordForm] = useState({
@@ -35,12 +39,12 @@ const AccountSettingsPage = () => {
   });
   const [savingPrivacy, setSavingPrivacy] = useState(false);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (ProtectedRoute handles this, but keep as backup)
   useEffect(() => {
-    if (!isAuthenticated && !loading) {
+    if (!user && !loading) {
       navigate('/login');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [user, loading, navigate]);
 
   const validatePasswordForm = () => {
     const newErrors = {};
@@ -112,29 +116,33 @@ const AccountSettingsPage = () => {
   };
 
   const handleLogoutFromAllDevices = () => {
-    const confirmLogout = window.confirm('هل أنت متأكد من تسجيل الخروج من جميع الأجهزة؟');
-    if (confirmLogout) {
-      logout();
-      navigate('/login');
-      success('تم تسجيل الخروج من جميع الأجهزة');
-    }
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogoutFromAllDevices = () => {
+    logout();
+    navigate('/login');
+    success('تم تسجيل الخروج من جميع الأجهزة');
+    setShowLogoutDialog(false);
   };
 
   const handleDeleteAccount = () => {
-    const confirmDelete = window.confirm('⚠️ تحذير: هل أنت متأكد تماماً من حذف حسابك؟\n\nهذا الإجراء لا يمكن التراجع عنه. ستفقد جميع بياناتك بشكل نهائي.');
-    if (!confirmDelete) return;
+    setDeleteStep(1);
+    setShowDeleteDialog(true);
+  };
 
-    const finalConfirm = window.prompt('للحذف النهائي، اكتب "حذف" في المربع أدناه:');
-    if (finalConfirm !== 'حذف') {
-      showErrorToast('لم يتم تأكيد الحذف');
-      return;
-    }
+  const confirmDeleteAccountStep1 = () => {
+    setDeleteStep(2);
+  };
 
+  const confirmDeleteAccountFinal = () => {
     setDeletingAccount(true);
     setTimeout(() => {
       logout();
       navigate('/');
       success('تم حذف حسابك بنجاح');
+      setDeletingAccount(false);
+      setShowDeleteDialog(false);
     }, 1000);
   };
 
@@ -430,6 +438,37 @@ const AccountSettingsPage = () => {
           </div>
         </AnimatedItem>
       </div>
+
+      {/* Logout from All Devices Dialog */}
+      <ConfirmDialog
+        isOpen={showLogoutDialog}
+        title="تسجيل الخروج من جميع الأجهزة"
+        message="هل أنت متأكد من تسجيل الخروج من جميع الأجهزة؟"
+        confirmText="تسجيل الخروج"
+        cancelText="إلغاء"
+        isDanger={true}
+        onConfirm={confirmLogoutFromAllDevices}
+        onCancel={() => setShowLogoutDialog(false)}
+      />
+
+      {/* Delete Account Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        title={deleteStep === 1 ? "حذف الحساب" : "تأكيد نهائي"}
+        message={deleteStep === 1 
+          ? "⚠️ تحذير: هل أنت متأكد تماماً من حذف حسابك؟\n\nهذا الإجراء لا يمكن التراجع عنه. ستفقد جميع بياناتك بشكل نهائي."
+          : "للحذف النهائي، انقر على زر التأكيد أدناه"
+        }
+        confirmText={deleteStep === 1 ? "متابعة" : "حذف نهائياً"}
+        cancelText="إلغاء"
+        isDanger={true}
+        isLoading={deletingAccount}
+        onConfirm={deleteStep === 1 ? confirmDeleteAccountStep1 : confirmDeleteAccountFinal}
+        onCancel={() => {
+          setShowDeleteDialog(false);
+          setDeleteStep(1);
+        }}
+      />
     </div>
   );
 };

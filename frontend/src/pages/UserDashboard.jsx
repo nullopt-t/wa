@@ -1,38 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const UserDashboard = () => {
-  const [user, setUser] = useState(null);
+  const { user, loading: authLoading } = useAuth();
   const [dailyMood, setDailyMood] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
   const [recommendedContent, setRecommendedContent] = useState([]);
 
-  // Simulating user data fetch
+  // Show loading while auth is checking
+  if (authLoading) {
+    return (
+      <div className="bg-[var(--bg-primary)] min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
+      </div>
+    );
+  }
+
+  // Load user data from AuthContext
   useEffect(() => {
-    // In a real app, this would come from the auth context
-    const mockUser = {
-      firstName: 'أحمد',
-      lastName: 'محمد',
-      email: 'ahmad.mohamed@example.com',
-      joinedDate: '2024-01-15',
-      therapyGoals: ['تقليل التوتر', 'تحسين النوم', 'تعزيز الثقة']
-    };
-    
-    setUser(mockUser);
-    
-    // Mock recent activity
+    // Mock recent activity (replace with real API call)
     setRecentActivity([
       { id: 1, type: 'article', title: 'كيفية التعامل مع التوتر', date: '2024-01-20' },
       { id: 2, type: 'habit', title: 'تم تسجيل عادة جديدة', date: '2024-01-19' },
       { id: 3, type: 'community', title: 'تم نشر منشور في المجتمع', date: '2024-01-18' }
     ]);
-    
-    // Mock recommended content
+
+    // Mock recommended content (replace with real API call)
     setRecommendedContent([
-      { id: 1, title: 'Articles on Stress Management', category: 'Articles' },
-      { id: 2, title: 'Mindfulness Exercises', category: 'Exercises' },
-      { id: 3, title: 'Building Healthy Relationships', category: 'Guides' }
+      { id: 1, title: 'مقالات عن إدارة التوتر', category: 'مقالات' },
+      { id: 2, title: 'تمارين اليقظة الذهنية', category: 'تمارين' },
+      { id: 3, title: 'بناء علاقات صحية', category: 'أدلة' }
     ]);
   }, []);
 

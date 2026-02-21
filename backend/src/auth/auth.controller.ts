@@ -40,8 +40,9 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(AuthGuard('jwt'))
-  getProfile(@Request() req) {
-    return req.user;
+  async getProfile(@Request() req) {
+    // Fetch full user profile from database (JWT only contains basic info)
+    return this.userService.findById(req.user.userId);
   }
 
   @Patch('change-password')

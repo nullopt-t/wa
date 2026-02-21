@@ -16,29 +16,6 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  // Prevent browser's default validation styling
-  useEffect(() => {
-    // Disable autofill yellow background
-    const style = document.createElement('style');
-    style.textContent = `
-      input:-webkit-autofill,
-      input:-webkit-autofill:hover,
-      input:-webkit-autofill:focus,
-      input:-webkit-autofill:active {
-        -webkit-text-fill-color: var(--text-primary) !important;
-        transition: background-color 5000s ease-in-out 0s;
-      }
-      input:invalid,
-      input:user-invalid {
-        background-color: var(--bg-secondary) !important;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
-
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -93,7 +70,7 @@ const SignupPage = () => {
     { code: '+222', label: '🇲🇷 موريتانيا', name: 'موريتانيا' },
   ];
 
-  // Auto-focus on first name field and prevent browser validation styling
+  // Prevent browser's default validation styling
   useEffect(() => {
     firstNameRef.current?.focus();
 

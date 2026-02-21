@@ -8,6 +8,8 @@ import { RedisCacheModule } from './modules/redis-cache/redis-cache.module';
 import { UserModule } from './users/user.module';
 import { HealthModule } from './modules/health/health.module';
 import { EmailModule } from './modules/email/email.module';
+import { TherapistModule } from './therapist/therapist.module';
+import { SessionsModule } from './sessions/sessions.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { EmailModule } from './modules/email/email.module';
     UserModule,
     AuthModule,
     HealthModule,
+    TherapistModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

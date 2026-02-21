@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ErrorProvider } from './context/ErrorContext.jsx';
@@ -9,6 +10,7 @@ import './styles/App.css';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import HomePage from './pages/HomePage.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
 import CommunityPage from './pages/CommunityPage.jsx';
 import ContactPage from './pages/ContactPage.jsx';
@@ -33,7 +35,18 @@ import UserDashboard from './pages/UserDashboard.jsx';
 import TherapistDashboard from './pages/TherapistDashboard.jsx';
 import ProfileSettingsPage from './pages/ProfileSettingsPage.jsx';
 import AccountSettingsPage from './pages/AccountSettingsPage.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 function AppWrapper() {
   const location = useLocation();
@@ -56,7 +69,9 @@ function AppWrapper() {
             } />
             <Route path="/community" element={
               <AnimatedRoute>
-                <CommunityPage />
+                <ProtectedRoute>
+                  <CommunityPage />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/contact" element={
@@ -74,24 +89,11 @@ function AppWrapper() {
                 <VisionPage />
               </AnimatedRoute>
             } />
-            <Route path="/habits" element={
-              <AnimatedRoute>
-                <HabitsPage />
-              </AnimatedRoute>
-            } />
-            <Route path="/stories" element={
-              <AnimatedRoute>
-                <StoriesPage />
-              </AnimatedRoute>
-            } />
-            <Route path="/feedback" element={
-              <AnimatedRoute>
-                <FeedbackPage />
-              </AnimatedRoute>
-            } />
             <Route path="/future-message" element={
               <AnimatedRoute>
-                <FutureMessagePage />
+                <ProtectedRoute>
+                  <FutureMessagePage />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/login" element={
@@ -106,7 +108,9 @@ function AppWrapper() {
             } />
             <Route path="/chatbot" element={
               <AnimatedRoute>
-                <ChatbotPage />
+                <ProtectedRoute>
+                  <ChatbotPage />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/faq" element={
@@ -146,12 +150,30 @@ function AppWrapper() {
             } />
             <Route path="/verify-email/pending-approval" element={
               <AnimatedRoute>
-                <PendingApprovalPage />
+                <ProtectedRoute allowedRoles={['therapist']}>
+                  <PendingApprovalPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/videos" element={
+              <AnimatedRoute>
+                <ProtectedRoute>
+                  <VideosPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/find-therapist" element={
+              <AnimatedRoute>
+                <ProtectedRoute>
+                  <FindTherapistPage />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/habits" element={
               <AnimatedRoute>
-                <HabitsPage />
+                <ProtectedRoute>
+                  <HabitsPage />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/stories" element={
@@ -161,17 +183,9 @@ function AppWrapper() {
             } />
             <Route path="/feedback" element={
               <AnimatedRoute>
-                <FeedbackPage />
-              </AnimatedRoute>
-            } />
-            <Route path="/videos" element={
-              <AnimatedRoute>
-                <VideosPage />
-              </AnimatedRoute>
-            } />
-            <Route path="/find-therapist" element={
-              <AnimatedRoute>
-                <FindTherapistPage />
+                <ProtectedRoute>
+                  <FeedbackPage />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/dashboard" element={
@@ -181,22 +195,37 @@ function AppWrapper() {
             } />
             <Route path="/user-dashboard" element={
               <AnimatedRoute>
-                <UserDashboard />
+                <ProtectedRoute allowedRoles={['user']}>
+                  <UserDashboard />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/therapist-dashboard" element={
               <AnimatedRoute>
-                <TherapistDashboard />
+                <ProtectedRoute allowedRoles={['therapist']}>
+                  <TherapistDashboard />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/profile-settings" element={
               <AnimatedRoute>
-                <ProfileSettingsPage />
+                <ProtectedRoute>
+                  <ProfileSettingsPage />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/account-settings" element={
               <AnimatedRoute>
-                <AccountSettingsPage />
+                <ProtectedRoute>
+                  <AccountSettingsPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            
+            {/* 404 Not Found - Catch-all route (must be last) */}
+            <Route path="*" element={
+              <AnimatedRoute>
+                <NotFoundPage />
               </AnimatedRoute>
             } />
           </Routes>
@@ -209,8 +238,9 @@ function AppWrapper() {
 
 // Component to redirect based on user role
 function DashboardRedirect() {
-  const { user, loading } = useAuth();
-  
+  const { user, loading, isAuthenticated } = useAuth();
+
+  // Show loading while checking auth
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -218,12 +248,18 @@ function DashboardRedirect() {
       </div>
     );
   }
-  
-  if (user?.role === 'therapist') {
-    return <TherapistDashboard />;
-  } else {
-    return <UserDashboard />;
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
+
+  // Redirect to appropriate dashboard based on role
+  if (user?.role === 'therapist') {
+    return <Navigate to="/therapist-dashboard" replace />;
+  }
+  
+  return <Navigate to="/user-dashboard" replace />;
 }
 
 function App() {
@@ -232,9 +268,11 @@ function App() {
       <AuthProvider>
         <ThemeProvider>
           <ToastProvider>
-            <Router>
-              <AppWrapper />
-            </Router>
+            <QueryClientProvider client={queryClient}>
+              <Router>
+                <AppWrapper />
+              </Router>
+            </QueryClientProvider>
           </ToastProvider>
         </ThemeProvider>
       </AuthProvider>
