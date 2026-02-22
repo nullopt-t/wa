@@ -23,7 +23,7 @@ const RecentClients = ({ clients }) => {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">العملاء الحاليين</h2>
           <Link
-            to="/therapist/clients"
+            to="#"
             className="text-[var(--primary-color)] hover:text-[var(--primary-hover)] text-sm font-medium"
           >
             عرض الكل <i className="fas fa-arrow-left mr-1"></i>
@@ -42,7 +42,7 @@ const RecentClients = ({ clients }) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-[var(--text-primary)]">العملاء الحاليين</h2>
         <Link
-          to="/therapist/clients"
+          to="#"
           className="text-[var(--primary-color)] hover:text-[var(--primary-hover)] text-sm font-medium"
         >
           عرض الكل <i className="fas fa-arrow-left mr-1"></i>

@@ -16,35 +16,35 @@ import EarningsCard from '../components/dashboard/EarningsCard.jsx';
 import DashboardSkeleton from '../components/dashboard/DashboardSkeleton.jsx';
 
 const TherapistDashboard = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading, initialized } = useAuth();
   const { error: showError } = useToast();
   const navigate = useNavigate();
 
+  // Redirect if not authenticated or not a therapist (only after initialized)
+  useEffect(() => {
+    if (initialized && (!user || user.role !== 'therapist')) {
+      navigate('/login');
+    }
+  }, [user, initialized, navigate]);
+
   // Fetch dashboard data with React Query
-  const { 
-    data: dashboardData, 
-    isLoading, 
-    isError, 
+  const {
+    data: dashboardData,
+    isLoading,
+    isError,
     error,
     refetch,
-    isRefetching 
+    isRefetching
   } = useQuery({
     queryKey: ['therapistDashboard', user?.id],
     queryFn: async () => {
       const data = await therapistAPI.getDashboard();
       return data;
     },
-    enabled: !!user && user.role === 'therapist',
+    enabled: !!user && user.role === 'therapist' && initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });
-
-  // Redirect if not authenticated or not a therapist
-  useEffect(() => {
-    if (!authLoading && (!user || user.role !== 'therapist')) {
-      navigate('/login');
-    }
-  }, [user, authLoading, navigate]);
 
   // Show error toast on API failure
   useEffect(() => {
@@ -61,7 +61,7 @@ const TherapistDashboard = () => {
   }, [dashboardData]);
 
   // Show loading skeleton
-  if (isLoading || authLoading) {
+  if (loading || isLoading) {
     return <DashboardSkeleton />;
   }
 

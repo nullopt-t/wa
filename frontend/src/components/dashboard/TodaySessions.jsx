@@ -42,7 +42,7 @@ const TodaySessions = ({ sessions }) => {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">جلسات اليوم</h2>
           <Link
-            to="/therapist/sessions"
+            to="#"
             className="text-[var(--primary-color)] hover:text-[var(--primary-hover)] text-sm font-medium"
           >
             عرض الكل <i className="fas fa-arrow-left mr-1"></i>
@@ -61,7 +61,7 @@ const TodaySessions = ({ sessions }) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-[var(--text-primary)]">جلسات اليوم</h2>
         <Link
-          to="/therapist/sessions"
+          to="#"
           className="text-[var(--primary-color)] hover:text-[var(--primary-hover)] text-sm font-medium"
         >
           عرض الكل <i className="fas fa-arrow-left mr-1"></i>

@@ -108,6 +108,12 @@ const ProfileSettingsPage = () => {
         return;
       }
 
+      // Check if user ID exists
+      if (!user?._id) {
+        showErrorToast('يرجى تسجيل الدخول أولاً');
+        return;
+      }
+
       // Show preview immediately
       const reader = new FileReader();
       reader.onloadend = () => {

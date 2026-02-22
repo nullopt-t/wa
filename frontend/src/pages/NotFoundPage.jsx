@@ -23,7 +23,12 @@ const NotFoundPage = () => {
   // Navigate when countdown reaches 0
   useEffect(() => {
     if (countdown === 0) {
-      navigate('/');
+      // Try to go back, if can't go back then go to home
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/');
+      }
     }
   }, [countdown, navigate]);
 
@@ -101,15 +106,15 @@ const NotFoundPage = () => {
 
             <button
               onClick={() => navigate(-1)}
-              className="p-4 bg-[var(--card-bg)] backdrop-blur-md rounded-xl border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/50 transition-all duration-300 group"
+              className="p-4 bg-[var(--primary-color)] text-white rounded-xl hover:bg-[var(--primary-hover)] transition-all duration-300 group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[var(--primary-color)]/20 rounded-lg flex items-center justify-center group-hover:bg-[var(--primary-color)]/30 transition-colors">
-                  <i className="fas fa-arrow-right text-[var(--primary-color)]"></i>
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                  <i className="fas fa-arrow-right text-white"></i>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-[var(--text-primary)]">رجوع</div>
-                  <div className="text-sm text-[var(--text-secondary)]">العودة للصفحة السابقة</div>
+                  <div className="font-bold">رجوع</div>
+                  <div className="text-sm text-white/80">العودة للصفحة السابقة</div>
                 </div>
               </div>
             </button>
@@ -132,7 +137,7 @@ const NotFoundPage = () => {
           {/* Countdown */}
           <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-secondary)] mt-8">
             <i className="fas fa-clock"></i>
-            <span>سيتم تحويلك للصفحة الرئيسية خلال </span>
+            <span>العودة للصفحة السابقة خلال </span>
             <span className={`font-bold text-lg transition-all duration-300 ${
               countdown <= 3 ? 'text-red-500 animate-pulse' : 'text-[var(--primary-color)]'
             }`}>
@@ -140,6 +145,15 @@ const NotFoundPage = () => {
             </span>
             <span> ثوانٍ</span>
           </div>
+
+          {/* Cancel Auto-Redirect */}
+          <button
+            onClick={() => setCountdown(999)}
+            className="mt-4 text-sm text-[var(--primary-color)] hover:text-[var(--primary-hover)] font-medium transition-colors"
+          >
+            <i className="fas fa-pause ml-1"></i>
+            إيقاف التحويل التلقائي
+          </button>
         </div>
       </AnimatedItem>
     </div>

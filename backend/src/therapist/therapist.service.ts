@@ -3,12 +3,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Session, SessionDocument } from '../sessions/schemas/session.schema';
+import { SessionsService } from '../sessions/sessions.service';
 
 @Injectable()
 export class TherapistService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel('Session') private sessionModel: Model<SessionDocument>,
+    private sessionsService: SessionsService,
   ) {}
 
   async getDashboardData(therapistId: string) {

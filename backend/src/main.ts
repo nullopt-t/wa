@@ -30,12 +30,16 @@ async function bootstrap() {
     prefix: '/uploads',
   });
 
-  // Validation pipe
+  // Validation pipe with transform
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: {
+        // Convert empty strings to undefined
+        enableImplicitConversion: true,
+      },
     }),
   );
 

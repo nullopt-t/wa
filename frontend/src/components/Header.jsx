@@ -104,8 +104,8 @@ const Header = () => {
                     title="الحساب"
                   >
                     {user?.avatar ? (
-                      <img 
-                        src={user.avatar} 
+                      <img
+                        src={user.avatar.startsWith('/') ? `http://localhost:4000${user.avatar}` : user.avatar}
                         alt={user.firstName}
                         className="w-full h-full rounded-full object-cover"
                       />
@@ -123,7 +123,7 @@ const Header = () => {
                           <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white text-2xl font-bold overflow-hidden flex-shrink-0">
                             {user?.avatar ? (
                               <img 
-                                src={user.avatar} 
+                                src={user.avatar.startsWith('/') ? `http://localhost:4000${user.avatar}` : user.avatar} 
                                 alt={user.firstName}
                                 className="w-full h-full object-cover"
                               />
@@ -150,7 +150,7 @@ const Header = () => {
                       <div className="p-3">
                         <div className="space-y-1">
                           <Link
-                            to="/dashboard"
+                            to="/therapist/dashboard"
                             className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
                             onClick={() => setShowAccountDropdown(false)}
                           >
@@ -224,7 +224,7 @@ const Header = () => {
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden">
                   {user?.avatar ? (
                     <img 
-                      src={user.avatar} 
+                      src={user.avatar.startsWith('/') ? `http://localhost:4000${user.avatar}` : user.avatar} 
                       alt={user.firstName}
                       className="w-full h-full object-cover"
                     />
@@ -250,7 +250,7 @@ const Header = () => {
             {/* Menu Items */}
             <div className="space-y-2">
               <Link
-                to="/dashboard"
+                to="/therapist/dashboard"
                 className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
                 onClick={() => setShowAccountDropdown(false)}
               >

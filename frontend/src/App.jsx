@@ -36,6 +36,8 @@ import TherapistDashboard from './pages/TherapistDashboard.jsx';
 import ProfileSettingsPage from './pages/ProfileSettingsPage.jsx';
 import AccountSettingsPage from './pages/AccountSettingsPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import SessionsPage from './pages/SessionsPage.jsx';
+import ComingSoonPage from './pages/ComingSoonPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
 
 // Create a client
@@ -52,9 +54,9 @@ function AppWrapper() {
   const location = useLocation();
 
   return (
-    <div className="App" dir="rtl">
+    <div className="flex flex-col min-h-screen" dir="rtl">
       <Header />
-      <main>
+      <main className="flex-grow">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={
@@ -200,7 +202,7 @@ function AppWrapper() {
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
-            <Route path="/therapist-dashboard" element={
+            <Route path="/therapist/dashboard" element={
               <AnimatedRoute>
                 <ProtectedRoute allowedRoles={['therapist']}>
                   <TherapistDashboard />
@@ -221,7 +223,6 @@ function AppWrapper() {
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
-            
             {/* 404 Not Found - Catch-all route (must be last) */}
             <Route path="*" element={
               <AnimatedRoute>
@@ -256,7 +257,7 @@ function DashboardRedirect() {
 
   // Redirect to appropriate dashboard based on role
   if (user?.role === 'therapist') {
-    return <Navigate to="/therapist-dashboard" replace />;
+    return <Navigate to="/therapist/dashboard" replace />;
   }
   
   return <Navigate to="/user-dashboard" replace />;

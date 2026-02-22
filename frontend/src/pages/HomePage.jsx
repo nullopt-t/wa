@@ -1,8 +1,37 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const HomePage = () => {
+  const { isAuthenticated, user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (isAuthenticated && !loading && user) {
+      if (user.role === 'therapist') {
+        navigate('/therapist/dashboard');
+      } else {
+        navigate('/user-dashboard');
+      }
+    }
+  }, [isAuthenticated, loading, user, navigate]);
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="bg-[var(--bg-primary)] min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
+      </div>
+    );
+  }
+
+  // Don't render homepage content if authenticated (redirecting)
+  if (isAuthenticated && user) {
+    return null;
+  }
+
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen">
       <section className="py-16 bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)]">
