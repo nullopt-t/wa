@@ -1,307 +1,245 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import { postsAPI, categoriesAPI } from '../services/communityApi.js';
+import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
+import PostCard from '../components/community/PostCard.jsx';
+import CreatePostModal from '../components/community/CreatePostModal.jsx';
+import CommunitySidebar from '../components/community/CommunitySidebar.jsx';
 
 const CommunityPage = () => {
-  const [posts, setPosts] = useState([]);
-  const [newPost, setNewPost] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
-  const [user] = useState({ name: 'أحمد محمد', avatar: 'AM' }); // Mock user data
+  const { isAuthenticated, user } = useAuth();
+  const { success, error: showError } = useToast();
 
-  // Mock data for posts
+  const [posts, setPosts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    total: 0,
+  });
+  const [filters, setFilters] = useState({
+    category: '',
+    sort: 'createdAt',
+  });
+  
+  // AbortController for cancelling pending requests
+  const abortControllerRef = useRef(null);
+
+  // Load categories
   useEffect(() => {
-    const mockPosts = [
-      {
-        id: 1,
-        author: { name: 'نور إبراهيم', avatar: 'NI', role: 'user' },
-        content: 'مرحباً بالجميع، أشعر اليوم بتحسن كبير بعد ممارسة تقنيات التنفس التي تعلمتها في منصة وعي. شكرًا لكم على هذا الدعم الرائع!',
-        timestamp: '20 دقيقة مضت',
-        likes: 12,
-        comments: 5,
-        category: 'قصص نجاح'
-      },
-      {
-        id: 2,
-        author: { name: 'د. سارة أحمد', avatar: 'SA', role: 'therapist' },
-        content: 'نصيحة اليوم: لا تتردد في طلب المساعدة عند الحاجة. الصحة النفسية مهمة مثل الصحة الجسدية.',
-        timestamp: 'ساعة مضت',
-        likes: 24,
-        comments: 8,
-        category: 'نصائح'
-      },
-      {
-        id: 3,
-        author: { name: 'محمد علي', avatar: 'MA', role: 'user' },
-        content: 'هل هناك من يمر بتجارب مشابهة للتوتر قبل الأزمات؟ أود مشاركة تجاربي والتحدث عن كيفية التغلب عليها.',
-        timestamp: '3 ساعات مضت',
-        likes: 8,
-        comments: 12,
-        category: 'دعم متبادل'
-      },
-      {
-        id: 4,
-        author: { name: 'ليلى عمر', avatar: 'LO', role: 'user' },
-        content: 'أحببت هذه المقالة عن تقنيات إدارة التوتر. هل يمكن لأحد أن يشاركني تجاربه مع هذه التقنية؟',
-        timestamp: '5 ساعات مضت',
-        likes: 15,
-        comments: 7,
-        category: 'أسئلة واستفسارات'
-      }
-    ];
-    
-    setPosts(mockPosts);
+    loadCategories();
   }, []);
 
-  const categories = [
-    { id: 'all', name: 'الكل', count: 24 },
-    { id: 'success', name: 'قصص نجاح', count: 8 },
-    { id: 'support', name: 'دعم متبادل', count: 12 },
-    { id: 'advice', name: 'نصائح', count: 18 },
-    { id: 'questions', name: 'أسئلة', count: 15 },
-    { id: 'resources', name: 'موارد', count: 9 }
-  ];
+  // Load posts when filters change (resets to page 1)
+  useEffect(() => {
+    loadPosts(1, true); // Reset posts when filters change
+  }, [filters]);
 
-  const handlePostSubmit = (e) => {
-    e.preventDefault();
-    if (newPost.trim()) {
-      const post = {
-        id: posts.length + 1,
-        author: user,
-        content: newPost,
-        timestamp: 'الآن',
-        likes: 0,
-        comments: 0,
-        category: 'عام'
-      };
-      
-      setPosts([post, ...posts]);
-      setNewPost('');
+  const loadCategories = async () => {
+    try {
+      const data = await categoriesAPI.getAll();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
     }
   };
 
-  const filteredPosts = activeTab === 'all' 
-    ? posts 
-    : posts.filter(post => 
-        activeTab === 'success' && post.category.includes('قصص') ||
-        activeTab === 'support' && post.category.includes('دعم') ||
-        activeTab === 'advice' && post.category.includes('نصائح') ||
-        activeTab === 'questions' && post.category.includes('أسئلة') ||
-        activeTab === 'resources' && post.category.includes('موارد')
-      );
+  const loadPosts = async (page = 1, resetPosts = false) => {
+    try {
+      setLoading(true);
+      console.log('=== LOAD POSTS ===');
+      console.log('Page:', page, 'Reset:', resetPosts, 'Current posts:', posts.length);
+      
+      // Cancel any pending request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // Create new AbortController for this request
+      abortControllerRef.current = new AbortController();
+      
+      const params = {
+        page,
+        limit: 20,
+        ...(filters.category && { category: filters.category }),
+        sort: filters.sort,
+      };
+      console.log('Request params:', params);
+
+      const data = await postsAPI.getAll(params);
+      console.log('Response:', data);
+      
+      // Update pagination info
+      setPagination({
+        currentPage: data.currentPage,
+        totalPages: data.totalPages,
+        total: data.total,
+      });
+      
+      // Either replace posts (new filter) or append (load more)
+      const newPosts = resetPosts ? data.posts : [...posts, ...data.posts];
+      console.log('Setting posts:', newPosts.length, 'posts');
+      setPosts(newPosts);
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Request was cancelled');
+        return;
+      }
+      showError(error.message || 'فشل تحميل المنشورات');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePost = async (postData) => {
+    if (isCreating) return; // Prevent duplicate submissions
+    
+    try {
+      setIsCreating(true);
+      await postsAPI.create(postData);
+      success('تم إنشاء المنشور بنجاح، سيتم مراجعته ونشره قريباً');
+      setShowCreateModal(false);
+      // Reload posts to refresh the feed
+      loadPosts(1, true);
+    } catch (error) {
+      showError(error.message || 'فشل إنشاء المنشور');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleLikePost = async (postId) => {
+    if (!isAuthenticated) {
+      showError('يرجى تسجيل الدخول للإعجاب بالمنشورات');
+      return;
+    }
+
+    try {
+      await postsAPI.like(postId);
+      // Optimistically update the UI without reloading all posts
+      setPosts(posts.map(post => {
+        if (post._id === postId) {
+          const isLiked = post.likes?.includes(user.id);
+          return {
+            ...post,
+            likes: isLiked 
+              ? post.likes.filter(id => id !== user.id)
+              : [...(post.likes || []), user.id]
+          };
+        }
+        return post;
+      }));
+    } catch (error) {
+      showError(error.message || 'فشل الإعجاب بالمنشور');
+    }
+  };
 
   return (
-    <div className="bg-[var(--bg-primary)] min-h-screen">
-      {/* Community Header */}
-      <AnimatedItem type="slideUp" delay={0.1}>
-        <section className="py-12 bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] text-white">
-          <div className="max-w-6xl mx-auto px-4">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">مجتمع وعي</h1>
-            <p className="text-xl opacity-90 max-w-3xl">انضم إلى مجتمع من الأفراد الذين يمرون بتجارب مشابهة ويسعون لتحسين صحتهم النفسية</p>
-          </div>
-        </section>
-      </AnimatedItem>
-
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Sidebar - Categories and Info */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Community Guidelines */}
-            <AnimatedItem type="slideRight" delay={0.2}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">إرشادات المجتمع</h3>
-                <ul className="space-y-2 text-[var(--text-secondary)]">
-                  <li className="flex items-start">
-                    <i className="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
-                    <span>كن محترمًا مع الآخرين</span>
-                  </li>
-                  <li className="flex items-start">
-                    <i className="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
-                    <span>شارك تجاربك الشخصية فقط</span>
-                  </li>
-                  <li className="flex items-start">
-                    <i className="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
-                    <span>لا تقدم تشخيصات طبية</span>
-                  </li>
-                  <li className="flex items-start">
-                    <i className="fas fa-check-circle text-green-500 mt-1 ml-2"></i>
-                    <span>احترم الخصوصية</span>
-                  </li>
-                </ul>
-              </div>
-            </AnimatedItem>
-
-            {/* Discussion Categories */}
-            <AnimatedItem type="slideRight" delay={0.3}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">التصنيفات</h3>
-                <div className="space-y-2">
-                  {categories.map(category => (
-                    <button
-                      key={category.id}
-                      onClick={() => setActiveTab(category.id)}
-                      className={`w-full text-right p-3 rounded-xl flex justify-between items-center ${
-                        activeTab === category.id
-                          ? 'bg-[var(--primary-color)] text-white'
-                          : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-primary)]'
-                      }`}
-                    >
-                      <span>{category.name}</span>
-                      <span className="bg-[var(--bg-primary)] text-[var(--text-primary)] text-xs px-2 py-1 rounded-full">
-                        {category.count}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </AnimatedItem>
-
-            {/* Active Members */}
-            <AnimatedItem type="slideRight" delay={0.4}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">الأعضاء النشطون</h3>
-                <div className="space-y-3">
-                  {[
-                    { name: 'نور إبراهيم', posts: 24 },
-                    { name: 'محمد علي', posts: 18 },
-                    { name: 'ليلى عمر', posts: 15 },
-                    { name: 'د. سارة أحمد', posts: 32 }
-                  ].map((member, index) => (
-                    <div key={index} className="flex items-center p-2 hover:bg-[var(--bg-secondary)] rounded-xl">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-full flex items-center justify-center text-white text-sm mr-3">
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[var(--text-primary)] text-sm">{member.name}</div>
-                        <div className="text-[var(--text-secondary)] text-xs">{member.posts} مشاركات</div>
-                      </div>
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </AnimatedItem>
-          </div>
-
-          {/* Main Content - Posts Feed */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Create Post Card */}
-            <AnimatedItem type="slideUp" delay={0.2}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-full flex items-center justify-center text-white font-bold">
-                    {user.avatar}
-                  </div>
-                  <form onSubmit={handlePostSubmit} className="flex-1">
-                    <textarea
-                      value={newPost}
-                      onChange={(e) => setNewPost(e.target.value)}
-                      placeholder="شارك شيئاً مع المجتمع..."
-                      className="w-full p-4 bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] resize-none"
-                      rows="3"
-                    ></textarea>
-                    <div className="flex justify-between items-center mt-4">
-                      <div className="flex space-x-4 text-[var(--text-secondary)]">
-                        <button type="button" className="hover:text-[var(--primary-color)]">
-                          <i className="fas fa-image"></i>
-                        </button>
-                        <button type="button" className="hover:text-[var(--primary-color)]">
-                          <i className="fas fa-smile"></i>
-                        </button>
-                        <button type="button" className="hover:text-[var(--primary-color)]">
-                          <i className="fas fa-paperclip"></i>
-                        </button>
-                      </div>
-                      <button
-                        type="submit"
-                        className="px-6 py-2 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors"
-                      >
-                        مشاركة
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </AnimatedItem>
-
-            {/* Posts Feed */}
-            <div className="space-y-6">
-              {filteredPosts.map((post, index) => (
-                <AnimatedItem key={post.id} type="slideUp" delay={0.1 * index}>
-                  <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-full flex items-center justify-center text-white font-bold">
-                        {post.author.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-bold text-[var(--text-primary)]">{post.author.name}</h4>
-                            <span className="text-[var(--text-secondary)] text-sm">{post.timestamp}</span>
-                          </div>
-                          <span className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs rounded-full">
-                            {post.category}
-                          </span>
-                        </div>
-                        
-                        <p className="mt-3 text-[var(--text-primary)] leading-relaxed">{post.content}</p>
-                        
-                        <div className="flex space-x-6 mt-4 pt-4 border-t border-[var(--border-color)]/30">
-                          <button className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-[var(--primary-color)]">
-                            <i className="far fa-heart"></i>
-                            <span>{post.likes}</span>
-                          </button>
-                          <button className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-[var(--primary-color)]">
-                            <i className="far fa-comment"></i>
-                            <span>{post.comments}</span>
-                          </button>
-                          <button className="flex items-center space-x-2 text-[var(--text-secondary)] hover:text-[var(--primary-color)]">
-                            <i className="fas fa-share"></i>
-                            <span>مشاركة</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Comments Section (simplified) */}
-                    <div className="mt-6 pl-16 space-y-4">
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center text-white text-xs">
-                          SA
-                        </div>
-                        <div className="bg-[var(--bg-secondary)] p-3 rounded-xl flex-1">
-                          <div className="font-medium text-[var(--text-primary)] text-sm">د. سارة أحمد</div>
-                          <p className="text-[var(--text-secondary)] text-sm mt-1">هذا رائع! مشاركة رائعة ومفيدة للجميع.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs">
-                          MA
-                        </div>
-                        <div className="bg-[var(--bg-secondary)] p-3 rounded-xl flex-1">
-                          <div className="font-medium text-[var(--text-primary)] text-sm">محمد علي</div>
-                          <p className="text-[var(--text-secondary)] text-sm mt-1">أنا أيضاً أشعر بنفس الشيء، شكرًا لمشاركتك.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3 mt-4">
-                        <div className="w-8 h-8 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-full flex items-center justify-center text-white text-xs">
-                          {user.avatar}
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="أضف تعليقك..."
-                          className="flex-1 p-3 bg-[var(--bg-secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </AnimatedItem>
-              ))}
+    <div className="bg-[var(--bg-primary)] min-h-screen py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Header */}
+        <AnimatedItem type="slideUp" delay={0.1}>
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">المجتمع</h1>
+              <p className="text-[var(--text-secondary)]">شارك تجاربك واحصل على الدعم من المجتمع</p>
             </div>
+            
+            {isAuthenticated && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center gap-2"
+              >
+                <i className="fas fa-plus"></i>
+                منشور جديد
+              </button>
+            )}
+          </div>
+        </AnimatedItem>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <AnimatedItem type="slideRight" delay={0.2}>
+            <CommunitySidebar
+              categories={categories}
+              selectedCategory={filters.category}
+              onSelectCategory={(categoryId) => setFilters({ ...filters, category: categoryId })}
+              onClearFilters={() => setFilters({ category: '', sort: 'createdAt' })}
+            />
+          </AnimatedItem>
+
+          {/* Main Feed */}
+          <div className="lg:col-span-3">
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
+              </div>
+            ) : posts.length === 0 ? (
+              <AnimatedItem type="slideUp" delay={0.3}>
+                <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-12 text-center border border-[var(--border-color)]/30">
+                  <i className="fas fa-newspaper text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">لا توجد منشورات بعد</h3>
+                  <p className="text-[var(--text-secondary)] mb-6">كن أول من ينشر منشوراً في المجتمع</p>
+                  {isAuthenticated && (
+                    <button
+                      onClick={() => setShowCreateModal(true)}
+                      className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors"
+                    >
+                      <i className="fas fa-plus ml-2"></i>
+                      إنشاء منشور
+                    </button>
+                  )}
+                </div>
+              </AnimatedItem>
+            ) : (
+              <div className="space-y-6">
+                {console.log('Rendering posts:', posts.length)}
+                {posts.map((post, index) => (
+                  <AnimatedItem key={post._id} type="slideUp" delay={index * 0.1}>
+                    <PostCard
+                      post={post}
+                      onLike={() => handleLikePost(post._id)}
+                      isAuthenticated={isAuthenticated}
+                    />
+                  </AnimatedItem>
+                ))}
+              </div>
+            )}
+
+            {/* Load More - Only show if there are more pages */}
+            {!loading && posts.length > 0 && pagination.currentPage < pagination.totalPages && (
+              <AnimatedItem type="slideUp" delay={0.4}>
+                <div className="flex justify-center mt-8">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      loadPosts(pagination.currentPage + 1, false);
+                    }}
+                    className="px-8 py-3 bg-[var(--card-bg)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--bg-secondary)] transition-colors"
+                  >
+                    تحميل المزيد
+                  </button>
+                </div>
+              </AnimatedItem>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Create Post Modal */}
+      {showCreateModal && (
+        <CreatePostModal
+          categories={categories}
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreatePost}
+        />
+      )}
     </div>
   );
 };

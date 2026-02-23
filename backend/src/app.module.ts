@@ -9,6 +9,7 @@ import { UserModule } from './users/user.module';
 import { HealthModule } from './modules/health/health.module';
 import { EmailModule } from './modules/email/email.module';
 import { TherapistModule } from './therapist/therapist.module';
+import { CommunityModule } from './community/community.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { TherapistModule } from './therapist/therapist.module';
     AuthModule,
     HealthModule,
     TherapistModule,
+    CommunityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

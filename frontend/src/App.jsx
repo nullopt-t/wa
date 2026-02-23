@@ -71,9 +71,7 @@ function AppWrapper() {
             } />
             <Route path="/community" element={
               <AnimatedRoute>
-                <ProtectedRoute>
-                  <CommunityPage />
-                </ProtectedRoute>
+                <CommunityPage />
               </AnimatedRoute>
             } />
             <Route path="/contact" element={
