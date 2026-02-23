@@ -38,6 +38,7 @@ import AccountSettingsPage from './pages/AccountSettingsPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import SessionsPage from './pages/SessionsPage.jsx';
 import ComingSoonPage from './pages/ComingSoonPage.jsx';
+import PostDetailPage from './pages/PostDetailPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
 
 // Create a client
@@ -72,6 +73,11 @@ function AppWrapper() {
             <Route path="/community" element={
               <AnimatedRoute>
                 <CommunityPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/community/post/:postId" element={
+              <AnimatedRoute>
+                <PostDetailPage />
               </AnimatedRoute>
             } />
             <Route path="/contact" element={

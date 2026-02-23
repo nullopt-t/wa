@@ -1,0 +1,164 @@
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { Report, ReportDocument, ReportStatus } from '../schemas/report.schema';
+import { Post, PostDocument } from '../schemas/post.schema';
+import { Comment, CommentDocument } from '../schemas/comment.schema';
+import { CreateReportDto, UpdateReportDto } from '../dto/report.dto';
+
+@Injectable()
+export class ReportService {
+  constructor(
+    @InjectModel(Report.name) private reportModel: Model<ReportDocument>,
+    @InjectModel(Post.name) private postModel: Model<PostDocument>,
+    @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
+  ) {}
+
+  // Create report (authenticated users)
+  async create(userId: string, createReportDto: CreateReportDto): Promise<Report> {
+    const { targetType, targetId, reason, description } = createReportDto;
+
+    // Verify target exists
+    if (targetType === 'post') {
+      const post = await this.postModel.findById(targetId).exec();
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+    } else if (targetType === 'comment') {
+      const comment = await this.commentModel.findById(targetId).exec();
+      if (!comment) {
+        throw new NotFoundException('Comment not found');
+      }
+    }
+
+    // Check if user already reported this target
+    const existingReport = await this.reportModel
+      .findOne({
+        reporterId: new Types.ObjectId(userId),
+        targetId: new Types.ObjectId(targetId),
+        targetType,
+      })
+      .exec();
+
+    if (existingReport) {
+      throw new BadRequestException('You have already reported this content');
+    }
+
+    const createdReport = new this.reportModel({
+      reporterId: new Types.ObjectId(userId),
+      targetType,
+      targetId: new Types.ObjectId(targetId),
+      reason,
+      description,
+      status: ReportStatus.PENDING,
+    });
+
+    return createdReport.save();
+  }
+
+  // Get reports for a target (for admins/moderators)
+  async getReportsForTarget(targetType: string, targetId: string): Promise<Report[]> {
+    return this.reportModel
+      .find({ targetType, targetId: new Types.ObjectId(targetId) })
+      .populate('reporterId', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  // Get all reports (for admins)
+  async findAll(page = 1, limit = 20, status?: string): Promise<any> {
+    const filter: any = {};
+    if (status) {
+      filter.status = status;
+    }
+
+    const reports = await this.reportModel
+      .find(filter)
+      .populate('reporterId', 'firstName lastName avatar')
+      .populate('reviewedBy', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const total = await this.reportModel.countDocuments(filter);
+
+    return {
+      reports,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total,
+    };
+  }
+
+  // Update report (for admins/moderators)
+  async update(userId: string, id: string, updateReportDto: UpdateReportDto): Promise<Report> {
+    const report = await this.reportModel.findById(id).exec();
+
+    if (!report) {
+      throw new NotFoundException('Report not found');
+    }
+
+    const updated = await this.reportModel
+      .findByIdAndUpdate(
+        id,
+        {
+          ...updateReportDto,
+          reviewedBy: new Types.ObjectId(userId),
+          reviewedAt: new Date(),
+        },
+        { new: true },
+      )
+      .populate('reviewedBy', 'firstName lastName')
+      .exec();
+
+    // If resolved, take action on the reported content
+    if (updateReportDto.status === 'resolved') {
+      await this.takeActionOnReport(report);
+    }
+
+    return updated;
+  }
+
+  // Take action on resolved report (hide/delete content)
+  private async takeActionOnReport(report: ReportDocument) {
+    if (report.targetType === 'post') {
+      await this.postModel.findByIdAndUpdate(report.targetId, {
+        status: 'hidden',
+      }).exec();
+    } else if (report.targetType === 'comment') {
+      await this.commentModel.findByIdAndUpdate(report.targetId, {
+        status: 'hidden',
+      }).exec();
+    }
+  }
+
+  // Get report statistics (for admins)
+  async getStatistics(): Promise<any> {
+    const total = await this.reportModel.countDocuments();
+    const pending = await this.reportModel.countDocuments({ status: ReportStatus.PENDING });
+    const reviewed = await this.reportModel.countDocuments({ status: ReportStatus.REVIEWED });
+    const resolved = await this.reportModel.countDocuments({ status: ReportStatus.RESOLVED });
+    const dismissed = await this.reportModel.countDocuments({ status: ReportStatus.DISMISSED });
+
+    // Group by reason
+    const byReason = await this.reportModel.aggregate([
+      {
+        $group: {
+          _id: '$reason',
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    return {
+      total,
+      pending,
+      reviewed,
+      resolved,
+      dismissed,
+      byReason,
+    };
+  }
+}

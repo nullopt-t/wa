@@ -30,8 +30,14 @@ export class Post {
   @Prop({ default: 0 })
   views: number;
 
+  @Prop([{ type: Types.ObjectId, ref: 'User' }])
+  viewers?: Types.ObjectId[]; // Track unique viewers for deduplication
+
   @Prop({ default: 0 })
   commentsCount: number;
+
+  @Prop([{ type: Types.ObjectId, ref: 'User' }])
+  savedBy?: Types.ObjectId[]; // Users who saved/bookmarked this post
 
   // Moderation
   @Prop({ 

@@ -44,10 +44,35 @@ export class PostController {
 
   // Get single post (public)
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    // Track view
-    await this.postService.trackView(id);
-    return this.postService.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req) {
+    // Track view with user ID if authenticated
+    const userId = req.user?.userId;
+    const viewData = await this.postService.trackView(id, userId);
+    const post = await this.postService.findOne(id);
+    
+    // Return post with updated view count
+    return {
+      ...JSON.parse(JSON.stringify(post)),
+      views: viewData.views,
+      uniqueViews: viewData.uniqueViews,
+    };
+  }
+
+  // Get single post with full data including comments (for post detail page)
+  @Get('detail/:id')
+  async findOneWithComments(
+    @Param('id') id: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
+    @Request() req
+  ) {
+    // Track view with user ID if authenticated
+    const userId = req.user?.userId;
+    if (userId) {
+      await this.postService.trackView(id, userId);
+    }
+    
+    return this.postService.findOneWithComments(id, Number(page), Number(limit));
   }
 
   // Create post (authenticated users)
@@ -86,9 +111,26 @@ export class PostController {
     return this.postService.like(userId, id);
   }
 
-  // Track view (public)
+  // Track view (public) - returns updated view count
   @Post(':id/view')
-  async trackView(@Param('id') id: string) {
-    return this.postService.trackView(id);
+  async trackView(@Param('id') id: string, @Request() req) {
+    const userId = req.user?.userId;
+    return this.postService.trackView(id, userId);
+  }
+
+  // Save/Unsave post (authenticated users)
+  @Post(':id/save')
+  @UseGuards(AuthGuard('jwt'))
+  async save(@Request() req, @Param('id') id: string) {
+    const userId = req.user.userId;
+    return this.postService.save(userId, id);
+  }
+
+  // Get user's saved posts
+  @Get('saved/list')
+  @UseGuards(AuthGuard('jwt'))
+  async getSavedPosts(@Request() req, @Query('page') page = 1) {
+    const userId = req.user.userId;
+    return this.postService.getSavedPosts(userId, page);
   }
 }

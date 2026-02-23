@@ -1,6 +1,12 @@
 import React from 'react';
 
 const CommunitySidebar = ({ categories, selectedCategory, onSelectCategory, onClearFilters }) => {
+  // Filter out empty categories and sort by post count (DESC)
+  // Backend should already do this, but we filter again as a safety measure
+  const activeCategories = categories
+    .filter(category => category.postCount > 0)
+    .sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
+
   return (
     <div className="space-y-6">
       {/* Categories Card */}
@@ -24,8 +30,8 @@ const CommunitySidebar = ({ categories, selectedCategory, onSelectCategory, onCl
             <i className="fas fa-th"></i>
           </button>
 
-          {/* Category List */}
-          {categories.map((category) => (
+          {/* Category List - Sorted by post count, empty categories hidden */}
+          {activeCategories.map((category) => (
             <button
               key={category._id}
               onClick={() => onSelectCategory(category._id)}
@@ -39,8 +45,19 @@ const CommunitySidebar = ({ categories, selectedCategory, onSelectCategory, onCl
                 {category.icon && <i className={`fas ${category.icon}`} style={{ color: category.color }}></i>}
                 <span className="font-medium">{category.nameAr}</span>
               </div>
+              <span className="text-xs text-[var(--text-secondary)] bg-[var(--bg-secondary)] px-2 py-1 rounded-full">
+                {category.postCount || 0}
+              </span>
             </button>
           ))}
+
+          {/* Show message if no active categories */}
+          {activeCategories.length === 0 && (
+            <div className="text-center py-4 text-[var(--text-secondary)] text-sm">
+              <i className="fas fa-inbox text-2xl mb-2"></i>
+              <p>لا توجد أقسام نشطة حالياً</p>
+            </div>
+          )}
         </div>
       </div>
 

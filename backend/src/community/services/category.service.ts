@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Category, CategoryDocument } from '../schemas/category.schema';
+import { Post, PostDocument } from '../schemas/post.schema';
 import { CreateCategoryDto, UpdateCategoryDto } from '../dto/category.dto';
 
 @Injectable()
 export class CategoryService {
   constructor(
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
+    @InjectModel(Post.name) private postModel: Model<PostDocument>,
   ) {}
 
   // Create new category
@@ -16,12 +18,30 @@ export class CategoryService {
     return createdCategory.save();
   }
 
-  // Get all active categories
-  async findAll(): Promise<Category[]> {
-    return this.categoryModel
+  // Get all active categories with post count
+  async findAll(): Promise<any[]> {
+    const categories = await this.categoryModel
       .find({ isActive: true })
       .sort({ order: 1 })
       .exec();
+
+    // Calculate actual post count for each category using aggregation
+    const categoriesWithCount = await Promise.all(
+      categories.map(async (category) => {
+        const postCount = await this.postModel.countDocuments({
+          categoryId: category._id.toString(),
+          status: 'approved',
+        }).exec();
+
+        return {
+          ...category.toObject(),
+          postCount,
+        };
+      })
+    );
+
+    // Sort by post count (DESC)
+    return categoriesWithCount.sort((a, b) => b.postCount - a.postCount);
   }
 
   // Get all categories (including inactive, for admin)

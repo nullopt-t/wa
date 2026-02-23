@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { postsAPI, categoriesAPI } from '../services/communityApi.js';
@@ -7,6 +7,25 @@ import AnimatedItem from '../components/AnimatedItem.jsx';
 import PostCard from '../components/community/PostCard.jsx';
 import CreatePostModal from '../components/community/CreatePostModal.jsx';
 import CommunitySidebar from '../components/community/CommunitySidebar.jsx';
+
+// Custom animations for buttons
+const customAnimations = `
+  @keyframes bounce-subtle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    25% {
+      transform: translateY(-3px);
+    }
+    75% {
+      transform: translateY(3px);
+    }
+  }
+  
+  .animate-bounce-subtle {
+    animation: bounce-subtle 1s ease-in-out infinite;
+  }
+`;
 
 const CommunityPage = () => {
   const { isAuthenticated, user } = useAuth();
@@ -26,18 +45,49 @@ const CommunityPage = () => {
     category: '',
     sort: 'createdAt',
   });
-  
+
   // AbortController for cancelling pending requests
   const abortControllerRef = useRef(null);
+  // Debounce timer for filter changes
+  const filterDebounceRef = useRef(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Abort any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      // Clear any pending debounce
+      if (filterDebounceRef.current) {
+        clearTimeout(filterDebounceRef.current);
+      }
+    };
+  }, []);
 
   // Load categories
   useEffect(() => {
     loadCategories();
   }, []);
 
-  // Load posts when filters change (resets to page 1)
+  // Load posts when filters change (resets to page 1) - with debouncing
   useEffect(() => {
-    loadPosts(1, true); // Reset posts when filters change
+    // Clear any pending debounce
+    if (filterDebounceRef.current) {
+      clearTimeout(filterDebounceRef.current);
+    }
+
+    // Debounce filter changes by 300ms to prevent rapid API calls
+    filterDebounceRef.current = setTimeout(() => {
+      loadPosts(1, true);
+    }, 300);
+
+    // Cleanup on unmount or filter change
+    return () => {
+      if (filterDebounceRef.current) {
+        clearTimeout(filterDebounceRef.current);
+      }
+    };
   }, [filters]);
 
   const loadCategories = async () => {
@@ -98,14 +148,18 @@ const CommunityPage = () => {
 
   const handleCreatePost = async (postData) => {
     if (isCreating) return; // Prevent duplicate submissions
-    
+
     try {
       setIsCreating(true);
       await postsAPI.create(postData);
       success('تم إنشاء المنشور بنجاح، سيتم مراجعته ونشره قريباً');
       setShowCreateModal(false);
+      // Clear any pending filter debounce
+      if (filterDebounceRef.current) {
+        clearTimeout(filterDebounceRef.current);
+      }
       // Reload posts to refresh the feed
-      loadPosts(1, true);
+      await loadPosts(1, true);
     } catch (error) {
       showError(error.message || 'فشل إنشاء المنشور');
     } finally {
@@ -120,16 +174,13 @@ const CommunityPage = () => {
     }
 
     try {
-      await postsAPI.like(postId);
-      // Optimistically update the UI without reloading all posts
+      const result = await postsAPI.like(postId);
+      // Update the post with the returned likes array from server
       setPosts(posts.map(post => {
         if (post._id === postId) {
-          const isLiked = post.likes?.includes(user.id);
           return {
             ...post,
-            likes: isLiked 
-              ? post.likes.filter(id => id !== user.id)
-              : [...(post.likes || []), user.id]
+            likes: result.likes || [],
           };
         }
         return post;
@@ -139,8 +190,34 @@ const CommunityPage = () => {
     }
   };
 
+  const handleSavePost = async (postId) => {
+    if (!isAuthenticated) {
+      showError('يرجى تسجيل الدخول لحفظ المنشورات');
+      return;
+    }
+
+    try {
+      const result = await postsAPI.save(postId);
+      // Update the post with the returned savedBy array from server
+      setPosts(posts.map(post => {
+        if (post._id === postId) {
+          return {
+            ...post,
+            savedBy: result.savedBy || [],
+          };
+        }
+        return post;
+      }));
+    } catch (error) {
+      showError(error.message || 'فشل حفظ المنشور');
+    }
+  };
+
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen py-8">
+      {/* Custom Animations Styles */}
+      <style>{customAnimations}</style>
+      
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <AnimatedItem type="slideUp" delay={0.1}>
@@ -204,6 +281,7 @@ const CommunityPage = () => {
                     <PostCard
                       post={post}
                       onLike={() => handleLikePost(post._id)}
+                      onSave={() => handleSavePost(post._id)}
                       isAuthenticated={isAuthenticated}
                     />
                   </AnimatedItem>

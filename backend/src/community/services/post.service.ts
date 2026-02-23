@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Post, PostDocument } from '../schemas/post.schema';
+import { Comment, CommentDocument } from '../schemas/comment.schema';
 import { CreatePostDto, UpdatePostDto } from '../dto/post.dto';
 
 @Injectable()
 export class PostService {
   constructor(
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
+    @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
   ) {}
 
   // Create new post
@@ -77,6 +79,59 @@ export class PostService {
     return post;
   }
 
+  // Get single post with full data (including comments)
+  async findOneWithComments(id: string, page = 1, limit = 50): Promise<any> {
+    const post = await this.postModel
+      .findById(id)
+      .populate('authorId', 'firstName lastName avatar role')
+      .populate('categoryId')
+      .exec();
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const commentsData = await this.commentModel
+      .find({ postId: id, status: 'approved', parentId: { $exists: false } })
+      .populate('authorId', 'firstName lastName avatar')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    // Get replies for each comment
+    const commentsWithReplies = await Promise.all(
+      commentsData.map(async (comment) => {
+        const replies = await this.commentModel
+          .find({ parentId: comment._id, status: 'approved' })
+          .populate('authorId', 'firstName lastName avatar')
+          .sort({ createdAt: 1 })
+          .exec();
+
+        return {
+          ...comment.toObject(),
+          replies,
+        };
+      })
+    );
+
+    const totalComments = await this.commentModel.countDocuments({
+      postId: id,
+      status: 'approved',
+      parentId: { $exists: false },
+    });
+
+    return {
+      post,
+      comments: commentsWithReplies,
+      commentsPagination: {
+        totalPages: Math.ceil(totalComments / limit),
+        currentPage: page,
+        total: totalComments,
+      },
+    };
+  }
+
   // Update post
   async update(userId: string, id: string, updatePostDto: UpdatePostDto): Promise<Post> {
     const post = await this.postModel.findById(id).exec();
@@ -118,16 +173,16 @@ export class PostService {
   // Like post
   async like(userId: string, postId: string): Promise<Post> {
     const post = await this.postModel.findById(postId).exec();
-    
+
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
     const userObjectId = new Types.ObjectId(userId);
-    
+
     // Check if already liked
     const isLiked = post.likes?.some(id => id.toString() === userId);
-    
+
     if (isLiked) {
       // Unlike
       post.likes = post.likes.filter(id => id.toString() !== userId);
@@ -138,15 +193,55 @@ export class PostService {
     }
 
     await post.save();
-    return post;
+    
+    // Return populated post
+    return this.postModel.findById(postId)
+      .populate('authorId', 'firstName lastName avatar role')
+      .populate('categoryId')
+      .exec();
   }
 
-  // Track view
-  async trackView(id: string): Promise<void> {
-    await this.postModel.findByIdAndUpdate(id, {
-      $inc: { views: 1 },
-      lastActivityAt: new Date(),
-    }).exec();
+  // Track view with deduplication (one view per user per post)
+  async trackView(id: string, userId?: string): Promise<{ views: number; uniqueViews: number }> {
+    const post = await this.postModel.findById(id).exec();
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const userObjectId = userId ? new Types.ObjectId(userId) : null;
+    let updatedPost;
+
+    if (userId) {
+      // Check if user already viewed this post
+      const alreadyViewed = post.viewers?.some(
+        viewerId => viewerId.toString() === userId,
+      );
+
+      if (!alreadyViewed) {
+        // First view from this user - increment count and add to viewers
+        updatedPost = await this.postModel.findByIdAndUpdate(id, {
+          $inc: { views: 1 },
+          $push: { viewers: userObjectId },
+          lastActivityAt: new Date(),
+        }, { new: true }).exec();
+      } else {
+        // User already viewed - just update last activity (no count increment)
+        updatedPost = await this.postModel.findByIdAndUpdate(id, {
+          lastActivityAt: new Date(),
+        }, { new: true }).exec();
+      }
+    } else {
+      // Anonymous user - always increment (no deduplication possible)
+      updatedPost = await this.postModel.findByIdAndUpdate(id, {
+        $inc: { views: 1 },
+        lastActivityAt: new Date(),
+      }, { new: true }).exec();
+    }
+
+    return {
+      views: updatedPost.views,
+      uniqueViews: updatedPost.viewers?.length || 0,
+    };
   }
 
   // Search posts
@@ -213,6 +308,64 @@ export class PostService {
         { content: { $regex: query, $options: 'i' } },
         { tags: { $regex: query, $options: 'i' } },
       ],
+    });
+
+    return {
+      posts,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total,
+    };
+  }
+
+  // Save/Unsave post (bookmark)
+  async save(userId: string, postId: string): Promise<Post> {
+    const post = await this.postModel.findById(postId).exec();
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+
+    // Check if already saved
+    const isSaved = post.savedBy?.some(id => id.toString() === userId);
+
+    if (isSaved) {
+      // Unsave
+      post.savedBy = post.savedBy.filter(id => id.toString() !== userId);
+    } else {
+      // Save
+      if (!post.savedBy) post.savedBy = [];
+      post.savedBy.push(userObjectId);
+    }
+
+    await post.save();
+    
+    // Return populated post
+    return this.postModel.findById(postId)
+      .populate('authorId', 'firstName lastName avatar role')
+      .populate('categoryId')
+      .exec();
+  }
+
+  // Get user's saved posts
+  async getSavedPosts(userId: string, page = 1, limit = 20): Promise<any> {
+    const posts = await this.postModel
+      .find({
+        status: 'approved',
+        savedBy: new Types.ObjectId(userId),
+      })
+      .populate('authorId', 'firstName lastName avatar')
+      .populate('categoryId')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const total = await this.postModel.countDocuments({
+      status: 'approved',
+      savedBy: new Types.ObjectId(userId),
     });
 
     return {

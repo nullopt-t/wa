@@ -127,16 +127,16 @@ export class CommentService {
   // Like comment
   async like(userId: string, commentId: string): Promise<Comment> {
     const comment = await this.commentModel.findById(commentId).exec();
-    
+
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
 
     const userObjectId = new Types.ObjectId(userId);
-    
+
     // Check if already liked
     const isLiked = comment.likes?.some(id => id.toString() === userId);
-    
+
     if (isLiked) {
       // Unlike
       comment.likes = comment.likes.filter(id => id.toString() !== userId);
@@ -147,6 +147,10 @@ export class CommentService {
     }
 
     await comment.save();
-    return comment.populate('authorId', 'firstName lastName avatar');
+    
+    // Return populated comment
+    return this.commentModel.findById(commentId)
+      .populate('authorId', 'firstName lastName avatar')
+      .exec();
   }
 }

@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext.jsx';
 import CommentCard from './CommentCard.jsx';
 import ConfirmDialog from '../ConfirmDialog.jsx';
 
-const CommentSection = ({ postId }) => {
+const CommentSection = ({ postId, onCommentsChange }) => {
   const { isAuthenticated } = useAuth();
   const { success, error: showError } = useToast();
 
@@ -13,8 +13,19 @@ const CommentSection = ({ postId }) => {
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Notify parent of comments count change
+  useEffect(() => {
+    if (onCommentsChange) {
+      onCommentsChange(postId, comments.length);
+    }
+  }, [comments.length, postId, onCommentsChange]);
 
   useEffect(() => {
     loadComments();
@@ -72,8 +83,17 @@ const CommentSection = ({ postId }) => {
     }
 
     try {
-      await commentsAPI.like(commentId);
-      loadComments();
+      const result = await commentsAPI.like(commentId);
+      // Update the comment with the returned likes array from server
+      setComments(comments.map(comment => {
+        if (comment._id === commentId) {
+          return {
+            ...comment,
+            likes: result.likes || [],
+          };
+        }
+        return comment;
+      }));
       success('تم الإعجاب بالتعليق');
     } catch (error) {
       showError(error.message || 'فشل الإعجاب بالتعليق');
@@ -88,6 +108,9 @@ const CommentSection = ({ postId }) => {
   const confirmDeleteComment = async () => {
     if (!commentToDelete) return;
 
+    setDeletingCommentId(commentToDelete);
+    setShowDeleteDialog(false);
+
     try {
       await commentsAPI.delete(commentToDelete);
       success('تم حذف التعليق بنجاح');
@@ -95,9 +118,41 @@ const CommentSection = ({ postId }) => {
     } catch (error) {
       showError(error.message || 'فشل حذف التعليق');
     } finally {
-      setShowDeleteDialog(false);
+      setDeletingCommentId(null);
       setCommentToDelete(null);
     }
+  };
+
+  const handleEditComment = (comment) => {
+    setEditingComment(comment);
+    setEditContent(comment.content);
+    setIsEditing(true);
+  };
+
+  const submitEditComment = async (e) => {
+    e.preventDefault();
+    
+    if (!editContent.trim() || !editingComment) return;
+
+    try {
+      setIsEditing(true);
+      await commentsAPI.update(editingComment._id, {
+        content: editContent.trim(),
+      });
+      success('تم تعديل التعليق بنجاح');
+      loadComments();
+      cancelEdit();
+    } catch (error) {
+      showError(error.message || 'فشل تعديل التعليق');
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingComment(null);
+    setEditContent('');
+    setIsEditing(false);
   };
 
   return (
@@ -170,13 +225,15 @@ const CommentSection = ({ postId }) => {
         </div>
       ) : (
         <div className="space-y-4">
-          {comments.map((comment, index) => (
+          {comments.map((comment) => (
             <CommentCard
               key={comment._id}
               comment={comment}
               onLike={() => handleLikeComment(comment._id)}
               onDelete={() => handleDeleteComment(comment._id)}
+              onEdit={handleEditComment}
               isAuthenticated={isAuthenticated}
+              isDeleting={deletingCommentId === comment._id}
             />
           ))}
         </div>
@@ -197,6 +254,62 @@ const CommentSection = ({ postId }) => {
           setCommentToDelete(null);
         }}
       />
+
+      {/* Edit Comment Modal */}
+      {editingComment && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={cancelEdit}
+          ></div>
+
+          <div className="relative bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 w-full max-w-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-[var(--text-primary)]">تعديل التعليق</h3>
+              <button
+                onClick={cancelEdit}
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <form onSubmit={submitEditComment}>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="اكتب تعليقك..."
+                rows="4"
+                className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] resize-none mb-4"
+              />
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={isEditing || !editContent.trim()}
+                  className="flex-1 px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50"
+                >
+                  {isEditing ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin ml-2"></i>
+                      جاري...
+                    </>
+                  ) : (
+                    'حفظ التعديلات'
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="px-6 py-3 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--bg-secondary)] transition-colors"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

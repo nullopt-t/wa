@@ -82,6 +82,16 @@ export const postsAPI = {
   trackView: (id) => apiRequest(`/community/posts/${id}/view`, {
     method: 'POST',
   }),
+
+  // Save/Unsave post
+  save: (id) => apiRequest(`/community/posts/${id}/save`, {
+    method: 'POST',
+  }),
+
+  // Get saved posts
+  getSaved: (page = 1) => apiRequest(`/community/posts/saved/list?page=${page}`, {
+    method: 'GET',
+  }),
 };
 
 // Comments API
@@ -111,6 +121,40 @@ export const commentsAPI = {
   // Like/Unlike comment
   like: (id) => apiRequest(`/community/comments/${id}/like`, {
     method: 'POST',
+  }),
+};
+
+// Reports API
+export const reportsAPI = {
+  // Create report
+  create: (reportData) => apiRequest('/community/reports', {
+    method: 'POST',
+    body: JSON.stringify(reportData),
+  }),
+
+  // Get reports for a target
+  getForTarget: (targetType, targetId) => apiRequest(`/community/reports/target/${targetType}/${targetId}`, {
+    method: 'GET',
+  }),
+
+  // Get all reports (admin)
+  getAll: (page = 1, status) => {
+    const params = new URLSearchParams({ page });
+    if (status) params.append('status', status);
+    return apiRequest(`/community/reports?${params}`, {
+      method: 'GET',
+    });
+  },
+
+  // Update report (admin)
+  update: (id, reportData) => apiRequest(`/community/reports/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(reportData),
+  }),
+
+  // Get statistics (admin)
+  getStatistics: () => apiRequest('/community/reports/stats/overview', {
+    method: 'GET',
   }),
 };
 

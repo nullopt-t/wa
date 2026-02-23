@@ -12,10 +12,12 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Enable CORS
+  // Enable CORS with preflight handling
   app.enableCors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
   // Security middleware
@@ -23,6 +25,7 @@ async function bootstrap() {
     crossOriginResourcePolicy: false, // Disable CORP to allow loading images from frontend
     crossOriginOpenerPolicy: false, // Disable COOP for static assets
   }));
+
   app.use(compression());
 
   // Serve static files for uploads (outside API prefix)
