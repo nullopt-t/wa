@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import PostCard from '../components/community/PostCard.jsx';
 import CommentSection from '../components/community/CommentSection.jsx';
-import CommunitySidebar from '../components/community/CommunitySidebar.jsx';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -15,7 +14,6 @@ const PostDetailPage = () => {
 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [commentsPagination, setCommentsPagination] = useState({
     currentPage: 1,
@@ -26,7 +24,6 @@ const PostDetailPage = () => {
   // Load post data
   useEffect(() => {
     loadPostData();
-    loadCategories();
   }, [postId]);
 
   const loadPostData = async () => {
@@ -81,16 +78,6 @@ const PostDetailPage = () => {
       showError(error.message || 'فشل تحميل المنشور');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadCategories = async () => {
-    try {
-      const response = await fetch('/api/community/categories');
-      const data = await response.json();
-      setCategories(data);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
     }
   };
 
@@ -236,17 +223,37 @@ const PostDetailPage = () => {
             </AnimatedItem>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar - Community Guidelines Only */}
           <AnimatedItem type="slideRight" delay={0.2}>
-            <CommunitySidebar
-              categories={categories}
-              selectedCategory={post.categoryId?._id}
-              onSelectCategory={(categoryId) => {
-                if (categoryId === post.categoryId?._id) return;
-                navigate(`/community?category=${categoryId}`);
-              }}
-              onClearFilters={() => navigate('/community')}
-            />
+            <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-6 border border-[var(--border-color)]/30">
+              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <i className="fas fa-book text-[var(--primary-color)]"></i>
+                إرشادات المجتمع
+              </h3>
+
+              <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
+                <li className="flex items-start gap-2">
+                  <i className="fas fa-check-circle text-green-500 mt-1"></i>
+                  <span>احترم آراء الآخرين وتجاربهم</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <i className="fas fa-check-circle text-green-500 mt-1"></i>
+                  <span>لا تشارك معلومات شخصية حساسة</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <i className="fas fa-check-circle text-green-500 mt-1"></i>
+                  <span>التزم بالموضوعات المتعلقة بالصحة النفسية</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <i className="fas fa-check-circle text-green-500 mt-1"></i>
+                  <span>تجنب النصائح الطبية المتخصصة</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <i className="fas fa-check-circle text-green-500 mt-1"></i>
+                  <span>بلغ عن المحتوى غير المناسب</span>
+                </li>
+              </ul>
+            </div>
           </AnimatedItem>
         </div>
       </div>
