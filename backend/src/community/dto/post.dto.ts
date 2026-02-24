@@ -48,6 +48,10 @@ export class UpdatePostDto {
 
   @IsOptional()
   @IsBoolean()
+  isAnonymous?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   isClosed?: boolean;
 
   @IsOptional()
