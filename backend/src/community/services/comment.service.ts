@@ -78,16 +78,25 @@ export class CommentService {
   }
 
   // Update comment
-  async update(userId: string, id: string, updateCommentDto: UpdateCommentDto): Promise<Comment> {
+  async update(userId: string, id: string, updateCommentDto: UpdateCommentDto, postId?: string): Promise<Comment> {
     const comment = await this.commentModel.findById(id).exec();
-    
+
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
 
-    // Check if user owns the comment
-    if (comment.authorId.toString() !== userId) {
-      throw new ForbiddenException('You can only edit your own comments');
+    // Check if user owns the comment OR owns the post
+    const isCommentAuthor = comment.authorId.toString() === userId;
+    
+    let isPostAuthor = false;
+    if (postId) {
+      const postModel = this.commentModel.db.model('Post');
+      const post = await postModel.findById(postId).exec();
+      isPostAuthor = post && post.authorId.toString() === userId;
+    }
+
+    if (!isCommentAuthor && !isPostAuthor) {
+      throw new ForbiddenException('You can only edit your own comments or comments on your posts');
     }
 
     return this.commentModel

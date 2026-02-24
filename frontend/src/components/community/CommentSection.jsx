@@ -5,8 +5,8 @@ import { useToast } from '../../context/ToastContext.jsx';
 import CommentCard from './CommentCard.jsx';
 import ConfirmDialog from '../ConfirmDialog.jsx';
 
-const CommentSection = ({ postId, onCommentsChange }) => {
-  const { isAuthenticated } = useAuth();
+const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
+  const { isAuthenticated, user } = useAuth();
   const { success, error: showError } = useToast();
 
   const [comments, setComments] = useState([]);
@@ -129,6 +129,9 @@ const CommentSection = ({ postId, onCommentsChange }) => {
     setIsEditing(true);
   };
 
+  // Check if current user is the post author
+  const isCurrentUserPostAuthor = postAuthorId && user && (postAuthorId === user.id || postAuthorId === user._id);
+
   const submitEditComment = async (e) => {
     e.preventDefault();
     
@@ -138,7 +141,7 @@ const CommentSection = ({ postId, onCommentsChange }) => {
       setIsEditing(true);
       await commentsAPI.update(editingComment._id, {
         content: editContent.trim(),
-      });
+      }, postId); // Pass postId for permission check
       success('تم تعديل التعليق بنجاح');
       loadComments();
       cancelEdit();
@@ -234,6 +237,7 @@ const CommentSection = ({ postId, onCommentsChange }) => {
               onEdit={handleEditComment}
               isAuthenticated={isAuthenticated}
               isDeleting={deletingCommentId === comment._id}
+              isPostAuthor={isCurrentUserPostAuthor}
             />
           ))}
         </div>

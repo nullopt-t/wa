@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ReportModal from './ReportModal.jsx';
 
-const CommentCard = ({ comment, onLike, onDelete, onEdit, isAuthenticated, isDeleting = false }) => {
+const CommentCard = ({ comment, onLike, onDelete, onEdit, isAuthenticated, isDeleting = false, isPostAuthor = false }) => {
   const { user } = useAuth();
   const [showReportModal, setShowReportModal] = useState(false);
 
@@ -28,7 +28,10 @@ const CommentCard = ({ comment, onLike, onDelete, onEdit, isAuthenticated, isDel
   };
 
   const authorAvatar = getAvatarUrl(comment.authorId?.avatar);
-  const isAuthor = user && (comment.authorId?._id === user.id || comment.authorId?._id === user._id);
+  const isCommentAuthor = user && (comment.authorId?._id === user.id || comment.authorId?._id === user._id);
+  
+  // Post author or comment author can edit
+  const canEdit = isCommentAuthor || isPostAuthor;
 
   return (
     <div className={`bg-[var(--bg-secondary)] rounded-xl p-6 transition-all duration-300 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -56,18 +59,30 @@ const CommentCard = ({ comment, onLike, onDelete, onEdit, isAuthenticated, isDel
             </div>
 
             {/* Author Actions */}
-            {isAuthor && (
-              <button
-                onClick={onDelete}
-                disabled={isDeleting}
-                className={`text-red-500 hover:text-red-600 transition-colors text-sm ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isDeleting ? (
-                  <i className="fas fa-spinner fa-spin"></i>
-                ) : (
-                  <i className="fas fa-trash"></i>
-                )}
-              </button>
+            {canEdit && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onEdit(comment)}
+                  className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors text-sm"
+                  title="تعديل التعليق"
+                >
+                  <i className="fas fa-pen"></i>
+                  <span className="mr-1">تعديل</span>
+                </button>
+                <button
+                  onClick={onDelete}
+                  disabled={isDeleting}
+                  className={`text-red-500 hover:text-red-600 transition-colors text-sm ${
+                    isDeleting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isDeleting ? (
+                    <i className="fas fa-spinner fa-spin"></i>
+                  ) : (
+                    <i className="fas fa-trash"></i>
+                  )}
+                </button>
+              </div>
             )}
           </div>
 
@@ -94,18 +109,6 @@ const CommentCard = ({ comment, onLike, onDelete, onEdit, isAuthenticated, isDel
               <i className="fas fa-reply"></i>
               <span className="mr-1">رد</span>
             </button>
-
-            {/* Edit Button (Author only) */}
-            {isAuthor && (
-              <button
-                onClick={() => onEdit(comment)}
-                className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors text-sm"
-                title="تعديل التعليق"
-              >
-                <i className="fas fa-pen"></i>
-                <span className="mr-1">تعديل</span>
-              </button>
-            )}
 
             <button
               onClick={() => setShowReportModal(true)}

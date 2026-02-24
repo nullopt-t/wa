@@ -113,7 +113,7 @@ export const commentsAPI = {
   }),
 
   // Update comment
-  update: (id, commentData) => apiRequest(`/community/comments/${id}`, {
+  update: (id, commentData, postId) => apiRequest(`/community/comments/${id}${postId ? `?postId=${postId}` : ''}`, {
     method: 'PATCH',
     body: JSON.stringify(commentData),
   }),

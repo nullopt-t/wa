@@ -35,16 +35,17 @@ export class CommentController {
     return this.commentService.create(userId, createCommentDto);
   }
 
-  // Update comment (author only)
+  // Update comment (author or post owner)
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   async update(
     @Request() req,
     @Param('id') id: string,
     @Body() updateCommentDto: UpdateCommentDto,
+    @Query('postId') postId?: string,
   ) {
     const userId = req.user.userId;
-    return this.commentService.update(userId, id, updateCommentDto);
+    return this.commentService.update(userId, id, updateCommentDto, postId);
   }
 
   // Delete comment (author only)

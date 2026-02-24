@@ -229,6 +229,7 @@ const PostDetailPage = () => {
               <div className="mt-6">
                 <CommentSection
                   postId={postId}
+                  postAuthorId={post.authorId?._id}
                   onCommentsChange={() => {}}
                 />
               </div>
