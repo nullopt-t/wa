@@ -133,4 +133,10 @@ export class PostController {
     const userId = req.user.userId;
     return this.postService.getSavedPosts(userId, page);
   }
+
+  // Get trending tags
+  @Get('trending/tags')
+  async getTrendingTags(@Query('limit') limit = 10) {
+    return this.postService.getTrendingTags(Number(limit));
+  }
 }

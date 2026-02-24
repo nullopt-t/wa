@@ -43,6 +43,7 @@ const CommunityPage = () => {
   });
   const [filters, setFilters] = useState({
     category: '',
+    tag: '',
     sort: 'createdAt',
   });
 
@@ -72,6 +73,8 @@ const CommunityPage = () => {
 
   // Load posts when filters change (resets to page 1) - with debouncing
   useEffect(() => {
+    console.log('Filters changed:', filters);
+    
     // Clear any pending debounce
     if (filterDebounceRef.current) {
       clearTimeout(filterDebounceRef.current);
@@ -79,6 +82,7 @@ const CommunityPage = () => {
 
     // Debounce filter changes by 300ms to prevent rapid API calls
     filterDebounceRef.current = setTimeout(() => {
+      console.log('Loading posts with filters:', filters);
       loadPosts(1, true);
     }, 300);
 
@@ -117,6 +121,7 @@ const CommunityPage = () => {
         page,
         limit: 20,
         ...(filters.category && { category: filters.category }),
+        ...(filters.tag && { tag: filters.tag }),
         sort: filters.sort,
       };
       console.log('Request params:', params);
@@ -213,6 +218,10 @@ const CommunityPage = () => {
     }
   };
 
+  const handleClearTagFilter = () => {
+    setFilters({ ...filters, tag: '' });
+  };
+
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen py-8">
       {/* Custom Animations Styles */}
@@ -245,8 +254,11 @@ const CommunityPage = () => {
             <CommunitySidebar
               categories={categories}
               selectedCategory={filters.category}
+              selectedTag={filters.tag}
               onSelectCategory={(categoryId) => setFilters({ ...filters, category: categoryId })}
-              onClearFilters={() => setFilters({ category: '', sort: 'createdAt' })}
+              onSelectTag={(tag) => setFilters({ ...filters, tag })}
+              onClearFilters={() => setFilters({ category: '', tag: '', sort: 'createdAt' })}
+              onClearTagFilter={handleClearTagFilter}
             />
           </AnimatedItem>
 

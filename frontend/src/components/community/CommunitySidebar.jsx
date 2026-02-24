@@ -1,11 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { postsAPI } from '../../services/communityApi.js';
 
-const CommunitySidebar = ({ categories, selectedCategory, onSelectCategory, onClearFilters }) => {
+const CommunitySidebar = ({ 
+  categories, 
+  selectedCategory, 
+  selectedTag,
+  onSelectCategory, 
+  onSelectTag,
+  onClearFilters,
+  onClearTagFilter 
+}) => {
+  const navigate = useNavigate();
+  const [trendingTags, setTrendingTags] = useState([]);
+  const [tagsLoading, setTagsLoading] = useState(true);
+
   // Filter out empty categories and sort by post count (DESC)
   // Backend should already do this, but we filter again as a safety measure
   const activeCategories = categories
     .filter(category => category.postCount > 0)
     .sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
+
+  // Load trending tags
+  useEffect(() => {
+    loadTrendingTags();
+  }, []);
+
+  const loadTrendingTags = async () => {
+    try {
+      setTagsLoading(true);
+      const data = await postsAPI.getTrendingTags(8);
+      setTrendingTags(data);
+    } catch (error) {
+      console.error('Failed to load trending tags:', error);
+    } finally {
+      setTagsLoading(false);
+    }
+  };
+
+  const handleTagClick = (tag) => {
+    // Use the callback from parent to set filter
+    if (onSelectTag) {
+      onSelectTag(tag);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -21,7 +59,7 @@ const CommunitySidebar = ({ categories, selectedCategory, onSelectCategory, onCl
           <button
             onClick={onClearFilters}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
-              !selectedCategory
+              !selectedCategory && !selectedTag
                 ? 'bg-[var(--primary-color)]/10 text-[var(--primary-color)]'
                 : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'
             }`}
@@ -29,6 +67,23 @@ const CommunitySidebar = ({ categories, selectedCategory, onSelectCategory, onCl
             <span className="font-medium">جميع المنشورات</span>
             <i className="fas fa-th"></i>
           </button>
+
+          {/* Active Tag Filter Indicator */}
+          {selectedTag && (
+            <div className="flex items-center justify-between px-4 py-3 bg-[var(--primary-color)]/10 rounded-xl">
+              <div className="flex items-center gap-2">
+                <i className="fas fa-tag text-[var(--primary-color)]"></i>
+                <span className="font-medium text-[var(--primary-color)]">#{selectedTag}</span>
+              </div>
+              <button
+                onClick={onClearTagFilter}
+                className="text-[var(--primary-color)] hover:text-red-500 transition-colors"
+                title="إزالة الفلتر"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          )}
 
           {/* Category List - Sorted by post count, empty categories hidden */}
           {activeCategories.map((category) => (
@@ -99,23 +154,35 @@ const CommunitySidebar = ({ categories, selectedCategory, onSelectCategory, onCl
           منشورات شائعة
         </h3>
 
-        <div className="flex flex-wrap gap-2">
-          <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs rounded-full">
-            #القلق
-          </span>
-          <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs rounded-full">
-            #الاكتئاب
-          </span>
-          <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs rounded-full">
-            #العلاج
-          </span>
-          <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs rounded-full">
-            #العناية_بالذات
-          </span>
-          <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs rounded-full">
-            #الدعم
-          </span>
-        </div>
+        {tagsLoading ? (
+          <div className="flex flex-wrap gap-2">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="px-3 py-1 bg-[var(--bg-secondary)] rounded-full animate-pulse w-20 h-6"
+              ></div>
+            ))}
+          </div>
+        ) : trendingTags.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {trendingTags.map((item, index) => (
+              <button
+                key={index}
+                onClick={() => handleTagClick(item.tag)}
+                className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs rounded-full hover:bg-[var(--primary-color)] hover:text-white transition-colors cursor-pointer flex items-center gap-1"
+                title={`${item.count} منشورات`}
+              >
+                #{item.tag}
+                <span className="text-[10px] opacity-60">({item.count})</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-[var(--text-secondary)] text-sm">
+            <i className="fas fa-tag text-2xl mb-2"></i>
+            <p>لا توجد وسوم شائعة حالياً</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -41,7 +41,12 @@ export class PostService {
       filter.categoryId = category;
       console.log('Category filter:', filter.categoryId);
     }
-    if (tag) filter.tags = tag;
+    
+    if (tag) {
+      // Filter by tag (exact match in tags array)
+      filter.tags = tag;
+      console.log('Tag filter:', filter.tags);
+    }
 
     console.log('Final filter:', JSON.stringify(filter));
 
@@ -374,5 +379,26 @@ export class PostService {
       currentPage: page,
       total,
     };
+  }
+
+  // Get trending tags (most used in approved posts)
+  async getTrendingTags(limit = 10): Promise<any[]> {
+    const tags = await this.postModel.aggregate([
+      { $match: { status: 'approved' } },
+      { $unwind: '$tags' },
+      {
+        $group: {
+          _id: '$tags',
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: limit },
+    ]).exec();
+
+    return tags.map(tag => ({
+      tag: tag._id,
+      count: tag.count,
+    }));
   }
 }

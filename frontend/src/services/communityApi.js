@@ -92,6 +92,11 @@ export const postsAPI = {
   getSaved: (page = 1) => apiRequest(`/community/posts/saved/list?page=${page}`, {
     method: 'GET',
   }),
+
+  // Get trending tags
+  getTrendingTags: (limit = 10) => apiRequest(`/community/posts/trending/tags?limit=${limit}`, {
+    method: 'GET',
+  }),
 };
 
 // Comments API
