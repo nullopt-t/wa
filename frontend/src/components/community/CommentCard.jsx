@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ReportModal from './ReportModal.jsx';
 
-const CommentCard = ({ comment, onLike, onDelete, onEdit, isAuthenticated, isDeleting = false, isPostAuthor = false }) => {
+const CommentCard = ({ comment, onLike, onDelete, onEdit, onReply, isAuthenticated, isDeleting = false, isPostAuthor = false, isReply = false }) => {
   const { user } = useAuth();
   const [showReportModal, setShowReportModal] = useState(false);
 
@@ -34,7 +34,7 @@ const CommentCard = ({ comment, onLike, onDelete, onEdit, isAuthenticated, isDel
   const canEdit = isCommentAuthor || isPostAuthor;
 
   return (
-    <div className={`bg-[var(--bg-secondary)] rounded-xl p-6 transition-all duration-300 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`${isReply ? 'bg-[var(--bg-secondary)]/50' : 'bg-[var(--bg-secondary)]'} rounded-xl p-6 transition-all duration-300 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="flex items-start gap-4">
         {/* Avatar */}
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden">
@@ -105,10 +105,15 @@ const CommentCard = ({ comment, onLike, onDelete, onEdit, isAuthenticated, isDel
               <span className="text-sm">{likesCount}</span>
             </button>
 
-            <button className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors text-sm">
-              <i className="fas fa-reply"></i>
-              <span className="mr-1">رد</span>
-            </button>
+            {onReply && (
+              <button
+                onClick={() => onReply(comment)}
+                className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors text-sm"
+              >
+                <i className="fas fa-reply"></i>
+                <span className="mr-1">رد</span>
+              </button>
+            )}
 
             <button
               onClick={() => setShowReportModal(true)}

@@ -19,6 +19,9 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
   const [editingComment, setEditingComment] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
 
   // Notify parent of comments count change
   useEffect(() => {
@@ -186,6 +189,42 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
     setIsEditing(false);
   };
 
+  const handleReply = (comment) => {
+    setReplyingTo(comment);
+    setReplyContent('');
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+    setReplyContent('');
+  };
+
+  const submitReply = async (e) => {
+    e.preventDefault();
+    
+    if (!replyContent.trim() || !replyingTo) {
+      showError('يرجى كتابة رد');
+      return;
+    }
+
+    try {
+      setSubmittingReply(true);
+      await commentsAPI.create({
+        postId,
+        parentId: replyingTo._id,
+        content: replyContent.trim(),
+      });
+      success('تم إضافة الرد بنجاح');
+      setReplyContent('');
+      loadComments();
+      cancelReply();
+    } catch (error) {
+      showError(error.message || 'فشل إضافة الرد');
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
   return (
     <>
       <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-8 border border-[var(--border-color)]/30">
@@ -257,16 +296,85 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
       ) : (
         <div className="space-y-4">
           {comments.map((comment) => (
-            <CommentCard
-              key={comment._id}
-              comment={comment}
-              onLike={() => handleLikeComment(comment._id)}
-              onDelete={() => handleDeleteComment(comment._id)}
-              onEdit={handleEditComment}
-              isAuthenticated={isAuthenticated}
-              isDeleting={deletingCommentId === comment._id}
-              isPostAuthor={isCurrentUserPostAuthor}
-            />
+            <div key={comment._id}>
+              <CommentCard
+                comment={comment}
+                onLike={() => handleLikeComment(comment._id)}
+                onDelete={() => handleDeleteComment(comment._id)}
+                onEdit={handleEditComment}
+                onReply={handleReply}
+                isAuthenticated={isAuthenticated}
+                isDeleting={deletingCommentId === comment._id}
+                isPostAuthor={isCurrentUserPostAuthor}
+              />
+              
+              {/* Display Replies */}
+              {comment.replies && comment.replies.length > 0 && (
+                <div className="mt-3 ml-8 space-y-3 border-r-2 border-[var(--border-color)] pr-4">
+                  {comment.replies.map((reply) => (
+                    <CommentCard
+                      key={reply._id}
+                      comment={reply}
+                      onLike={() => handleLikeComment(reply._id)}
+                      onDelete={() => handleDeleteComment(reply._id)}
+                      onEdit={handleEditComment}
+                      onReply={handleReply}
+                      isAuthenticated={isAuthenticated}
+                      isDeleting={deletingCommentId === reply._id}
+                      isPostAuthor={isCurrentUserPostAuthor}
+                      isReply={true}
+                    />
+                  ))}
+                </div>
+              )}
+              
+              {/* Reply Form */}
+              {replyingTo?._id === comment._id && isAuthenticated && (
+                <div className="mt-3 ml-8 mr-4 p-4 bg-[var(--bg-secondary)] rounded-xl">
+                  <div className="flex items-start gap-3 mb-3">
+                    <i className="fas fa-reply text-[var(--primary-color)]"></i>
+                    <span className="text-sm text-[var(--text-secondary)]">
+                      رد على: {comment.authorId?.firstName || 'مجهول'}
+                    </span>
+                  </div>
+                  <form onSubmit={submitReply}>
+                    <textarea
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      placeholder="اكتب ردك..."
+                      rows="3"
+                      className="w-full px-4 py-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] resize-none mb-3"
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        type="submit"
+                        disabled={submittingReply || !replyContent.trim()}
+                        className="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 text-sm"
+                      >
+                        {submittingReply ? (
+                          <>
+                            <i className="fas fa-spinner fa-spin ml-2"></i>
+                            جاري...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-paper-plane ml-2"></i>
+                            نشر الرد
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelReply}
+                        className="px-4 py-2 border border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[var(--bg-secondary)] transition-colors text-sm"
+                      >
+                        إلغاء
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
