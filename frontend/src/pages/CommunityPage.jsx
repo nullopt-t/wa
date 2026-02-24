@@ -6,6 +6,8 @@ import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import PostCard from '../components/community/PostCard.jsx';
 import CreatePostModal from '../components/community/CreatePostModal.jsx';
+import EditPostModal from '../components/community/EditPostModal.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import CommunitySidebar from '../components/community/CommunitySidebar.jsx';
 
 // Custom animations for buttons
@@ -36,6 +38,10 @@ const CommunityPage = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [postToEdit, setPostToEdit] = useState(null);
+  const [postToDelete, setPostToDelete] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -226,6 +232,46 @@ const CommunityPage = () => {
     }
   };
 
+  const handleEditPost = (post) => {
+    setPostToEdit(post);
+    setShowEditModal(true);
+  };
+
+  const handleUpdatePost = async (updateData) => {
+    if (!postToEdit) return;
+
+    try {
+      await postsAPI.update(postToEdit._id, updateData);
+      success('تم تعديل المنشور بنجاح');
+      setShowEditModal(false);
+      setPostToEdit(null);
+      // Reload posts to get updated data
+      await loadPosts(1, true);
+    } catch (error) {
+      showError(error.message || 'فشل تعديل المنشور');
+    }
+  };
+
+  const handleDeletePostClick = (post) => {
+    setPostToDelete(post);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeletePost = async () => {
+    if (!postToDelete) return;
+
+    try {
+      await postsAPI.delete(postToDelete._id);
+      success('تم حذف المنشور بنجاح');
+      setShowDeleteDialog(false);
+      setPostToDelete(null);
+      // Reload posts
+      await loadPosts(1, true);
+    } catch (error) {
+      showError(error.message || 'فشل حذف المنشور');
+    }
+  };
+
   const handleClearTagFilter = () => {
     setFilters({ ...filters, tag: '' });
   };
@@ -302,6 +348,8 @@ const CommunityPage = () => {
                       post={post}
                       onLike={() => handleLikePost(post._id)}
                       onSave={() => handleSavePost(post._id)}
+                      onEdit={() => handleEditPost(post)}
+                      onDelete={() => handleDeletePostClick(post)}
                       isAuthenticated={isAuthenticated}
                     />
                   </AnimatedItem>
@@ -336,6 +384,36 @@ const CommunityPage = () => {
           categories={categories}
           onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreatePost}
+        />
+      )}
+
+      {/* Edit Post Modal */}
+      {showEditModal && postToEdit && (
+        <EditPostModal
+          post={postToEdit}
+          categories={categories}
+          onClose={() => {
+            setShowEditModal(false);
+            setPostToEdit(null);
+          }}
+          onSubmit={handleUpdatePost}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && postToDelete && (
+        <ConfirmDialog
+          isOpen={showDeleteDialog}
+          title="حذف المنشور"
+          message="هل أنت متأكد من حذف هذا المنشور؟ لا يمكن التراجع عن هذا الإجراء."
+          confirmText="حذف"
+          cancelText="إلغاء"
+          isDanger={true}
+          onConfirm={handleDeletePost}
+          onCancel={() => {
+            setShowDeleteDialog(false);
+            setPostToDelete(null);
+          }}
         />
       )}
     </div>

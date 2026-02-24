@@ -5,6 +5,8 @@ import { useToast } from '../../context/ToastContext.jsx';
 import CommentCard from './CommentCard.jsx';
 import ConfirmDialog from '../ConfirmDialog.jsx';
 import CommentTree from './CommentTree.jsx';
+
+const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
   const { isAuthenticated, user } = useAuth();
   const { success, error: showError } = useToast();
 

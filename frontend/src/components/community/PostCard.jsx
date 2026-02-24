@@ -5,7 +5,7 @@ import { postsAPI } from '../../services/communityApi.js';
 import CommentSection from './CommentSection.jsx';
 import ReportModal from './ReportModal.jsx';
 
-const PostCard = ({ post, onLike, onSave, isAuthenticated }) => {
+const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -22,8 +22,11 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated }) => {
 
   const postId = post._id || post.id;
 
-  // Calculate like state directly from props (no local state to avoid sync issues)
+  // Check if current user is the post author
   const userId = user?.id || user?._id;
+  const isPostAuthor = user && post.authorId && (post.authorId._id === userId || post.authorId._id === userId);
+
+  // Calculate like state directly from props (no local state to avoid sync issues)
   const likesArray = post.likes || [];
   const localIsLiked = likesArray.some(
     likeId => (likeId._id || likeId) === userId
@@ -296,8 +299,31 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated }) => {
 
       {/* Post Header */}
       <div className="p-6 pb-4 overflow-hidden pt-16">
-        {/* Desktop Report Button (Top Right) */}
-        <div className="hidden md:block absolute top-4 right-4">
+        {/* Top Right Action Buttons */}
+        <div className="hidden md:flex absolute top-4 right-4 gap-2">
+          {/* Edit Button (Author Only) */}
+          {isPostAuthor && (
+            <button
+              onClick={() => onEdit && onEdit(post)}
+              className="w-10 h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] hover:scale-110 transition-all duration-300 shadow-lg"
+              title="تعديل المنشور"
+            >
+              <i className="fas fa-pen"></i>
+            </button>
+          )}
+          
+          {/* Delete Button (Author Only) */}
+          {isPostAuthor && (
+            <button
+              onClick={() => onDelete && onDelete(post)}
+              className="w-10 h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 hover:border-red-500 hover:scale-110 transition-all duration-300 shadow-lg"
+              title="حذف المنشور"
+            >
+              <i className="fas fa-trash"></i>
+            </button>
+          )}
+          
+          {/* Report Button */}
           <button
             onClick={() => setShowReportModal(true)}
             className="w-10 h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 hover:border-red-500 hover:scale-110 transition-all duration-300 shadow-lg"

@@ -88,51 +88,27 @@ const CommentTree = ({
 
       {/* Nested Replies with Tree Lines */}
       {hasReplies && (
-        <div className="mt-3 ml-6 flex">
-          {/* Vertical line connecting parent to children */}
-          <div 
-            className="w-px mr-4"
-            style={{ 
-              width: '2px',
-              background: `linear-gradient(to bottom, var(--primary-color) 0%, var(--border-color) 100%)`,
-              minWidth: '2px'
-            }}
-          ></div>
-          
-          {/* Replies container */}
-          <div className="flex-1 space-y-3">
-            {comment.replies.map((reply, index) => (
-              <div key={reply._id} className="relative">
-                {/* Horizontal line to each reply */}
-                <div 
-                  className="absolute -left-4 top-6 h-px"
-                  style={{
-                    background: 'var(--border-color)',
-                    width: '16px',
-                    left: '-18px'
-                  }}
-                ></div>
-                
-                <CommentTree 
-                  comment={reply} 
-                  depth={depth + 1}
-                  onLike={onLike}
-                  onDelete={onDelete}
-                  onEdit={onEdit}
-                  onReply={onReply}
-                  replyingTo={replyingTo}
-                  replyContent={replyContent}
-                  setReplyContent={setReplyContent}
-                  submitReply={submitReply}
-                  cancelReply={cancelReply}
-                  submittingReply={submittingReply}
-                  isAuthenticated={isAuthenticated}
-                  deletingCommentId={deletingCommentId}
-                  isPostAuthor={isPostAuthor}
-                />
-              </div>
-            ))}
-          </div>
+        <div className="mt-3 ml-6 border-l-2 border-gray-200 pl-4 space-y-4">
+          {comment.replies.map((reply) => (
+            <CommentTree 
+              key={reply._id} 
+              comment={reply} 
+              depth={depth + 1}
+              onLike={onLike}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              onReply={onReply}
+              replyingTo={replyingTo}
+              replyContent={replyContent}
+              setReplyContent={setReplyContent}
+              submitReply={submitReply}
+              cancelReply={cancelReply}
+              submittingReply={submittingReply}
+              isAuthenticated={isAuthenticated}
+              deletingCommentId={deletingCommentId}
+              isPostAuthor={isPostAuthor}
+            />
+          ))}
         </div>
       )}
     </div>
