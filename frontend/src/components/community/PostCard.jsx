@@ -162,6 +162,9 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated }) => {
   };
 
   const authorAvatar = getAvatarUrl(post.authorId?.avatar);
+  const authorName = post.isAnonymous 
+    ? 'مجهول' 
+    : `${post.authorId?.firstName || ''} ${post.authorId?.lastName || ''}`.trim() || 'مستخدم';
 
   const toggleComments = () => {
     // Navigate to post detail page where all comments are visible
@@ -294,16 +297,18 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated }) => {
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold overflow-hidden">
-              {authorAvatar ? (
-                <img src={authorAvatar} alt={post.authorId?.firstName} className="w-full h-full object-cover" />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden">
+              {post.isAnonymous ? (
+                <i className="fas fa-user-secret text-xl"></i>
+              ) : authorAvatar ? (
+                <img src={authorAvatar} alt={authorName} className="w-full h-full object-cover" />
               ) : (
-                post.authorId?.firstName?.charAt(0) || 'م'
+                authorName.charAt(0) || 'م'
               )}
             </div>
             <div className="overflow-hidden">
               <p className="font-bold text-[var(--text-primary)] break-words">
-                {post.isAnonymous ? 'مجهول' : `${post.authorId?.firstName} ${post.authorId?.lastName}`}
+                {authorName}
               </p>
               <p className="text-xs text-[var(--text-secondary)] break-words">
                 {formatRelativeTime(post.createdAt)} • {post.categoryId?.nameAr || 'عام'}
