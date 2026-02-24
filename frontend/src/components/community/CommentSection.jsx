@@ -126,7 +126,7 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
   const handleEditComment = (comment) => {
     setEditingComment(comment);
     setEditContent(comment.content);
-    setIsEditing(true);
+    // Don't set isEditing here - it's only for API loading state
   };
 
   // Check if current user is the post author
@@ -135,20 +135,48 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
   const submitEditComment = async (e) => {
     e.preventDefault();
     
-    if (!editContent.trim() || !editingComment) return;
+    if (!editContent.trim() || !editingComment) {
+      console.error('Invalid edit data:', { editContent, editingComment });
+      showError('يرجى كتابة تعليق صحيح');
+      return;
+    }
+
+    // Check if content actually changed
+    if (editContent.trim() === editingComment.content) {
+      showError('لم يتم تغيير أي شيء');
+      cancelEdit();
+      return;
+    }
+
+    console.log('Submitting edit:', {
+      commentId: editingComment._id,
+      postId,
+      content: editContent.trim(),
+    });
 
     try {
       setIsEditing(true);
-      await commentsAPI.update(editingComment._id, {
-        content: editContent.trim(),
-      }, postId); // Pass postId for permission check
+      
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
+      );
+      
+      const response = await Promise.race([
+        commentsAPI.update(editingComment._id, {
+          content: editContent.trim(),
+        }, postId),
+        timeoutPromise
+      ]);
+      
+      console.log('Edit response:', response);
       success('تم تعديل التعليق بنجاح');
       loadComments();
       cancelEdit();
     } catch (error) {
+      console.error('Edit failed:', error);
       showError(error.message || 'فشل تعديل التعليق');
-    } finally {
-      setIsEditing(false);
+      setIsEditing(false); // Ensure we reset loading state
     }
   };
 
