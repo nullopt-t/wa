@@ -5,6 +5,118 @@ import { useToast } from '../../context/ToastContext.jsx';
 import CommentCard from './CommentCard.jsx';
 import ConfirmDialog from '../ConfirmDialog.jsx';
 
+// Recursive component to render nested comments (defined outside to prevent re-creation)
+const CommentTree = ({ 
+  comment, 
+  depth = 0, 
+  onLike, 
+  onDelete, 
+  onEdit, 
+  onReply, 
+  replyingTo, 
+  replyContent, 
+  setReplyContent,
+  submitReply,
+  cancelReply,
+  submittingReply,
+  isAuthenticated,
+  deletingCommentId,
+  isPostAuthor
+}) => {
+  const maxDepth = 10;
+  const hasReplies = comment.replies && comment.replies.length > 0;
+  const isReplyingToThis = replyingTo?._id === comment._id;
+
+  return (
+    <div className={depth > 0 ? 'mt-3' : ''}>
+      <CommentCard
+        comment={comment}
+        onLike={() => onLike(comment._id)}
+        onDelete={() => onDelete(comment._id)}
+        onEdit={onEdit}
+        onReply={depth < maxDepth ? () => onReply(comment) : null}
+        isAuthenticated={isAuthenticated}
+        isDeleting={deletingCommentId === comment._id}
+        isPostAuthor={isPostAuthor}
+        isReply={depth > 0}
+      />
+      
+      {/* Reply Form */}
+      {isReplyingToThis && isAuthenticated && (
+        <div className="mt-3 ml-8 mr-4 p-4 bg-[var(--bg-secondary)] rounded-xl">
+          <div className="flex items-start gap-3 mb-3">
+            <i className="fas fa-reply text-[var(--primary-color)]"></i>
+            <span className="text-sm text-[var(--text-secondary)]">
+              رد على: {comment.authorId?.firstName || 'مجهول'}
+            </span>
+          </div>
+          <form onSubmit={submitReply}>
+            <textarea
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              placeholder="اكتب ردك..."
+              rows="3"
+              className="w-full px-4 py-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] resize-none mb-3"
+            />
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={submittingReply || !replyContent.trim()}
+                className="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 text-sm"
+              >
+                {submittingReply ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin ml-2"></i>
+                    جاري...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-paper-plane ml-2"></i>
+                    نشر الرد
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={cancelReply}
+                className="px-4 py-2 border border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[var(--bg-secondary)] transition-colors text-sm"
+              >
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      
+      {/* Render Nested Replies */}
+      {hasReplies && (
+        <div className="mt-3 ml-8 space-y-3 border-r-2 border-[var(--border-color)] pr-4">
+          {comment.replies.map((reply) => (
+            <CommentTree 
+              key={reply._id} 
+              comment={reply} 
+              depth={depth + 1}
+              onLike={onLike}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              onReply={onReply}
+              replyingTo={replyingTo}
+              replyContent={replyContent}
+              setReplyContent={setReplyContent}
+              submitReply={submitReply}
+              cancelReply={cancelReply}
+              submittingReply={submittingReply}
+              isAuthenticated={isAuthenticated}
+              deletingCommentId={deletingCommentId}
+              isPostAuthor={isPostAuthor}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
   const { isAuthenticated, user } = useAuth();
   const { success, error: showError } = useToast();
@@ -37,7 +149,6 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
   const loadComments = async () => {
     try {
       setLoading(true);
-      console.log('Loading comments for post:', postId);
       const data = await commentsAPI.getByPost(postId);
       console.log('Comments loaded:', data);
       setComments(data.comments || []);
@@ -87,16 +198,28 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
 
     try {
       const result = await commentsAPI.like(commentId);
-      // Update the comment with the returned likes array from server
-      setComments(comments.map(comment => {
-        if (comment._id === commentId) {
-          return {
-            ...comment,
-            likes: result.likes || [],
-          };
-        }
-        return comment;
-      }));
+      
+      // Recursively update comments tree with new likes
+      const updateCommentLikes = (comments) => {
+        return comments.map(comment => {
+          if (comment._id === commentId) {
+            return {
+              ...comment,
+              likes: result.likes || [],
+            };
+          }
+          // Recursively update nested replies
+          if (comment.replies && comment.replies.length > 0) {
+            return {
+              ...comment,
+              replies: updateCommentLikes(comment.replies),
+            };
+          }
+          return comment;
+        });
+      };
+      
+      setComments(updateCommentLikes(comments));
       success('تم الإعجاب بالتعليق');
     } catch (error) {
       showError(error.message || 'فشل الإعجاب بالتعليق');
@@ -296,85 +419,24 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
       ) : (
         <div className="space-y-4">
           {comments.map((comment) => (
-            <div key={comment._id}>
-              <CommentCard
-                comment={comment}
-                onLike={() => handleLikeComment(comment._id)}
-                onDelete={() => handleDeleteComment(comment._id)}
-                onEdit={handleEditComment}
-                onReply={handleReply}
-                isAuthenticated={isAuthenticated}
-                isDeleting={deletingCommentId === comment._id}
-                isPostAuthor={isCurrentUserPostAuthor}
-              />
-              
-              {/* Display Replies */}
-              {comment.replies && comment.replies.length > 0 && (
-                <div className="mt-3 ml-8 space-y-3 border-r-2 border-[var(--border-color)] pr-4">
-                  {comment.replies.map((reply) => (
-                    <CommentCard
-                      key={reply._id}
-                      comment={reply}
-                      onLike={() => handleLikeComment(reply._id)}
-                      onDelete={() => handleDeleteComment(reply._id)}
-                      onEdit={handleEditComment}
-                      onReply={handleReply}
-                      isAuthenticated={isAuthenticated}
-                      isDeleting={deletingCommentId === reply._id}
-                      isPostAuthor={isCurrentUserPostAuthor}
-                      isReply={true}
-                    />
-                  ))}
-                </div>
-              )}
-              
-              {/* Reply Form */}
-              {replyingTo?._id === comment._id && isAuthenticated && (
-                <div className="mt-3 ml-8 mr-4 p-4 bg-[var(--bg-secondary)] rounded-xl">
-                  <div className="flex items-start gap-3 mb-3">
-                    <i className="fas fa-reply text-[var(--primary-color)]"></i>
-                    <span className="text-sm text-[var(--text-secondary)]">
-                      رد على: {comment.authorId?.firstName || 'مجهول'}
-                    </span>
-                  </div>
-                  <form onSubmit={submitReply}>
-                    <textarea
-                      value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
-                      placeholder="اكتب ردك..."
-                      rows="3"
-                      className="w-full px-4 py-3 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] resize-none mb-3"
-                    />
-                    <div className="flex gap-3">
-                      <button
-                        type="submit"
-                        disabled={submittingReply || !replyContent.trim()}
-                        className="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 text-sm"
-                      >
-                        {submittingReply ? (
-                          <>
-                            <i className="fas fa-spinner fa-spin ml-2"></i>
-                            جاري...
-                          </>
-                        ) : (
-                          <>
-                            <i className="fas fa-paper-plane ml-2"></i>
-                            نشر الرد
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={cancelReply}
-                        className="px-4 py-2 border border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[var(--bg-secondary)] transition-colors text-sm"
-                      >
-                        إلغاء
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-            </div>
+            <CommentTree 
+              key={comment._id} 
+              comment={comment} 
+              depth={0}
+              onLike={handleLikeComment}
+              onDelete={handleDeleteComment}
+              onEdit={handleEditComment}
+              onReply={handleReply}
+              replyingTo={replyingTo}
+              replyContent={replyContent}
+              setReplyContent={setReplyContent}
+              submitReply={submitReply}
+              cancelReply={cancelReply}
+              submittingReply={submittingReply}
+              isAuthenticated={isAuthenticated}
+              deletingCommentId={deletingCommentId}
+              isPostAuthor={isCurrentUserPostAuthor}
+            />
           ))}
         </div>
       )}

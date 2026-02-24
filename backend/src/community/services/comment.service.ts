@@ -37,7 +37,7 @@ export class CommentService {
     return savedComment.populate('authorId', 'firstName lastName avatar');
   }
 
-  // Get comments for a post
+  // Get comments for a post (with nested replies)
   async findByPost(postId: string, page = 1, limit = 50): Promise<any> {
     const comments = await this.commentModel
       .find({ postId: postId, status: 'approved', parentId: { $exists: false } })
@@ -47,15 +47,14 @@ export class CommentService {
       .skip((page - 1) * limit)
       .exec();
 
-    // Get replies for each comment
+    console.log(`Found ${comments.length} top-level comments`);
+
+    // Get nested replies for each comment recursively
     const commentsWithReplies = await Promise.all(
       comments.map(async (comment) => {
-        const replies = await this.commentModel
-          .find({ parentId: comment._id, status: 'approved' })
-          .populate('authorId', 'firstName lastName avatar')
-          .sort({ createdAt: 1 })
-          .exec();
-        
+        const replies = await this.getNestedReplies(comment._id.toString());
+        console.log(`Comment ${comment._id} has ${replies.length} nested replies`);
+
         return {
           ...comment.toObject(),
           replies,
@@ -63,7 +62,7 @@ export class CommentService {
       })
     );
 
-    const total = await this.commentModel.countDocuments({ 
+    const total = await this.commentModel.countDocuments({
       postId: postId,
       status: 'approved',
       parentId: { $exists: false },
@@ -75,6 +74,31 @@ export class CommentService {
       currentPage: page,
       total,
     };
+  }
+
+  // Recursively fetch nested replies
+  async getNestedReplies(parentId: string): Promise<any[]> {
+    const replies = await this.commentModel
+      .find({ 
+        parentId: parentId, 
+        status: 'approved' 
+      })
+      .populate('authorId', 'firstName lastName avatar')
+      .sort({ createdAt: 1 })
+      .exec();
+
+    // Recursively get replies for each reply
+    const repliesWithNested = await Promise.all(
+      replies.map(async (reply) => {
+        const nestedReplies = await this.getNestedReplies(reply._id.toString());
+        return {
+          ...reply.toObject(),
+          replies: nestedReplies,
+        };
+      })
+    );
+
+    return repliesWithNested;
   }
 
   // Update comment

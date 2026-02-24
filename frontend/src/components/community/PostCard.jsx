@@ -172,10 +172,22 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated }) => {
   };
 
   const handleLike = async () => {
-    if (!isAuthenticated || isLiking) return;
+    console.log('Like clicked:', { postId, isAuthenticated, onLike });
+    
+    if (!isAuthenticated || isLiking) {
+      console.log('Like blocked:', { isAuthenticated, isLiking });
+      return;
+    }
+    
     setIsLiking(true);
     try {
-      await onLike(postId);
+      if (onLike) {
+        await onLike(postId);
+      } else {
+        console.error('onLike callback not provided!');
+      }
+    } catch (error) {
+      console.error('Like error:', error);
     } finally {
       setIsLiking(false);
     }

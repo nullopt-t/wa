@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import PostCard from '../components/community/PostCard.jsx';
 import CommentSection from '../components/community/CommentSection.jsx';
+import { postsAPI } from '../services/communityApi.js';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -88,14 +89,7 @@ const PostDetailPage = () => {
     }
 
     try {
-      const response = await fetch(`/api/community/posts/${id}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!response.ok) throw new Error('فشل الإعجاب');
-      
-      const result = await response.json();
+      const result = await postsAPI.like(id);
       setPost({
         ...post,
         likes: result.likes || [],
@@ -112,14 +106,7 @@ const PostDetailPage = () => {
     }
 
     try {
-      const response = await fetch(`/api/community/posts/${id}/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!response.ok) throw new Error('فشل الحفظ');
-      
-      const result = await response.json();
+      const result = await postsAPI.save(id);
       setPost({
         ...post,
         savedBy: result.savedBy || [],
@@ -205,8 +192,6 @@ const PostDetailPage = () => {
                   onLike={handleLikePost}
                   onSave={handleSavePost}
                   isAuthenticated={isAuthenticated}
-                  onViewed={() => {}}
-                  onCommentsChange={() => {}}
                 />
               </div>
             </AnimatedItem>

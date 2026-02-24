@@ -173,13 +173,19 @@ const CommunityPage = () => {
   };
 
   const handleLikePost = async (postId) => {
+    console.log('handleLikePost called:', { postId, isAuthenticated });
+    
     if (!isAuthenticated) {
+      console.log('Not authenticated, showing error');
       showError('يرجى تسجيل الدخول للإعجاب بالمنشورات');
       return;
     }
 
+    console.log('Calling postsAPI.like...');
     try {
       const result = await postsAPI.like(postId);
+      console.log('Like result:', result);
+      
       // Update the post with the returned likes array from server
       setPosts(posts.map(post => {
         if (post._id === postId) {
@@ -190,7 +196,9 @@ const CommunityPage = () => {
         }
         return post;
       }));
+      console.log('Posts updated');
     } catch (error) {
+      console.error('Like error:', error);
       showError(error.message || 'فشل الإعجاب بالمنشور');
     }
   };
