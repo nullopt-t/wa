@@ -39,6 +39,11 @@ import NotFoundPage from './pages/NotFoundPage.jsx';
 import SessionsPage from './pages/SessionsPage.jsx';
 import ComingSoonPage from './pages/ComingSoonPage.jsx';
 import PostDetailPage from './pages/PostDetailPage.jsx';
+import UserProfilePage from './pages/UserProfilePage.jsx';
+import SavedPostsPage from './pages/SavedPostsPage.jsx';
+import ArticlesPage from './pages/ArticlesPage.jsx';
+import ArticleDetailPage from './pages/ArticleDetailPage.jsx';
+import ArticleManagementPage from './pages/ArticleManagementPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
 
 // Create a client
@@ -78,6 +83,33 @@ function AppWrapper() {
             <Route path="/community/post/:postId" element={
               <AnimatedRoute>
                 <PostDetailPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/user/:userId" element={
+              <AnimatedRoute>
+                <UserProfilePage />
+              </AnimatedRoute>
+            } />
+            <Route path="/saved-posts" element={
+              <AnimatedRoute>
+                <SavedPostsPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/articles" element={
+              <AnimatedRoute>
+                <ArticlesPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/articles/:articleId" element={
+              <AnimatedRoute>
+                <ArticleDetailPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/articles/manage" element={
+              <AnimatedRoute>
+                <ProtectedRoute>
+                  <ArticleManagementPage />
+                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/contact" element={

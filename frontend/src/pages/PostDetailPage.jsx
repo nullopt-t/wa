@@ -116,6 +116,17 @@ const PostDetailPage = () => {
     }
   };
 
+  const handleEditPost = (editPost) => {
+    // Navigate to community page with edit modal
+    // For now, just show a message
+    showError('تعديل المنشور غير متاح في صفحة التفاصيل');
+  };
+
+  const handleDeletePost = () => {
+    // For now, just show a message
+    showError('حذف المنشور غير متاح في صفحة التفاصيل');
+  };
+
   if (loading) {
     return (
       <div className="bg-[var(--bg-primary)] min-h-screen py-8">
@@ -191,6 +202,8 @@ const PostDetailPage = () => {
                   post={post}
                   onLike={handleLikePost}
                   onSave={handleSavePost}
+                  onEdit={handleEditPost}
+                  onDelete={handleDeletePost}
                   isAuthenticated={isAuthenticated}
                 />
               </div>

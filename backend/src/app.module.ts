@@ -10,6 +10,8 @@ import { HealthModule } from './modules/health/health.module';
 import { EmailModule } from './modules/email/email.module';
 import { TherapistModule } from './therapist/therapist.module';
 import { CommunityModule } from './community/community.module';
+import { UploadModule } from './upload/upload.module';
+import { ArticleModule } from './article/article.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { CommunityModule } from './community/community.module';
     HealthModule,
     TherapistModule,
     CommunityModule,
+    UploadModule,
+    ArticleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

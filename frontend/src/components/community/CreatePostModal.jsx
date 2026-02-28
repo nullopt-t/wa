@@ -8,6 +8,11 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
     tags: '',
     isAnonymous: false,
   });
+  const [images, setImages] = useState([]);
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({}); // Track per-image upload status
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -20,6 +25,124 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files);
+    
+    if (files.length + images.length > 5) {
+      setErrors(prev => ({ ...prev, images: 'الحد الأقصى 5 صور' }));
+      return;
+    }
+
+    const newImages = [];
+    const newPreviews = [];
+
+    // First, mark all new images as uploading
+    const startIndex = imagePreviews.length;
+    const initialProgress = {};
+    
+    files.forEach((file, fileIndex) => {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, images: 'يرجى اختيار صور فقط' }));
+        return;
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, images: `حجم الصورة ${file.name} يتجاوز 5MB` }));
+        return;
+      }
+
+      newImages.push(file);
+      initialProgress[startIndex + fileIndex] = true;
+    });
+
+    // Set all as uploading immediately
+    if (Object.keys(initialProgress).length > 0) {
+      setUploadProgress(prev => ({ ...prev, ...initialProgress }));
+    }
+
+    // Create previews
+    newImages.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        newPreviews.push(reader.result);
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (newImages.length > 0) {
+      setImages(prev => [...prev, ...newImages]);
+      setErrors(prev => ({ ...prev, images: '' }));
+      
+      // Upload images immediately
+      setUploading(true);
+      try {
+        const formDataImages = new FormData();
+        newImages.forEach(image => {
+          formDataImages.append('images', image);
+        });
+
+        const uploadResponse = await fetch('http://localhost:4000/api/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: formDataImages,
+        });
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          throw new Error(error.message || 'فشل رفع الصور');
+        }
+
+        const uploadData = await uploadResponse.json();
+        const uploadedUrls = uploadData.files.map(file => file.url);
+        setUploadedImages(prev => [...prev, ...uploadedUrls]);
+        
+        // Minimum loading time for better UX (500ms)
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Mark all as uploaded
+        const completedProgress = {};
+        for (let i = 0; i < newImages.length; i++) {
+          completedProgress[startIndex + i] = false;
+        }
+        setUploadProgress(prev => ({ ...prev, ...completedProgress }));
+      } catch (error) {
+        console.error('Upload error:', error);
+        setErrors(prev => ({ ...prev, images: error.message }));
+        // Mark as failed (not uploading)
+        const failedProgress = {};
+        for (let i = 0; i < newImages.length; i++) {
+          failedProgress[startIndex + i] = false;
+        }
+        setUploadProgress(prev => ({ ...prev, ...failedProgress }));
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const removeImage = (index) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setUploadProgress(prev => {
+      const newProgress = {};
+      Object.keys(prev).forEach(key => {
+        const numKey = parseInt(key);
+        if (numKey < index) {
+          newProgress[numKey] = prev[key];
+        } else if (numKey > index) {
+          newProgress[numKey - 1] = prev[key];
+        }
+      });
+      return newProgress;
+    });
   };
 
   const validateForm = () => {
@@ -55,12 +178,15 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
     }
 
     setLoading(true);
+    
     try {
+      // Submit post with already uploaded images
       await onSubmit({
         title: formData.title,
         content: formData.content,
         categoryId: formData.categoryId,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        images: uploadedImages,
         isAnonymous: formData.isAnonymous,
       });
     } catch (error) {
@@ -177,6 +303,69 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
               />
             </div>
 
+            {/* Image Upload */}
+            <div>
+              <label className="block text-lg font-medium text-[var(--text-primary)] mb-2">
+                الصور (اختياري - الحد الأقصى 5 صور)
+              </label>
+              <div className="border-2 border-dashed border-[var(--border-color)] rounded-xl p-6 text-center hover:border-[var(--primary-color)] transition-colors cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <i className="fas fa-cloud-upload-alt text-4xl text-[var(--text-secondary)] mb-2"></i>
+                  <p className="text-[var(--text-primary)] font-medium">انقر لرفع الصور</p>
+                  <p className="text-sm text-[var(--text-secondary)] mt-1">JPEG, PNG, WebP, GIF (الحد الأقصى 5MB لكل صورة)</p>
+                </label>
+              </div>
+
+              {/* Image Previews */}
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className={`w-full h-32 object-cover rounded-lg ${uploadProgress[index] ? 'opacity-70' : ''}`}
+                      />
+                      {uploadProgress[index] && (
+                        <>
+                          {/* Spinner */}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                            <i className="fas fa-spinner fa-spin text-3xl text-white"></i>
+                          </div>
+                          {/* Progress Bar */}
+                          <div className="absolute bottom-2 left-2 right-2">
+                            <div className="h-1 bg-white/30 rounded-full overflow-hidden">
+                              <div className="h-full bg-[var(--primary-color)] rounded-full animate-pulse w-2/3"></div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        disabled={uploadProgress[index]}
+                        className="absolute top-1 right-1 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed z-10"
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {errors.images && (
+                <p className="text-red-500 text-sm mt-2">{errors.images}</p>
+              )}
+            </div>
+
             {/* Anonymous Option */}
             <div className="flex items-center gap-3">
               <input
@@ -208,7 +397,7 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
           <div className="flex gap-4 mt-8 pt-6 border-t border-[var(--border-color)]/30">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploading}
               className="flex-1 px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (

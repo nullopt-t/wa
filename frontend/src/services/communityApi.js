@@ -168,3 +168,51 @@ export default {
   posts: postsAPI,
   comments: commentsAPI,
 };
+
+// Articles API
+export const articlesAPI = {
+  // Get all articles
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/articles${queryString ? `?${queryString}` : ''}`, {
+      method: 'GET',
+    });
+  },
+
+  // Get featured articles
+  getFeatured: (limit = 3) => apiRequest(`/articles/featured?limit=${limit}`, {
+    method: 'GET',
+  }),
+
+  // Get article by slug
+  getBySlug: (slug) => apiRequest(`/articles/slug/${slug}`, {
+    method: 'GET',
+  }),
+
+  // Get single article
+  getById: (id) => apiRequest(`/articles/${id}`, {
+    method: 'GET',
+  }),
+
+  // Create article
+  create: (articleData) => apiRequest('/articles', {
+    method: 'POST',
+    body: JSON.stringify(articleData),
+  }),
+
+  // Update article
+  update: (id, articleData) => apiRequest(`/articles/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(articleData),
+  }),
+
+  // Delete article
+  delete: (id) => apiRequest(`/articles/${id}`, {
+    method: 'DELETE',
+  }),
+
+  // Like article
+  like: (id) => apiRequest(`/articles/${id}/like`, {
+    method: 'POST',
+  }),
+};

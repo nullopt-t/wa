@@ -20,34 +20,41 @@ const CategoriesPage = () => {
     },
     {
       id: 3,
+      title: 'مقالات وعي',
+      description: 'مقالات موثوقة في الصحة النفسية',
+      icon: 'fas fa-newspaper',
+      path: '/articles'
+    },
+    {
+      id: 4,
       title: 'وعي للإدمان',
       description: 'دعم متخصص للتعافي من الإدمان',
       icon: 'fas fa-heartbeat',
       path: '#'
     },
     {
-      id: 4,
+      id: 5,
       title: 'رسالة وعي المستقبلية',
       description: 'رسالتك إلى نفسك في المستقبل',
       icon: 'fas fa-envelope-open-text',
       path: '/future-message'
     },
     {
-      id: 5,
+      id: 6,
       title: 'مساعد وعي الذكي',
       description: 'مساعد افتراضي للدعم النفسي',
       icon: 'fas fa-robot',
       path: '/chatbot'
     },
     {
-      id: 6,
+      id: 7,
       title: 'دليل وعي',
       description: 'أدلة عملية لتحسين صحتك النفسية',
       icon: 'fas fa-book',
       path: '#'
     },
     {
-      id: 7,
+      id: 8,
       title: 'كتب',
       description: 'مجموعة من الكتب المتخصصة في الصحة النفسية',
       icon: 'fas fa-book-open',

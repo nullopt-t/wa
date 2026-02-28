@@ -277,61 +277,93 @@ const CommunityPage = () => {
   };
 
   return (
-    <div className="bg-[var(--bg-primary)] min-h-screen py-8">
+    <div className="bg-[var(--bg-primary)] min-h-screen py-4 md:py-8">
       {/* Custom Animations Styles */}
       <style>{customAnimations}</style>
-      
-      <div className="max-w-7xl mx-auto px-4">
+
+      <div className="max-w-7xl mx-auto px-3 md:px-4">
         {/* Header */}
         <AnimatedItem type="slideUp" delay={0.1}>
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">المجتمع</h1>
-              <p className="text-[var(--text-secondary)]">شارك تجاربك واحصل على الدعم من المجتمع</p>
+              <h1 className="text-3xl md:text-4xl font-bold text-[var(--text-primary)] mb-2">المجتمع</h1>
+              <p className="text-sm md:text-base text-[var(--text-secondary)]">شارك تجاربك واحصل على الدعم من المجتمع</p>
             </div>
-            
+
             {isAuthenticated && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center gap-2"
+                className="w-full md:w-auto px-4 md:px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center justify-center gap-2"
               >
                 <i className="fas fa-plus"></i>
-                منشور جديد
+                <span className="hidden sm:inline">منشور جديد</span>
+                <span className="sm:hidden">جديد</span>
               </button>
             )}
           </div>
         </AnimatedItem>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <AnimatedItem type="slideRight" delay={0.2}>
-            <CommunitySidebar
-              categories={categories}
-              selectedCategory={filters.category}
-              selectedTag={filters.tag}
-              onSelectCategory={(categoryId) => setFilters({ ...filters, category: categoryId })}
-              onSelectTag={(tag) => setFilters({ ...filters, tag })}
-              onClearFilters={() => setFilters({ category: '', tag: '', sort: 'createdAt' })}
-              onClearTagFilter={handleClearTagFilter}
-            />
-          </AnimatedItem>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-8">
+          {/* Sidebar - Hidden on mobile, slides in on desktop */}
+          <div className="hidden lg:block lg:col-span-1">
+            <AnimatedItem type="slideRight" delay={0.2}>
+              <CommunitySidebar
+                categories={categories}
+                selectedCategory={filters.category}
+                selectedTag={filters.tag}
+                onSelectCategory={(categoryId) => setFilters({ ...filters, category: categoryId })}
+                onSelectTag={(tag) => setFilters({ ...filters, tag })}
+                onClearFilters={() => setFilters({ category: '', tag: '', sort: 'createdAt' })}
+                onClearTagFilter={handleClearTagFilter}
+              />
+            </AnimatedItem>
+          </div>
+
+          {/* Mobile Filter Bar */}
+          <div className="lg:hidden mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <button
+                onClick={() => setFilters({ category: '', tag: '', sort: 'createdAt' })}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  !filters.category && !filters.tag
+                    ? 'bg-[var(--primary-color)] text-white'
+                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
+                }`}
+              >
+                الكل
+              </button>
+              {categories.slice(0, 5).map((category) => (
+                <button
+                  key={category._id}
+                  onClick={() => setFilters({ ...filters, category: category._id })}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    filters.category === category._id
+                      ? 'bg-[var(--primary-color)] text-white'
+                      : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
+                  }`}
+                >
+                  {category.nameAr}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Main Feed */}
           <div className="lg:col-span-3">
             {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
+              <div className="flex justify-center items-center py-12 md:py-20">
+                <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
               </div>
             ) : posts.length === 0 ? (
               <AnimatedItem type="slideUp" delay={0.3}>
-                <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-12 text-center border border-[var(--border-color)]/30">
-                  <i className="fas fa-newspaper text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
-                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">لا توجد منشورات بعد</h3>
-                  <p className="text-[var(--text-secondary)] mb-6">كن أول من ينشر منشوراً في المجتمع</p>
+                <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-8 md:p-12 text-center border border-[var(--border-color)]/30">
+                  <i className="fas fa-newspaper text-5xl md:text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
+                  <h3 className="text-xl md:text-2xl font-bold text-[var(--text-primary)] mb-2">لا توجد منشورات بعد</h3>
+                  <p className="text-sm md:text-base text-[var(--text-secondary)] mb-6">كن أول من ينشر منشوراً في المجتمع</p>
                   {isAuthenticated && (
                     <button
                       onClick={() => setShowCreateModal(true)}
-                      className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors"
+                      className="w-full md:w-auto px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors"
                     >
                       <i className="fas fa-plus ml-2"></i>
                       إنشاء منشور
@@ -360,14 +392,14 @@ const CommunityPage = () => {
             {/* Load More - Only show if there are more pages */}
             {!loading && posts.length > 0 && pagination.currentPage < pagination.totalPages && (
               <AnimatedItem type="slideUp" delay={0.4}>
-                <div className="flex justify-center mt-8">
+                <div className="flex justify-center mt-6 md:mt-8">
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       loadPosts(pagination.currentPage + 1, false);
                     }}
-                    className="px-8 py-3 bg-[var(--card-bg)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--bg-secondary)] transition-colors"
+                    className="w-full md:w-auto px-6 md:px-8 py-3 bg-[var(--card-bg)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--bg-secondary)] transition-colors"
                   >
                     تحميل المزيد
                   </button>

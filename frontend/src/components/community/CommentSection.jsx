@@ -239,42 +239,43 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
 
   return (
     <>
-      <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-8 border border-[var(--border-color)]/30">
+      <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 p-4 md:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <h2 className="text-lg md:text-2xl font-bold text-[var(--text-primary)]">
           التعليقات ({comments.length})
         </h2>
       </div>
 
       {/* Add Comment Form */}
       {isAuthenticated ? (
-        <form onSubmit={handleSubmitComment} className="mb-8">
-          <div className="flex gap-4">
+        <form onSubmit={handleSubmitComment} className="mb-6 md:mb-8">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="أضف تعليقاً..."
                 rows="3"
-                className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] resize-none"
+                className="w-full px-3 md:px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] resize-none text-sm md:text-base"
               />
             </div>
             <div className="flex items-end">
               <button
                 type="submit"
                 disabled={submitting || !newComment.trim()}
-                className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full md:w-auto px-4 md:px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
               >
                 {submitting ? (
                   <>
                     <i className="fas fa-spinner fa-spin ml-2"></i>
-                    جاري...
+                    <span className="hidden md:inline">جاري...</span>
+                    <span className="md:hidden">...</span>
                   </>
                 ) : (
                   <>
                     <i className="fas fa-paper-plane ml-2"></i>
-                    نشر
+                    <span className="hidden md:inline">نشر</span>
                   </>
                 )}
               </button>

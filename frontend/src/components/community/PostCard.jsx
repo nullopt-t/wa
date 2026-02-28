@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { postsAPI } from '../../services/communityApi.js';
 import CommentSection from './CommentSection.jsx';
 import ReportModal from './ReportModal.jsx';
+import { createPortal } from 'react-dom';
 
 const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) => {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
   const cardRef = useRef(null);
   const [needsExpand, setNeedsExpand] = useState(false);
   const viewTrackedRef = useRef(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const postId = post._id || post.id;
 
@@ -199,7 +202,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
   const handleShare = async () => {
     // Use current page URL for production, fallback to localhost for dev
     const shareUrl = `${window.location.origin}/community/post/${postId}`;
-    
+
     try {
       await navigator.clipboard.writeText(shareUrl);
       // Show copied feedback
@@ -208,6 +211,23 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
     } catch (error) {
       console.error('Copy failed:', error);
     }
+  };
+
+  const openImageModal = (index) => {
+    setCurrentImageIndex(index);
+    setShowImageModal(true);
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex(prev => (prev + 1) % post.images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex(prev => (prev - 1 + post.images.length) % post.images.length);
   };
 
   const handleSave = async () => {
@@ -224,6 +244,12 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
     }
   };
 
+  const handleAvatarClick = () => {
+    if (!post.isAnonymous && post.authorId?._id) {
+      navigate(`/user/${post.authorId._id}`);
+    }
+  };
+
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
     // Scroll to top of card if expanding and user is below it
@@ -236,20 +262,21 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
   };
 
   return (
-    <div
-      ref={cardRef}
-      className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/30 transition-all duration-300 overflow-hidden relative"
-    >
+    <>
+      <div
+        ref={cardRef}
+        className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/30 transition-all duration-300 relative"
+      >
       {/* Top Action Buttons (Share & Save) - Top Left Corner */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+      <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10 flex items-center gap-1 md:gap-2">
         {/* Share Button (Copy Link) */}
         <div className="relative group">
           <button
             onClick={handleShare}
-            className="w-10 h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] hover:scale-110 transition-all duration-300 shadow-lg"
+            className="w-8 h-8 md:w-10 md:h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] hover:scale-110 transition-all duration-300 shadow-lg"
             title="نسخ رابط المنشور"
           >
-            <i className="fas fa-link"></i>
+            <i className="fas fa-link text-sm md:text-base"></i>
           </button>
           {/* Copied Tooltip */}
           <div className={`absolute left-0 top-full mt-2 transition-all duration-300 ${showCopiedTooltip ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
@@ -335,7 +362,10 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden">
+            <div 
+              className={`w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden ${!post.isAnonymous ? 'cursor-pointer hover:scale-110 transition-transform' : ''}`}
+              onClick={!post.isAnonymous ? handleAvatarClick : undefined}
+            >
               {post.isAnonymous ? (
                 <i className="fas fa-user-secret text-xl"></i>
               ) : authorAvatar ? (
@@ -344,13 +374,24 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
                 authorName.charAt(0) || 'م'
               )}
             </div>
-            <div className="overflow-hidden">
-              <p className="font-bold text-[var(--text-primary)] break-words">
-                {authorName}
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] break-words">
-                {formatRelativeTime(post.createdAt)} • {post.categoryId?.nameAr || 'عام'}
-              </p>
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="overflow-hidden">
+                <p className="font-bold text-[var(--text-primary)] break-words">
+                  {post.isAnonymous ? 'مجهول' : authorName}
+                </p>
+                <p className="text-xs text-[var(--text-secondary)] break-words">
+                  {formatRelativeTime(post.createdAt)} • {post.categoryId?.nameAr || 'عام'}
+                </p>
+              </div>
+              {!post.isAnonymous && (
+                <button
+                  onClick={handleAvatarClick}
+                  className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors flex-shrink-0"
+                  title="عرض ملف المستخدم"
+                >
+                  <i className="fas fa-external-link-alt text-sm"></i>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -373,15 +414,82 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
 
         {/* Post Images */}
         {post.images && post.images.length > 0 && (
-          <div className={`grid gap-2 mb-4 ${isExpanded ? 'grid-cols-2' : 'grid-cols-2'}`}>
-            {post.images.slice(0, isExpanded ? post.images.length : 2).map((image, index) => (
-              <img
-                key={index}
-                src={image}
-                alt={`Post image ${index + 1}`}
-                className="rounded-lg object-cover h-32 w-full hover:scale-105 transition-transform duration-300"
-              />
-            ))}
+          <div className="mb-4">
+            {/* Single Image - Full Width */}
+            {post.images.length === 1 && (
+              <div className="relative overflow-hidden rounded-xl cursor-pointer" onClick={() => openImageModal(0)}>
+                <img
+                  src={post.images[0].startsWith('/') ? `http://localhost:4000${post.images[0]}` : post.images[0]}
+                  alt="Post image"
+                  className="w-full max-h-[500px] object-cover hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            )}
+
+            {/* Two Images - Side by Side */}
+            {post.images.length === 2 && (
+              <div className="grid grid-cols-2 gap-2">
+                {post.images.map((image, index) => (
+                  <div 
+                    key={index} 
+                    className="relative overflow-hidden rounded-xl cursor-pointer"
+                    onClick={() => openImageModal(index)}
+                  >
+                    <img
+                      src={image.startsWith('/') ? `http://localhost:4000${image}` : image}
+                      alt={`Post image ${index + 1}`}
+                      className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Three or More Images - Grid with "View More" */}
+            {post.images.length >= 3 && (
+              <div className="grid grid-cols-2 gap-2">
+                {/* First Image - Full Height */}
+                <div 
+                  className="row-span-2 relative overflow-hidden rounded-xl cursor-pointer"
+                  onClick={() => openImageModal(0)}
+                >
+                  <img
+                    src={post.images[0].startsWith('/') ? `http://localhost:4000${post.images[0]}` : post.images[0]}
+                    alt="Post image 1"
+                    className="w-full h-full min-h-[300px] object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                
+                {/* Second Image */}
+                <div 
+                  className="relative overflow-hidden rounded-xl cursor-pointer"
+                  onClick={() => openImageModal(1)}
+                >
+                  <img
+                    src={post.images[1].startsWith('/') ? `http://localhost:4000${post.images[1]}` : post.images[1]}
+                    alt="Post image 2"
+                    className="w-full h-40 object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                
+                {/* Third Image with "+X" overlay */}
+                <div 
+                  className="relative overflow-hidden rounded-xl cursor-pointer"
+                  onClick={() => openImageModal(2)}
+                >
+                  <img
+                    src={post.images[2].startsWith('/') ? `http://localhost:4000${post.images[2]}` : post.images[2]}
+                    alt="Post image 3"
+                    className="w-full h-40 object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                  {post.images.length > 3 && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
+                      <span className="text-white font-bold text-2xl">+{post.images.length - 3}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -458,14 +566,39 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
             </div>
           </div>
 
-          {/* Report Button - Mobile (in action bar) */}
-          <button
-            onClick={() => setShowReportModal(true)}
-            className="md:hidden text-[var(--text-secondary)] hover:text-red-500 transition-colors"
-            title="الإبلاغ عن المنشور"
-          >
-            <i className="fas fa-flag"></i>
-          </button>
+          {/* Mobile Action Buttons */}
+          <div className="md:hidden flex items-center gap-2">
+            {/* Edit Button (Author Only) */}
+            {isPostAuthor && (
+              <button
+                onClick={() => onEdit && onEdit(post)}
+                className="w-9 h-9 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary-color)]"
+                title="تعديل المنشور"
+              >
+                <i className="fas fa-pen text-sm"></i>
+              </button>
+            )}
+            
+            {/* Delete Button (Author Only) */}
+            {isPostAuthor && (
+              <button
+                onClick={() => onDelete && onDelete(post)}
+                className="w-9 h-9 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500"
+                title="حذف المنشور"
+              >
+                <i className="fas fa-trash text-sm"></i>
+              </button>
+            )}
+            
+            {/* Report Button */}
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="w-9 h-9 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500"
+              title="الإبلاغ عن المنشور"
+            >
+              <i className="fas fa-flag text-sm"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -479,7 +612,90 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
           onClose={() => setShowReportModal(false)}
         />
       )}
-    </div>
+      </div>
+
+      {/* Image Lightbox - Rendered via Portal at document.body level */}
+      {showImageModal && post.images && (
+        <ImageLightbox
+          images={post.images}
+          currentIndex={currentImageIndex}
+          onClose={closeImageModal}
+          onNext={nextImage}
+          onPrev={prevImage}
+        />
+      )}
+    </>
+  );
+};
+
+// Image Lightbox Modal Component (rendered via Portal)
+const ImageLightbox = ({ images, currentIndex, onClose, onNext, onPrev }) => {
+  if (!images || images.length === 0) return null;
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/95 flex flex-col"
+      onClick={onClose}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+    >
+      {/* Top Bar with Navigation */}
+      <div className="flex items-center justify-between p-4 md:p-6" style={{ zIndex: 10000 }}>
+        {/* Close Button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          className="text-white hover:text-gray-300 transition-colors p-3 bg-black/50 rounded-full hover:bg-black/70"
+          aria-label="Close"
+        >
+          <i className="fas fa-times text-2xl md:text-3xl"></i>
+        </button>
+
+        {/* Image Counter */}
+        <div className="bg-black/60 text-white px-4 py-2 md:px-6 md:py-3 rounded-full text-xs md:text-sm font-medium">
+          {currentIndex + 1} / {images.length}
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="flex gap-2 md:gap-3">
+          <button
+            onClick={(e) => { e.stopPropagation(); onPrev(); }}
+            className="text-white hover:text-gray-300 transition-colors p-3 md:p-4 bg-black/50 rounded-full hover:bg-black/70"
+            aria-label="Previous image"
+          >
+            <i className="fas fa-chevron-left text-xl md:text-2xl"></i>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onNext(); }}
+            className="text-white hover:text-gray-300 transition-colors p-3 md:p-4 bg-black/50 rounded-full hover:bg-black/70"
+            aria-label="Next image"
+          >
+            <i className="fas fa-chevron-right text-xl md:text-2xl"></i>
+          </button>
+        </div>
+      </div>
+
+      {/* Image Container - Centers the image */}
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8" style={{ zIndex: 10000 }}>
+        <img
+          src={images[currentIndex].startsWith('/') ? `http://localhost:4000${images[currentIndex]}` : images[currentIndex]}
+          alt={`Post image ${currentIndex + 1}`}
+          className="max-w-full max-h-full object-contain"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+
+      {/* Touch Areas for Mobile Swipe */}
+      <div 
+        className="absolute inset-y-0 left-0 w-1/3 md:hidden"
+        onClick={(e) => { e.stopPropagation(); onPrev(); }}
+        style={{ zIndex: 9999 }}
+      ></div>
+      <div 
+        className="absolute inset-y-0 right-0 w-1/3 md:hidden"
+        onClick={(e) => { e.stopPropagation(); onNext(); }}
+        style={{ zIndex: 9999 }}
+      ></div>
+    </div>,
+    document.body
   );
 };
 

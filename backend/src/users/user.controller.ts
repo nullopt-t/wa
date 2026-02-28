@@ -9,7 +9,6 @@ import { multerConfig } from '../modules/upload/multer.config';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { existsSync, mkdirSync } from 'fs';
-import type { Multer } from 'multer';
 
 @Controller('users')
 export class UserController {
@@ -88,7 +87,7 @@ export class UserController {
   }))
   async uploadAvatar(
     @Param('id') id: string,
-    @UploadedFile() file: Multer.File,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');

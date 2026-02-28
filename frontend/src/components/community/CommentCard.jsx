@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ReportModal from './ReportModal.jsx';
 
 const CommentCard = ({ comment, onLike, onDelete, onEdit, onReply, isAuthenticated, isDeleting = false, isPostAuthor = false, isReply = false }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [showReportModal, setShowReportModal] = useState(false);
 
@@ -33,12 +35,23 @@ const CommentCard = ({ comment, onLike, onDelete, onEdit, onReply, isAuthenticat
   // Post author or comment author can edit
   const canEdit = isCommentAuthor || isPostAuthor;
 
+  const handleAvatarClick = () => {
+    if (!comment.isAnonymous && comment.authorId?._id) {
+      navigate(`/user/${comment.authorId._id}`);
+    }
+  };
+
   return (
-    <div className={`${isReply ? 'bg-[var(--bg-secondary)]/50' : 'bg-[var(--bg-secondary)]'} rounded-xl p-6 transition-all duration-300 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
-      <div className="flex items-start gap-4">
+    <div className={`${isReply ? 'bg-[var(--bg-secondary)]/50' : 'bg-[var(--bg-secondary)]'} rounded-xl p-3 md:p-6 transition-all duration-300 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className="flex items-start gap-2 md:gap-4">
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden">
-          {authorAvatar ? (
+        <div
+          className={`w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden ${!comment.isAnonymous ? 'cursor-pointer hover:scale-110 transition-transform' : ''}`}
+          onClick={!comment.isAnonymous ? handleAvatarClick : undefined}
+        >
+          {comment.isAnonymous ? (
+            <i className="fas fa-user-secret text-base md:text-xl"></i>
+          ) : authorAvatar ? (
             <img src={authorAvatar} alt={comment.authorId?.firstName} className="w-full h-full object-cover" />
           ) : (
             comment.authorId?.firstName?.charAt(0) || 'م'
@@ -46,82 +59,79 @@ const CommentCard = ({ comment, onLike, onDelete, onEdit, onReply, isAuthenticat
         </div>
 
         {/* Content */}
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <span className="font-bold text-[var(--text-primary)]">
+        <div className="flex-1 overflow-hidden">
+          <div className="flex items-center justify-between mb-1 md:mb-2 gap-2">
+            <div className="min-w-0 flex-1">
+              <span className="font-bold text-[var(--text-primary)] text-sm md:text-base block truncate">
                 {comment.isAnonymous ? 'مجهول' : `${comment.authorId?.firstName} ${comment.authorId?.lastName}`}
               </span>
-              <span className="text-xs text-[var(--text-secondary)] mr-2">•</span>
-              <span className="text-xs text-[var(--text-secondary)]">
+              <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">
                 {formatDate(comment.createdAt)}
               </span>
             </div>
 
             {/* Author Actions */}
             {canEdit && (
-              <div className="flex gap-2">
+              <div className="flex gap-1 md:gap-2 flex-shrink-0">
                 <button
                   onClick={() => onEdit(comment)}
-                  className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors text-sm"
+                  className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors p-1 md:p-2"
                   title="تعديل التعليق"
                 >
-                  <i className="fas fa-pen"></i>
-                  <span className="mr-1">تعديل</span>
+                  <i className="fas fa-pen text-xs md:text-sm"></i>
                 </button>
                 <button
                   onClick={onDelete}
                   disabled={isDeleting}
-                  className={`text-red-500 hover:text-red-600 transition-colors text-sm ${
+                  className={`text-red-500 hover:text-red-600 transition-colors p-1 md:p-2 ${
                     isDeleting ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
+                  title="حذف التعليق"
                 >
                   {isDeleting ? (
-                    <i className="fas fa-spinner fa-spin"></i>
+                    <i className="fas fa-spinner fa-spin text-xs md:text-sm"></i>
                   ) : (
-                    <i className="fas fa-trash"></i>
+                    <i className="fas fa-trash text-xs md:text-sm"></i>
                   )}
                 </button>
               </div>
             )}
           </div>
 
-          <p className="text-[var(--text-secondary)] leading-relaxed mb-3">
+          <p className="text-[var(--text-secondary)] leading-relaxed mb-2 md:mb-3 text-sm md:text-base break-words whitespace-pre-wrap">
             {comment.content}
           </p>
 
           {/* Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4 flex-wrap flex-shrink-0">
             <button
               onClick={onLike}
               disabled={!isAuthenticated}
-              className={`flex items-center gap-2 transition-colors ${
+              className={`flex items-center gap-1 md:gap-2 transition-colors flex-shrink-0 ${
                 isAuthenticated
                   ? isLiked ? 'text-red-500' : 'text-[var(--text-secondary)] hover:text-red-500'
                   : 'text-[var(--text-secondary)]/50 cursor-not-allowed'
               }`}
             >
-              <i className={isLiked ? 'fas fa-heart' : 'far fa-heart'}></i>
-              <span className="text-sm">{likesCount}</span>
+              <i className={isLiked ? 'fas fa-heart text-xs md:text-sm' : 'far fa-heart text-xs md:text-sm'}></i>
+              <span className="text-xs md:text-sm whitespace-nowrap">{likesCount}</span>
             </button>
 
-            {onReply && (
-              <button
-                onClick={() => onReply(comment)}
-                className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors text-sm"
-              >
-                <i className="fas fa-reply"></i>
-                <span className="mr-1">رد</span>
-              </button>
-            )}
+            <button
+              onClick={onReply}
+              className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors text-xs md:text-sm flex-shrink-0"
+            >
+              <i className="fas fa-reply text-xs md:text-sm"></i>
+              <span className="mr-1 whitespace-nowrap">رد</span>
+            </button>
 
             <button
               onClick={() => setShowReportModal(true)}
-              className="text-[var(--text-secondary)] hover:text-red-500 transition-colors text-sm"
+              className="text-[var(--text-secondary)] hover:text-red-500 transition-colors text-xs md:text-sm flex-shrink-0"
               title="الإبلاغ عن التعليق"
             >
-              <i className="fas fa-flag"></i>
-              <span className="mr-1">إبلاغ</span>
+              <i className="fas fa-flag text-xs md:text-sm"></i>
+              <span className="mr-1 whitespace-nowrap">إبلاغ</span>
             </button>
           </div>
         </div>
