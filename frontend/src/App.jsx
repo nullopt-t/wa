@@ -19,7 +19,6 @@ import VisionPage from './pages/VisionPage.jsx';
 import HabitsPage from './pages/HabitsPage.jsx';
 import StoriesPage from './pages/StoriesPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
-import FutureMessagePage from './pages/FutureMessagePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
 import ChatbotPage from './pages/ChatbotPage.jsx';
@@ -44,6 +43,8 @@ import SavedPostsPage from './pages/SavedPostsPage.jsx';
 import ArticlesPage from './pages/ArticlesPage.jsx';
 import ArticleDetailPage from './pages/ArticleDetailPage.jsx';
 import ArticleManagementPage from './pages/ArticleManagementPage.jsx';
+import CreateFutureMessagePage from './pages/CreateFutureMessagePage.jsx';
+import FutureMessagesListPage from './pages/FutureMessagesListPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
 
 // Create a client
@@ -112,26 +113,23 @@ function AppWrapper() {
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
+            <Route path="/future-messages" element={
+              <AnimatedRoute>
+                <ProtectedRoute>
+                  <FutureMessagesListPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/future-messages/create" element={
+              <AnimatedRoute>
+                <ProtectedRoute>
+                  <CreateFutureMessagePage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
             <Route path="/contact" element={
               <AnimatedRoute>
                 <ContactPage />
-              </AnimatedRoute>
-            } />
-            <Route path="/about" element={
-              <AnimatedRoute>
-                <AboutPage />
-              </AnimatedRoute>
-            } />
-            <Route path="/vision" element={
-              <AnimatedRoute>
-                <VisionPage />
-              </AnimatedRoute>
-            } />
-            <Route path="/future-message" element={
-              <AnimatedRoute>
-                <ProtectedRoute>
-                  <FutureMessagePage />
-                </ProtectedRoute>
               </AnimatedRoute>
             } />
             <Route path="/login" element={

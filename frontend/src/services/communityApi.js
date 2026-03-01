@@ -169,6 +169,31 @@ export default {
   comments: commentsAPI,
 };
 
+// Future Messages API
+export const futureMessagesAPI = {
+  getAll: (includeDelivered = false) => apiRequest(`/future-messages?includeDelivered=${includeDelivered}`, {
+    method: 'GET',
+  }),
+
+  getById: (id) => apiRequest(`/future-messages/${id}`, {
+    method: 'GET',
+  }),
+
+  create: (messageData) => apiRequest('/future-messages', {
+    method: 'POST',
+    body: JSON.stringify(messageData),
+  }),
+
+  update: (id, messageData) => apiRequest(`/future-messages/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(messageData),
+  }),
+
+  delete: (id) => apiRequest(`/future-messages/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
 // Articles API
 export const articlesAPI = {
   // Get all articles

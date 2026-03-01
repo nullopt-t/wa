@@ -6,91 +6,56 @@ const CategoriesPage = () => {
   const categories = [
     {
       id: 1,
-      title: 'رحلة وعي',
-      description: 'مسارك نحو التطور والنمو النفسي',
-      icon: 'fas fa-route',
-      path: '#'
-    },
-    {
-      id: 2,
       title: 'مجتمع وعي',
       description: 'انضم إلى مجتمع الدعم والمشاركة',
       icon: 'fas fa-users',
       path: '/community'
     },
     {
-      id: 3,
+      id: 2,
       title: 'مقالات وعي',
       description: 'مقالات موثوقة في الصحة النفسية',
       icon: 'fas fa-newspaper',
       path: '/articles'
     },
     {
-      id: 4,
-      title: 'وعي للإدمان',
-      description: 'دعم متخصص للتعافي من الإدمان',
-      icon: 'fas fa-heartbeat',
-      path: '#'
-    },
-    {
-      id: 5,
+      id: 3,
       title: 'رسالة وعي المستقبلية',
       description: 'رسالتك إلى نفسك في المستقبل',
       icon: 'fas fa-envelope-open-text',
-      path: '/future-message'
+      path: '/future-messages'
     },
     {
-      id: 6,
+      id: 4,
       title: 'مساعد وعي الذكي',
       description: 'مساعد افتراضي للدعم النفسي',
       icon: 'fas fa-robot',
       path: '/chatbot'
     },
     {
-      id: 7,
-      title: 'دليل وعي',
-      description: 'أدلة عملية لتحسين صحتك النفسية',
-      icon: 'fas fa-book',
-      path: '#'
-    },
-    {
-      id: 8,
-      title: 'كتب',
-      description: 'مجموعة من الكتب المتخصصة في الصحة النفسية',
-      icon: 'fas fa-book-open',
-      path: '#'
-    },
-    {
-      id: 8,
+      id: 5,
       title: 'فيديوهات',
       description: 'فيديوهات تعليمية وتحفيزية',
       icon: 'fas fa-video',
       path: '/videos'
     },
     {
-      id: 9,
-      title: 'مقالات',
-      description: 'مقالات موثوقة في الصحة النفسية',
-      icon: 'fas fa-newspaper',
-      path: '#'
-    },
-    {
-      id: 10,
+      id: 6,
       title: 'قصص وتجارب',
       description: 'قصص واقعية من أشخاص مروا بتجارب مشابهة',
       icon: 'fas fa-comment-dots',
       path: '/stories'
     },
     {
-      id: 11,
-      title: 'اراء و فيدباك',
-      description: 'انضم إلى مجتمع الدعم والمشاركة',
+      id: 7,
+      title: 'اراء وفيدباك',
+      description: 'شاركنا رأيك وملاحظاتك',
       icon: 'fas fa-comments',
       path: '/feedback'
     },
     {
-      id: 12,
-      title: 'ابحث عن المعالج',
+      id: 8,
+      title: 'ابحث عن معالج',
       description: 'ابحث واتصل بأفضل المعالجين النفسيين',
       icon: 'fas fa-search',
       path: '/find-therapist'

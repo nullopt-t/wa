@@ -12,12 +12,13 @@ import { TherapistModule } from './therapist/therapist.module';
 import { CommunityModule } from './community/community.module';
 import { UploadModule } from './upload/upload.module';
 import { ArticleModule } from './article/article.module';
+import { FutureMessageModule } from './future-message/future-message.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env'], // Make it optional by using an array
+      envFilePath: ['.env'],
     }),
     MongooseModule.forRoot(process.env.DATABASE_URL || 'mongodb://admin:password@mongo:27017/waey?authSource=admin'),
     RedisCacheModule,
@@ -28,6 +29,7 @@ import { ArticleModule } from './article/article.module';
     CommunityModule,
     UploadModule,
     ArticleModule,
+    FutureMessageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
