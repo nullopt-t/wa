@@ -1,200 +1,627 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import { io } from 'socket.io-client';
+import DOMPurify from 'dompurify';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
 
 const ChatbotPage = () => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: 'مرحباً! أنا مساعد وعي الذكي، مساعدك الافتراضي في منصة وعي. أنا هنا لتقديم المعلومات والدعم الأولي. كيف يمكنني مساعدتك اليوم؟', sender: 'bot' }
-  ]);
+  const { isAuthenticated, user, token } = useAuth();
+  const { error: showError } = useToast();
+  const socketRef = useRef(null);
+  
+  const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSession, setCurrentSession] = useState(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [skipCount, setSkipCount] = useState(0);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesStartRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const inputRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // Initialize socket connection
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = () => {
-    if (inputValue.trim() === '') return;
-
-    // Add user message
-    const newUserMessage = {
-      id: messages.length + 1,
-      text: inputValue,
-      sender: 'user'
+    if (isAuthenticated && token) {
+      initializeSocket();
+    }
+    
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     };
-    
-    setMessages(prev => [...prev, newUserMessage]);
-    setInputValue('');
-    setIsLoading(true);
+  }, [isAuthenticated, token]);
 
-    // Simulate bot response after a delay
-    setTimeout(() => {
-      const botResponse = getBotResponse(inputValue);
-      const newBotMessage = {
-        id: messages.length + 2,
-        text: botResponse,
-        sender: 'bot'
-      };
-      setMessages(prev => [...prev, newBotMessage]);
-      setIsLoading(false);
-    }, 1000);
-  };
+  const initializeSocket = () => {
+    try {
+      const socket = io(`${SOCKET_URL}/chat`, {
+        auth: { token },
+        transports: ['websocket'],
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 500,
+        timeout: 5000,
+        forceNew: true,
+        autoConnect: true,
+      });
 
-  const getBotResponse = (userMessage) => {
-    const lowerCaseMessage = userMessage.toLowerCase();
-    
-    if (lowerCaseMessage.includes('مرحبا') || lowerCaseMessage.includes('السلام') || lowerCaseMessage.includes('هلا')) {
-      return 'السلام عليكم ورحمة الله وبركاته! كيف يمكنني مساعدتك اليوم؟';
-    } else if (lowerCaseMessage.includes('psychiatric') || lowerCaseMessage.includes('نفسي') || lowerCaseMessage.includes('忧郁') || lowerCaseMessage.includes('قلق')) {
-      return 'أنا هنا للاستماع إليك. إذا كنت تشعر بأعراض نفسية، أنصحك بالتحدث إلى متخصص. هل ترغب في معرفة موارد الدعم المتاحة؟';
-    } else if (lowerCaseMessage.includes('شكر') || lowerCaseMessage.includes('بخير')) {
-      return 'أنا سعيد لسماع ذلك! هل هناك شيء آخر يمكنني مساعدتك به؟';
-    } else if (lowerCaseMessage.includes('اسمك') || lowerCaseMessage.includes('من أنت')) {
-      return 'أنا مساعد وعي الذكي، مساعدك الافتراضي في منصة وعي. أنا هنا لتقديم المعلومات والدعم النفسي الأولي.';
-    } else if (lowerCaseMessage.includes('وداعا') || lowerCaseMessage.includes('مع السلامة')) {
-      return 'مع السلامة! لا تتردد في العودة إذا كنت بحاجة إلى أي مساعدة.';
-    } else {
-      return 'أشكرك على مشاركتك معي. إذا كانت لديك مشكلة نفسية أو نفسية، أنصحك بالتحدث إلى متخصص. هل ترغب في معرفة موارد الدعم المتاحة؟';
+      socket.on('connect', () => {
+        // Connected
+      });
+
+      socket.on('bot_response', (data) => {
+        setMessages(prev => [...prev, data.message]);
+        setShouldScrollToBottom(true);
+      });
+
+      socket.on('bot_typing', (data) => {
+        setIsLoading(data.isTyping);
+      });
+
+      socket.on('error', (error) => {
+        showError(error.message || 'حدث خطأ في الاتصال');
+      });
+
+      socket.on('disconnect', () => {
+        // Disconnected
+      });
+
+      socketRef.current = socket;
+    } catch (error) {
+      console.error('Failed to initialize socket:', error);
     }
   };
 
+  // Initialize or get active chat session
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      getOrCreateSession();
+    } else {
+      // For non-authenticated users, show welcome message
+      setMessages([
+        {
+          id: 1,
+          text: 'مرحباً! يرجى تسجيل الدخول للاستفادة من مساعد وعي الذكي.',
+          sender: 'bot',
+          timestamp: new Date()
+        }
+      ]);
+    }
+  }, [isAuthenticated, user]);
+
+  const getOrCreateSession = async () => {
+    try {
+      const token = localStorage.getItem('token');
+
+      // Try to get active session first
+      const activeResponse = await fetch(`${API_URL}/chat/sessions/active`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (activeResponse.ok) {
+        const text = await activeResponse.text();
+        if (text) {
+          const session = JSON.parse(text);
+          if (session && session._id) {
+            setCurrentSession(session);
+            setSkipCount(0);
+            setHasMoreMessages(true);
+            // Load existing messages
+            loadMessages(session._id, 0);
+            return;
+          }
+        }
+      }
+
+      // Create new session
+      const createResponse = await fetch(`${API_URL}/chat/sessions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (createResponse.ok) {
+        const text = await createResponse.text();
+        if (text) {
+          const session = JSON.parse(text);
+          setCurrentSession(session);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating session:', error);
+    }
+  };
+
+  const loadMessages = async (sessionId, skip = 0) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/chat/sessions/${sessionId}/messages?limit=20&skip=${skip}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const messages = await response.json();
+        if (messages.length > 0) {
+          const newMessages = messages.map(msg => ({
+            id: msg._id,
+            text: msg.content,
+            sender: msg.role === 'user' ? 'user' : 'bot',
+            timestamp: new Date(msg.createdAt),
+            emotions: msg.emotions
+          })).reverse(); // Reverse to show oldest first
+          
+          if (skip === 0) {
+            setMessages(newMessages);
+            setShouldScrollToBottom(true); // Scroll for initial load
+          } else {
+            setMessages(prev => [...newMessages, ...prev]);
+            // Don't scroll when loading old messages
+          }
+          
+          setHasMoreMessages(messages.length === 20);
+          setSkipCount(skip + messages.length);
+        } else {
+          setHasMoreMessages(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const handleScroll = () => {
+    const container = chatContainerRef.current;
+    if (!container || isLoadingMore || !hasMoreMessages) return;
+
+    // If scrolled to top (within 10px)
+    if (container.scrollTop < 10) {
+      setIsLoadingMore(true);
+      
+      // Get current scroll position
+      const oldScrollHeight = container.scrollHeight;
+      const oldScrollTop = container.scrollTop;
+      
+      loadMessages(currentSession._id, skipCount).then(() => {
+        setIsLoadingMore(false);
+        
+        // Maintain scroll position smoothly
+        requestAnimationFrame(() => {
+          const newScrollHeight = container.scrollHeight;
+          const heightDiff = newScrollHeight - oldScrollHeight;
+          
+          // Smooth scroll to maintain position
+          container.scrollTo({
+            top: heightDiff + oldScrollTop,
+            behavior: 'auto'
+          });
+        });
+      });
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+  };
+
+  useEffect(() => {
+    if (shouldScrollToBottom) {
+      scrollToBottom();
+      setShouldScrollToBottom(false);
+    }
+  }, [messages, shouldScrollToBottom]);
+
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (container && currentSession) {
+      container.addEventListener('scroll', handleScroll);
+      return () => {
+        if (container) {
+          container.removeEventListener('scroll', handleScroll);
+        }
+      };
+    }
+  }, [currentSession, isLoadingMore, hasMoreMessages, skipCount]);
+
+  useEffect(() => {
+    if (currentSession) {
+      inputRef.current?.focus();
+    }
+  }, [currentSession]);
+
+  const handleSendMessage = async () => {
+    if (inputValue.trim() === '') {
+      return;
+    }
+
+    if (!currentSession) {
+      showError('جاري إنشاء الجلسة...');
+      await getOrCreateSession();
+      if (!currentSession) {
+        showError('فشل إنشاء الجلسة. يرجى تحديث الصفحة.');
+        return;
+      }
+    }
+
+    const newUserMessage = {
+      id: Date.now(),
+      text: inputValue,
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, newUserMessage]);
+    const userMessage = inputValue;
+    setInputValue('');
+    setShouldScrollToBottom(true); // Scroll for new message
+
+    // Send via socket if connected
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('send_message', {
+        sessionId: currentSession._id,
+        content: userMessage,
+        analyzeEmotions: true,
+      });
+
+      socketRef.current.emit('start_typing', {
+        sessionId: currentSession._id,
+      });
+    } else {
+      // Fallback to REST API
+      setIsLoading(true);
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/chat/sessions/${currentSession._id}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            role: 'user',
+            content: userMessage,
+            analyzeEmotions: true,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+          setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            text: data.error,
+            sender: 'bot',
+            timestamp: new Date(),
+            isError: true
+          }]);
+        }
+
+        if (data.botMessage && data.botMessage.content) {
+          setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            text: data.botMessage.content,
+            sender: 'bot',
+            timestamp: new Date(),
+            emotions: data.analysis?.emotions,
+            crisisDetected: data.analysis?.crisisDetected,
+            suggestions: data.analysis?.suggestions,
+          }]);
+        }
+      } catch (error) {
+        console.error('REST API error:', error);
+        showError('فشل إرسال الرسالة. يرجى المحاولة مرة أخرى.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    }, 10);
+  };
+
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleSendMessage();
     }
   };
 
-  return (
-    <div className="bg-[var(--bg-primary)] min-h-screen">
-      <section className="py-16 bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)]">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold text-[var(--primary-color)] mb-4">مساعد وعي الذكي</h1>
-          <p className="text-xl text-[var(--text-secondary)]">مساعدك الافتراضي في منصة وعي لتقديم الدعم النفسي الأولي</p>
-        </div>
-      </section>
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString('ar-EG', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
 
-      <section className="py-16 bg-[var(--bg-secondary)]">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-[var(--bg-secondary)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden">
-            <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] p-6 text-white">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                  <i className="fas fa-robot text-2xl"></i>
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold">مساعد وعي الذكي</h2>
-                  <p className="text-sm opacity-80">متاح على مدار الساعة</p>
+  const getEmotionColor = (emotion) => {
+    const colors = {
+      sad: 'text-blue-500',
+      anxious: 'text-yellow-500',
+      angry: 'text-red-500',
+      happy: 'text-green-500',
+      stressed: 'text-orange-500',
+      neutral: 'text-gray-500',
+    };
+    return colors[emotion?.toLowerCase()] || 'text-gray-500';
+  };
+
+  const quickActions = [
+    { icon: 'fas fa-hand-wave', label: 'ترحيب', text: 'مرحباً، كيف حالك؟' },
+    { icon: 'fas fa-heart', label: 'قلق', text: 'أشعر بالقلق مؤخراً' },
+    { icon: 'fas fa-cloud-rain', label: 'حزن', text: 'أشعر بالحزن' },
+    { icon: 'fas fa-robot', label: 'من أنت', text: 'من أنت؟' },
+  ];
+
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-[var(--bg-primary)] h-screen flex flex-col items-center justify-center p-4">
+        <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-xl border border-[var(--border-color)]/30 p-8 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <i className="fas fa-robot text-4xl text-white"></i>
+          </div>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-4">مساعد وعي الذكي</h2>
+          <p className="text-[var(--text-secondary)] mb-6 leading-relaxed">
+            يرجى تسجيل الدخول للاستفادة من مساعد وعي الذكي والحصول على الدعم النفسي الأولي.
+          </p>
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="w-full px-6 py-4 bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+          >
+            تسجيل الدخول
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[var(--bg-primary)] h-screen flex flex-col overflow-hidden">
+      {/* Header */}
+      <header className="bg-[var(--bg-secondary)]/80 backdrop-blur-md shadow-md border-b border-[var(--border-color)]/30 flex-shrink-0">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="relative">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-xl flex items-center justify-center shadow-lg">
+                <i className="fas fa-robot text-base sm:text-xl text-white"></i>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-green-500 border-2 border-[var(--bg-secondary)] rounded-full animate-pulse"></div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base sm:text-lg font-bold text-[var(--text-primary)] truncate">مساعد وعي الذكي</h1>
+              <p className="text-[10px] sm:text-xs text-[var(--text-secondary)] flex items-center gap-1 sm:gap-1.5">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full flex-shrink-0"></span>
+                <span className="truncate">متاح الآن</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Chat Area */}
+      <main className="flex-1 max-w-6xl mx-auto w-full p-2 sm:p-3 md:p-4 flex flex-col min-h-0">
+        <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-xl sm:rounded-2xl shadow-xl border border-[var(--border-color)]/30 flex-1 flex flex-col overflow-hidden">
+          
+          {/* Messages */}
+          <div 
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 min-h-0 scroll-smooth"
+          >
+            {/* Loading More Indicator - Fixed at top */}
+            {isLoadingMore && (
+              <div className="sticky top-0 flex justify-center py-2 bg-[var(--card-bg)]/90 backdrop-blur-sm z-10">
+                <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] rounded-full shadow-lg">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-[var(--primary-color)]"></div>
+                  <span className="text-xs text-[var(--text-secondary)]">جاري تحميل الرسائل القديمة...</span>
                 </div>
               </div>
-            </div>
+            )}
             
-            <div className="h-96 overflow-y-auto p-6 bg-[var(--bg-primary)]">
-              {messages.map(message => (
-                <div key={message.id} className={`flex mb-6 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl ${message.sender === 'user' ? 'bg-[var(--primary-color)] text-white rounded-tr-none' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-tl-none shadow-sm border border-[var(--border-color)]'}`}>
-                    <p className="text-right">{message.text}</p>
+            {/* Scroll anchor */}
+            <div ref={messagesStartRef} />
+            
+            {messages.map((message) => (
+              <div 
+                key={message.id}
+                className={`flex mb-2 sm:mb-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`flex items-end gap-1.5 sm:gap-2.5 max-w-[85%] sm:max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  {/* Avatar */}
+                  <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 shadow-md ${
+                    message.sender === 'user' 
+                      ? 'bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] text-white' 
+                      : 'bg-[var(--bg-secondary)] text-[var(--primary-color)]'
+                  }`}>
+                    <i className={`fas ${message.sender === 'user' ? 'fa-user' : 'fa-robot'} text-xs sm:text-sm`}></i>
+                  </div>
+                  
+                  {/* Message Bubble */}
+                  <div className={`group px-4 py-2.5 rounded-2xl shadow-sm text-sm sm:text-base ${
+                    message.sender === 'user'
+                      ? 'bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-br-md'
+                      : 'bg-[var(--card-bg)] text-[var(--text-primary)] rounded-bl-md border border-[var(--border-color)]/20'
+                  }`}>
+                    {/* Crisis Alert */}
+                    {message.isCrisis && (
+                      <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <i className="fas fa-exclamation-triangle text-red-500"></i>
+                          <span className="font-bold text-red-500 text-xs">مهم جداً</span>
+                        </div>
+                        <p className="text-right text-sm whitespace-pre-wrap">{message.text}</p>
+                      </div>
+                    )}
+                    
+                    {/* Error Alert */}
+                    {message.isError && (
+                      <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <i className="fas fa-exclamation-circle text-yellow-500"></i>
+                          <span className="font-bold text-yellow-500 text-xs">خطأ</span>
+                        </div>
+                        <p className="text-right text-sm">{message.text}</p>
+                      </div>
+                    )}
+                    
+                    {!message.isCrisis && !message.isError && (
+                      <>
+                        <p 
+                          className="text-right leading-relaxed whitespace-pre-wrap break-words"
+                          dangerouslySetInnerHTML={{ 
+                            __html: DOMPurify.sanitize(message.text) 
+                          }}
+                        />
+                        
+                        {/* Emotions Display */}
+                        {message.emotions && message.emotions.length > 0 && (
+                          <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[var(--border-color)]/30">
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2">
+                              {message.emotions.map((emotion, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] sm:text-[10px] font-medium ${getEmotionColor(emotion.emotion)} bg-[var(--bg-secondary)]`}
+                                >
+                                  <i className={`fas ${
+                                    emotion.emotion === 'sad' ? 'fa-tear' :
+                                    emotion.emotion === 'anxious' ? 'fa-wind' :
+                                    emotion.emotion === 'angry' ? 'fa-angry' :
+                                    emotion.emotion === 'happy' ? 'fa-smile' :
+                                    emotion.emotion === 'stressed' ? 'fa-tired' :
+                                    'fa-face-meh'
+                                  }`}></i>
+                                  <span className="capitalize">{emotion.emotion}</span>
+                                  <span className="opacity-60">({Math.round(emotion.confidence * 100)}%)</span>
+                                </span>
+                              ))}
+                            </div>
+
+                            {/* Suggestions as Buttons */}
+                            {message.suggestions && message.suggestions.length > 0 && (
+                              <div className="mt-2 flex flex-col gap-2">
+                                <span className="text-[9px] sm:text-[10px] text-[var(--text-secondary)]">💡 اقتراحات:</span>
+                                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                                  {message.suggestions.map((suggestion, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={() => {
+                                        setInputValue(suggestion);
+                                        inputRef.current?.focus();
+                                      }}
+                                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs sm:text-sm bg-gradient-to-r from-[var(--primary-color)]/10 to-[var(--primary-color)]/20 text-[var(--primary-color)] border border-[var(--primary-color)]/30 hover:bg-[var(--primary-color)] hover:text-white transition-all hover:scale-105 cursor-pointer"
+                                    >
+                                      <i className="fas fa-lightbulb"></i>
+                                      {suggestion}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    <span className={`text-[9px] sm:text-[10px] mt-1 sm:mt-1.5 block opacity-60 ${
+                      message.sender === 'user' ? 'text-white' : 'text-[var(--text-secondary)]'
+                    }`}>
+                      {formatTime(message.timestamp)}
+                    </span>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
 
-              {isLoading && (
-                <div className="flex justify-start mb-6">
-                  <div className="max-w-xs lg:max-w-md px-5 py-3 rounded-2xl bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-tl-none shadow-sm border border-[var(--border-color)]">
-                    <div className="flex space-x-2">
-                      <div className="w-2 h-2 bg-[var(--text-secondary)] rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-[var(--text-secondary)] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                      <div className="w-2 h-2 bg-[var(--text-secondary)] rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+            {/* Typing Indicator */}
+            {isLoading && (
+              <div className="flex justify-start mb-2 sm:mb-3">
+                <div className="flex items-end gap-1.5 sm:gap-2.5">
+                  <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[var(--bg-secondary)] text-[var(--primary-color)] flex items-center justify-center flex-shrink-0 shadow-md">
+                    <i className="fas fa-robot text-xs sm:text-sm"></i>
+                  </div>
+                  <div className="px-4 py-3 rounded-2xl bg-[var(--bg-secondary)] rounded-bl-md border border-[var(--border-color)]/20 shadow-sm">
+                    <div className="flex space-x-1 sm:space-x-1.5 space-x-reverse">
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[var(--text-secondary)] rounded-full animate-bounce"></div>
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[var(--text-secondary)] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[var(--text-secondary)] rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
                     </div>
                   </div>
                 </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-            
-            <div className="p-6 bg-[var(--bg-secondary)] border-t border-[var(--border-color)]">
-              <div className="flex gap-4">
-                <button className="w-12 h-12 flex items-center justify-center bg-[var(--bg-primary)] rounded-full text-[var(--primary-color)] hover:bg-[var(--bg-secondary)] transition-colors">
-                  <i className="fas fa-microphone"></i>
-                </button>
-
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="السؤال"
-                    className="w-full px-6 py-4 pr-16 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-colors text-[var(--text-primary)] bg-[var(--bg-primary)]"
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--primary-color)] hover:text-[var(--primary-hover)] transition-colors"
-                  >
-                    <i className="fas fa-paper-plane text-lg"></i>
-                  </button>
-                </div>
-
-                <button className="w-12 h-12 flex items-center justify-center bg-[var(--primary-color)] text-white rounded-full hover:bg-[var(--primary-hover)] transition-colors">
-                  <i className="fas fa-plus"></i>
-                </button>
               </div>
+            )}
 
-              <div className="flex justify-center gap-4 mt-6">
-                <button className="px-4 py-2 bg-[var(--bg-primary)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors flex items-center gap-2">
-                  <i className="fas fa-heart"></i> الدعم العاطفي
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 bg-[var(--bg-secondary)]/50 border-t border-[var(--border-color)]/30 flex-shrink-0">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {quickActions.map((action, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setInputValue(action.text);
+                    inputRef.current?.focus();
+                  }}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-[var(--card-bg)] hover:bg-[var(--primary-color)]/10 border border-[var(--border-color)]/30 rounded-lg sm:rounded-xl transition-all hover:scale-105 hover:shadow-md flex-shrink-0 whitespace-nowrap"
+                >
+                  <i className={`${action.icon} text-[var(--primary-color)] text-sm sm:text-base`}></i>
+                  <span className="text-xs sm:text-sm text-[var(--text-primary)]">{action.label}</span>
                 </button>
-                <button className="px-4 py-2 bg-[var(--bg-primary)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors flex items-center gap-2">
-                  <i className="fas fa-book"></i> المعلومات
-                </button>
-                <button className="px-4 py-2 bg-[var(--bg-primary)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors flex items-center gap-2">
-                  <i className="fas fa-question-circle"></i> الأسئلة
-                </button>
-              </div>
+              ))}
             </div>
           </div>
-          
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
-                <i className="fas fa-clock"></i>
-              </div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">متاح على مدار الساعة</h3>
-              <p className="text-[var(--text-secondary)]">يمكنك التحدث إلى مساعد وعي الذكي في أي وقت تناسبك</p>
-            </div>
 
-            <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
-                <i className="fas fa-shield-alt"></i>
-              </div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">آمن وموثوق</h3>
-              <p className="text-[var(--text-secondary)]">جميع المحادثات مشفرة ومحمية وفق أعلى معايير الأمان</p>
-            </div>
-
-            <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
-                <i className="fas fa-brain"></i>
-              </div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">مبني على الأبحاث</h3>
-              <p className="text-[var(--text-secondary)]">يستخدم مساعد وعي الذكي معلومات مبنية على الأبحاث العلمية الحديثة</p>
+          {/* Input Area */}
+          <div className="p-3 sm:p-4 bg-[var(--bg-secondary)] border-t border-[var(--border-color)]/30 flex-shrink-0">
+            <div className="flex gap-2 sm:gap-3">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="اكتب رسالتك هنا..."
+                className="flex-1 min-w-0 px-3 sm:px-5 py-3 sm:py-4 bg-[var(--card-bg)] border-2 border-[var(--border-color)] rounded-lg sm:rounded-xl focus:border-[var(--primary-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all text-[var(--text-primary)] placeholder-[var(--text-secondary)] text-sm sm:text-base"
+                disabled={isLoading}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={isLoading || !inputValue.trim()}
+                className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-lg sm:rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-1.5 sm:gap-2 hover:scale-105 active:scale-95 flex-shrink-0"
+              >
+                <i className="fas fa-paper-plane text-base sm:text-lg"></i>
+                <span className="hidden sm:inline font-medium">إرسال</span>
+              </button>
             </div>
           </div>
         </div>
-      </section>
+      </main>
 
-      <section className="py-16 bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] text-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">مستعد للتحدث مع مساعد وعي الذكي؟</h2>
-          <p className="text-xl mb-10 opacity-90">ابدأ محادثتك الآن واحصل على الدعم النفسي الأولي</p>
-          <Link to="/categories" className="inline-block px-8 py-4 bg-white text-[var(--primary-color)] rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors">
-            <i className="fas fa-robot ml-2"></i> ابدأ المحادثة
-          </Link>
+      {/* Disclaimer */}
+      <footer className="bg-[var(--bg-secondary)]/80 backdrop-blur-md border-t border-[var(--border-color)]/30 py-2 sm:py-3 flex-shrink-0">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4">
+          <p className="text-center text-[10px] sm:text-[11px] text-[var(--text-secondary)] leading-relaxed">
+            ⚠️ <strong>تنبيه:</strong> هذا المساعد يقدم دعمًا أوليًا فقط ولا يغني عن الاستشارة المتخصصة. 
+            في حالات الطوارئ، يرجى التواصل مع الخدمات الطارئة.
+          </p>
         </div>
-      </section>
+      </footer>
     </div>
   );
 };

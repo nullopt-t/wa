@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -13,6 +14,7 @@ import { CommunityModule } from './community/community.module';
 import { UploadModule } from './upload/upload.module';
 import { ArticleModule } from './article/article.module';
 import { FutureMessageModule } from './future-message/future-message.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -21,6 +23,10 @@ import { FutureMessageModule } from './future-message/future-message.module';
       envFilePath: ['.env'],
     }),
     MongooseModule.forRoot(process.env.DATABASE_URL || 'mongodb://admin:password@mongo:27017/waey?authSource=admin'),
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 60 seconds
+      limit: 10, // 10 requests per minute
+    }]),
     RedisCacheModule,
     UserModule,
     AuthModule,
@@ -30,6 +36,7 @@ import { FutureMessageModule } from './future-message/future-message.module';
     UploadModule,
     ArticleModule,
     FutureMessageModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
