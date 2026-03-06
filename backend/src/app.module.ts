@@ -15,6 +15,8 @@ import { UploadModule } from './upload/upload.module';
 import { ArticleModule } from './article/article.module';
 import { FutureMessageModule } from './future-message/future-message.module';
 import { ChatModule } from './chat/chat.module';
+import { VideoModule } from './video/video.module';
+import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -37,6 +39,9 @@ import { ChatModule } from './chat/chat.module';
     ArticleModule,
     FutureMessageModule,
     ChatModule,
+    VideoModule,
+    CategoryModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -23,19 +23,10 @@ export class CreateArticleDto {
   @MinLength(100)
   content: string;
 
-  @IsString()
-  @IsNotEmpty({ message: 'Cover image is required' })
-  @MaxLength(500)
-  coverImage: string;
-
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
-
-  @IsOptional()
-  @IsMongoId()
-  categoryId?: string;
 
   @IsOptional()
   @IsBoolean()
@@ -78,18 +69,9 @@ export class UpdateArticleDto {
   content?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  coverImage?: string;
-
-  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
-
-  @IsOptional()
-  @IsMongoId()
-  categoryId?: string;
 
   @IsOptional()
   @IsBoolean()

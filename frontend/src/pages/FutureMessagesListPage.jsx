@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import { futureMessagesAPI } from '../services/communityApi.js';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 const FutureMessagesListPage = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const FutureMessagesListPage = () => {
   const [loading, setLoading] = useState(true);
   const [includeDelivered, setIncludeDelivered] = useState(false);
   const [editingMessage, setEditingMessage] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
   const [expandedMessages, setExpandedMessages] = useState({});
 
   const loadMessages = useCallback(async () => {
@@ -38,6 +41,30 @@ const FutureMessagesListPage = () => {
       ...prev,
       [messageId]: !prev[messageId],
     }));
+  };
+
+  const handleDeleteClick = (message) => {
+    setMessageToDelete(message);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!messageToDelete) return;
+
+    try {
+      await futureMessagesAPI.delete(messageToDelete._id);
+      success('تم حذف الرسالة بنجاح');
+      setShowDeleteConfirm(false);
+      setMessageToDelete(null);
+      loadMessages();
+    } catch (error) {
+      showError('فشل حذف الرسالة');
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setMessageToDelete(null);
   };
 
   const handleDelete = async (id) => {
@@ -200,7 +227,7 @@ const FutureMessagesListPage = () => {
                               <i className="fas fa-pen"></i>
                             </button>
                             <button
-                              onClick={() => handleDelete(message._id)}
+                              onClick={() => handleDeleteClick(message)}
                               className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                               title="حذف"
                             >
@@ -476,6 +503,18 @@ const EditMessageModal = ({ message, onClose, onSave, onError }) => {
           </div>
         </form>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="حذف الرسالة"
+        message="هل أنت متأكد من حذف هذه الرسالة؟\n\nهذا الإجراء لا يمكن التراجع عنه."
+        confirmText="حذف"
+        cancelText="إلغاء"
+        isDanger={true}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </div>
   );
 };

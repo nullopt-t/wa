@@ -10,7 +10,9 @@ const HomePage = () => {
   // Redirect authenticated users to their dashboard
   useEffect(() => {
     if (isAuthenticated && !loading && user) {
-      if (user.role === 'therapist') {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.role === 'therapist') {
         navigate('/therapist/dashboard');
       } else {
         navigate('/user-dashboard');

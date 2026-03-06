@@ -17,17 +17,11 @@ export class Article {
   @Prop({ required: true })
   content: string; // Full article content (markdown or HTML)
 
-  @Prop()
-  coverImage?: string; // Featured image URL
-
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   authorId: Types.ObjectId;
 
   @Prop({ type: [String], default: [] })
   tags: string[];
-
-  @Prop({ type: Types.ObjectId, ref: 'Category' })
-  categoryId?: Types.ObjectId;
 
   // Engagement
   @Prop({ default: 0 })

@@ -1,40 +1,52 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
-import { articlesAPI, categoriesAPI } from '../services/communityApi.js';
+import { articlesAPI } from '../services/communityApi.js';
 import ArticleForm from '../components/articles/ArticleForm.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 const ArticleManagementPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const { success, error: showError } = useToast();
 
   const [articles, setArticles] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [articleToDelete, setArticleToDelete] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const loadCategories = useCallback(async () => {
-    try {
-      const data = await categoriesAPI.getAll();
-      setCategories(data);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
+  // Check for edit query parameter AFTER articles are loaded
+  useEffect(() => {
+    if (!loading && articles.length > 0) {
+      const editId = searchParams.get('edit');
+      if (editId) {
+        const articleToEdit = articles.find(a => a._id === editId);
+        if (articleToEdit) {
+          setEditingArticle(articleToEdit);
+          setShowCreateModal(true);
+          // Clear the query parameter
+          navigate('/articles/manage', { replace: true });
+        }
+      }
     }
-  }, []);
+  }, [loading, articles, searchParams, navigate]);
 
   const loadArticles = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await articlesAPI.getAll({ limit: 50, myArticles: 'true' });
-      setArticles(data.articles || []);
+      const data = await articlesAPI.getAll({ limit: 100 });
+      const articlesList = data.articles || data.data || [];
+      setArticles(articlesList);
     } catch (error) {
       console.error('Failed to load articles:', error);
       showError('فشل تحميل المقالات');
+      setArticles([]);
     } finally {
       setLoading(false);
     }
@@ -47,20 +59,31 @@ const ArticleManagementPage = () => {
       return;
     }
     loadArticles();
-    loadCategories();
-  }, [isAuthenticated, loadArticles, loadCategories, navigate, showError]);
+  }, [isAuthenticated, loadArticles, navigate, showError]);
 
-  const handleDelete = useCallback(async (id) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذا المقال؟')) return;
+  const handleDeleteClick = (article) => {
+    setArticleToDelete(article);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!articleToDelete) return;
 
     try {
-      await articlesAPI.delete(id);
+      await articlesAPI.delete(articleToDelete._id);
       success('تم حذف المقال بنجاح');
+      setShowDeleteConfirm(false);
+      setArticleToDelete(null);
       loadArticles();
     } catch (error) {
       showError('فشل حذف المقال');
     }
-  }, [success, showError, loadArticles]);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setArticleToDelete(null);
+  };
 
   const handleCreate = useCallback(async (data) => {
     setSubmitting(true);
@@ -193,14 +216,17 @@ const ArticleManagementPage = () => {
                               <i className="fas fa-eye"></i>
                             </button>
                             <button
-                              onClick={() => setEditingArticle(article)}
+                              onClick={() => {
+                                setEditingArticle(article);
+                                setShowCreateModal(true);
+                              }}
                               className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
                               title="تعديل"
                             >
                               <i className="fas fa-pen"></i>
                             </button>
                             <button
-                              onClick={() => handleDelete(article._id)}
+                              onClick={() => handleDeleteClick(article)}
                               className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                               title="حذف"
                             >
@@ -244,13 +270,24 @@ const ArticleManagementPage = () => {
                 article={editingArticle}
                 onSubmit={editingArticle ? handleUpdate : handleCreate}
                 onCancel={handleCloseModal}
-                categories={categories}
                 disabled={submitting}
               />
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="حذف المقال"
+        message="هل أنت متأكد من حذف هذا المقال؟\n\nهذا الإجراء لا يمكن التراجع عنه."
+        confirmText="حذف"
+        cancelText="إلغاء"
+        isDanger={true}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </div>
   );
 };

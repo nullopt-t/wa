@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const UserDashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [dailyMood, setDailyMood] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
   const [recommendedContent, setRecommendedContent] = useState([]);
+
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (!authLoading && user?.role === 'admin') {
+      navigate('/admin');
+    }
+  }, [user, authLoading, navigate]);
 
   // Show loading while auth is checking
   if (authLoading) {
@@ -41,8 +49,21 @@ const UserDashboard = () => {
       <AnimatedItem type="slideUp" delay={0.1}>
         <section className="py-12 bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] text-white">
           <div className="max-w-6xl mx-auto px-4">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">مرحباً، {user?.firstName} {user?.lastName}</h1>
-            <p className="text-xl opacity-90">نأمل أن تكون في يوم جميل ونفسي مريح</p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">مرحباً، {user?.firstName} {user?.lastName}</h1>
+                <p className="text-xl opacity-90">نأمل أن تكون في يوم جميل ونفسي مريح</p>
+              </div>
+              {user?.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="px-6 py-3 bg-white/20 backdrop-blur-sm rounded-xl font-medium hover:bg-white/30 transition-colors flex items-center gap-2"
+                >
+                  <i className="fas fa-shield-alt"></i>
+                  <span className="hidden md:inline">لوحة الإدارة</span>
+                </Link>
+              )}
+            </div>
           </div>
         </section>
       </AnimatedItem>

@@ -27,16 +27,13 @@ const quillFormats = [
   'clean'
 ];
 
-const ArticleForm = ({ article, onSubmit, onCancel, categories, disabled = false }) => {
+const ArticleForm = ({ article, onSubmit, onCancel, disabled = false }) => {
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
     excerpt: '',
     content: '',
-    coverImage: null,
-    coverImageFile: null,
     tags: '',
-    categoryId: '',
     status: 'draft',
     isFeatured: false,
     readTime: 5,
@@ -56,17 +53,11 @@ const ArticleForm = ({ article, onSubmit, onCancel, categories, disabled = false
         slug: article.slug || '',
         excerpt: article.excerpt || '',
         content: article.content || '',
-        coverImage: article.coverImage || null,
-        coverImageFile: null,
         tags: article.tags?.join(', ') || '',
-        categoryId: article.categoryId?._id || '',
         status: article.status || 'draft',
         isFeatured: article.isFeatured || false,
         readTime: article.readTime || 5,
       });
-      if (article.coverImage) {
-        setImagePreview(article.coverImage.startsWith('/') ? `http://localhost:4000${article.coverImage}` : article.coverImage);
-      }
     }
   }, [article]);
 
@@ -202,15 +193,6 @@ const ArticleForm = ({ article, onSubmit, onCancel, categories, disabled = false
       newErrors.content = 'المحتوى يجب أن يكون 100 حرف على الأقل';
     }
 
-    if (!formData.categoryId) {
-      newErrors.categoryId = 'يرجى اختيار قسم';
-    }
-
-    // Cover image is required
-    if (!formData.coverImage && !article) {
-      newErrors.coverImage = 'صورة الغلاف مطلوبة';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -234,15 +216,14 @@ const ArticleForm = ({ article, onSubmit, onCancel, categories, disabled = false
         slug: formData.slug,
         excerpt: formData.excerpt,
         content: formData.content,
-        coverImage: formData.coverImage,
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
-        categoryId: formData.categoryId,
         status: formData.status,
         isFeatured: formData.isFeatured,
         readTime: parseInt(formData.readTime) || 5,
       };
 
       console.log('Submitting article:', submitData);
+      console.log('isFeatured value:', formData.isFeatured);
       await onSubmit(submitData);
     } catch (error) {
       console.error('Submit error:', error);
@@ -589,29 +570,6 @@ const ArticleForm = ({ article, onSubmit, onCancel, categories, disabled = false
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Category */}
-          <div>
-            <label className="block text-lg font-medium text-[var(--text-primary)] mb-2">
-              القسم <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="categoryId"
-              value={formData.categoryId}
-              onChange={handleInputChange}
-              className={`w-full px-4 py-3 bg-[var(--card-bg)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors ${
-                errors.categoryId ? 'border-red-500' : 'border-[var(--border-color)]'
-              }`}
-            >
-              <option value="">اختر القسم...</option>
-              {categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {category.nameAr}
-                </option>
-              ))}
-            </select>
-            {errors.categoryId && <p className="text-red-500 text-sm mt-1">{errors.categoryId}</p>}
-          </div>
-
           {/* Status */}
           <div>
             <label className="block text-lg font-medium text-[var(--text-primary)] mb-2">

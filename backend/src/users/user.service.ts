@@ -138,10 +138,14 @@ export class UserService {
     }
   }
 
-  async findAll(): Promise<Omit<User, 'password'>[]> {
+  async findAll(): Promise<{ users: Omit<User, 'password'>[]; total: number }> {
     // For now, not caching the entire user list since it changes frequently
-    const users = await this.userModel.find().exec();
-    return users.map(({ password, ...userWithoutPassword }) => userWithoutPassword as Omit<User, 'password'>);
+    const users = await this.userModel.find().lean().exec();
+    const usersWithoutPassword = users.map(({ password, ...userWithoutPassword }) => userWithoutPassword as Omit<User, 'password'>);
+    return {
+      users: usersWithoutPassword,
+      total: users.length,
+    };
   }
 
   async update(id: string, updateData: Partial<User>): Promise<Omit<User, 'password'>> {

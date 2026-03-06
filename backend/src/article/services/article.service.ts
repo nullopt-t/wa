@@ -3,11 +3,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Article, ArticleDocument } from '../schemas/article.schema';
 import { CreateArticleDto, UpdateArticleDto } from '../dto/article.dto';
+import { User, UserDocument } from '../../users/schemas/user.schema';
 
 @Injectable()
 export class ArticleService {
   constructor(
     @InjectModel(Article.name) private articleModel: Model<ArticleDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   // Create new article
@@ -38,12 +40,18 @@ export class ArticleService {
       tag,
       category,
       featured,
+      excludeFeatured,
       status,
       sort = 'publishedAt',
       myArticles,
     } = query;
 
     const filter: any = {};
+
+    // Exclude featured articles if requested (for main list when featured section is shown)
+    if (excludeFeatured === 'true') {
+      filter.isFeatured = { $ne: true };
+    }
 
     // If user is requesting their own articles
     if (myArticles === 'true' && userId) {
@@ -52,17 +60,19 @@ export class ArticleService {
       // - If specific status provided, filter by it
       // - Otherwise show all statuses (draft + published + archived)
       if (status && status !== 'all') {
-        // Validate status value
         const validStatuses = ['draft', 'published', 'archived'];
         if (validStatuses.includes(status)) {
           filter.status = status;
         }
       }
+      // If status='all' or not provided, don't filter by status (show all)
     } else {
-      // Public view - only show published articles
-      // Allow filtering by specific published status if provided
-      if (status && status !== 'all') {
-        // Validate status value
+      // Public view or admin view
+      // If status='all', show all articles regardless of status
+      if (status === 'all') {
+        // Don't filter by status - show all
+      } else if (status && status !== 'all') {
+        // Specific status provided
         const validStatuses = ['draft', 'published', 'archived'];
         if (validStatuses.includes(status)) {
           filter.status = status;
@@ -70,6 +80,7 @@ export class ArticleService {
           filter.status = 'published';
         }
       } else {
+        // No status provided - default to published for public view
         filter.status = 'published';
       }
     }
@@ -97,7 +108,6 @@ export class ArticleService {
     const articles = await this.articleModel
       .find(filter)
       .populate('authorId', 'firstName lastName avatar')
-      .populate('categoryId', 'name nameAr')
       .sort({ [sort]: -1, order: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -134,7 +144,6 @@ export class ArticleService {
       const article = await this.articleModel
         .findOne({ slug })
         .populate('authorId', 'firstName lastName avatar bio')
-        .populate('categoryId', 'name nameAr')
         .exec();
 
       if (!article) {
@@ -157,7 +166,6 @@ export class ArticleService {
       const article = await this.articleModel
         .findById(id)
         .populate('authorId', 'firstName lastName avatar bio')
-        .populate('categoryId', 'name nameAr')
         .exec();
 
       if (!article) {
@@ -183,8 +191,12 @@ export class ArticleService {
         throw new NotFoundException('Article not found');
       }
 
-      // Check if user owns the article
-      if (article.authorId.toString() !== userId) {
+      // Get user to check role
+      const user = await this.userModel.findById(userId).exec();
+      const isAdmin = user?.role === 'admin';
+
+      // Check if user owns the article OR is admin
+      if (!isAdmin && article.authorId.toString() !== userId) {
         throw new ForbiddenException('You can only edit your own articles');
       }
 
@@ -196,7 +208,6 @@ export class ArticleService {
       const updated = await this.articleModel
         .findByIdAndUpdate(id, updateArticleDto, { new: true })
         .populate('authorId', 'firstName lastName avatar')
-        .populate('categoryId', 'name nameAr')
         .exec();
 
       return updated;

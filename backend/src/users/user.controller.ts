@@ -22,7 +22,7 @@ export class UserController {
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  async findAll(): Promise<Omit<User, 'password'>[]> {
+  async findAll(): Promise<{ users: Omit<User, 'password'>[]; total: number }> {
     return this.userService.findAll();
   }
 

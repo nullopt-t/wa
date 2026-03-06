@@ -1,268 +1,190 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import AnimatedItem from '../components/AnimatedItem.jsx';
+import { videosAPI } from '../services/communityApi.js';
 
 const VideosPage = () => {
-  const [selectedCategory, setSelectedCategory] = useState('الكل');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [likedVideos, setLikedVideos] = useState({});
+  const { isAuthenticated, user } = useAuth();
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [featuredVideos, setFeaturedVideos] = useState([]);
 
-  const videos = [
-    {
-      id: 1,
-      title: "مقدمة في الصحة النفسية",
-      description: "دورة مقدمة لفهم أساسيات الصحة النفسية وكيفية الحفاظ عليها",
-      thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      channel: "قناة الصحة النفسية",
-      duration: "12:34",
-      views: "1.2K",
-      likes: 24,
-      comments: 5,
-      date: "2026-01-15",
-      category: "مقدمة"
-    },
-    {
-      id: 2,
-      title: "تقنيات الاسترخاء العميق",
-      description: "تعلم تقنيات التنفس والاسترخاء لتقليل التوتر والقلق",
-      thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      channel: "الاسترخاء اليومي",
-      duration: "18:22",
-      views: "2.5K",
-      likes: 42,
-      comments: 8,
-      date: "2026-01-20",
-      category: "استرخاء"
-    },
-    {
-      id: 3,
-      title: "التعامل مع الاكتئاب",
-      description: "نصائح عملية للتعامل مع الاكتئاب وتحسين الحالة النفسية",
-      thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      channel: "الصحة النفسية",
-      duration: "25:10",
-      views: "3.1K",
-      likes: 68,
-      comments: 12,
-      date: "2026-01-25",
-      category: "اكتئاب"
-    },
-    {
-      id: 4,
-      title: "النوم الجيد وتأثيره على الصحة النفسية",
-      description: "كيف يؤثر النوم الجيد على صحتك النفسية وطرق تحسينه",
-      thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      channel: "النوم والصحة",
-      duration: "15:45",
-      views: "1.8K",
-      likes: 35,
-      comments: 7,
-      date: "2026-02-01",
-      category: "نوم"
-    },
-    {
-      id: 5,
-      title: "القلق واضطراباته",
-      description: "فهم القلق واضطراباته وكيفية التعامل معها",
-      thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      channel: "الصحة النفسية",
-      duration: "22:18",
-      views: "2.7K",
-      likes: 51,
-      comments: 9,
-      date: "2026-02-05",
-      category: "قلق"
-    },
-    {
-      id: 6,
-      title: "العلاقات الصحية",
-      description: "كيف تبني وتحافظ على علاقات صحية ومتوازنة",
-      thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-      channel: "العلاقات اليومية",
-      duration: "19:30",
-      views: "1.9K",
-      likes: 29,
-      comments: 6,
-      date: "2026-02-10",
-      category: "علاقات"
-    }
-  ];
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin';
 
-  const categories = ['الكل', 'مقدمة', 'استرخاء', 'اكتئاب', 'نوم', 'قلق', 'علاقات'];
-
-  const filteredVideos = videos.filter(video => {
-    const matchesCategory = selectedCategory === 'الكل' || video.category === selectedCategory;
-    const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         video.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  const currentVideo = filteredVideos[currentVideoIndex];
-
-  // Handle scroll-based navigation only when mouse is over video container
   useEffect(() => {
-    const handleWheel = (e) => {
-      const videoContainer = document.getElementById('video-container');
-      if (videoContainer && videoContainer.contains(e.target)) {
-        e.preventDefault();
-        
-        if (e.deltaY > 0 && currentVideoIndex < filteredVideos.length - 1) {
-          setCurrentVideoIndex(prev => prev + 1);
-        } else if (e.deltaY < 0 && currentVideoIndex > 0) {
-          setCurrentVideoIndex(prev => prev - 1);
-        }
-      }
-    };
+    loadVideos();
+    loadFeaturedVideos();
+  }, []);
 
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, [currentVideoIndex, filteredVideos.length]);
-
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-  };
-
-  const toggleLike = () => {
-    if (currentVideo) {
-      setLikedVideos(prev => ({
-        ...prev,
-        [currentVideo.id]: !prev[currentVideo.id]
-      }));
+  const loadFeaturedVideos = async () => {
+    try {
+      const data = await videosAPI.getFeatured(6);
+      setFeaturedVideos(data);
+    } catch (error) {
+      console.error('Failed to load featured videos:', error);
     }
   };
 
+  const loadVideos = async () => {
+    try {
+      setLoading(true);
+      // Exclude featured videos from main list (they're shown separately)
+      const data = await videosAPI.getAll({ limit: 50, excludeFeatured: 'true' });
+      setVideos(data.videos);
+    } catch (error) {
+      console.error('Failed to load videos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getYouTubeEmbed = (url) => {
+    const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+    return `https://www.youtube.com/embed/${videoId}`;
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
-    <div className="bg-[var(--bg-primary)] min-h-screen relative">
-      {/* Floating Filter Menu */}
-      <div className="fixed top-4 right-4 z-50">
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="w-14 h-14 bg-[var(--primary-color)] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[var(--primary-hover)] transition-colors"
-        >
-          <i className={`fas ${showFilters ? 'fa-times' : 'fa-filter'} text-xl`}></i>
-        </button>
+    <div className="bg-[var(--bg-primary)] min-h-screen">
+      {/* Header */}
+      <section className="py-16 bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)]">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <h1 className="text-4xl font-bold text-[var(--primary-color)] mb-4">فيديوهات وعي</h1>
+          <p className="text-xl text-[var(--text-secondary)] max-w-3xl mx-auto">
+            مكتبة فيديوهات تعليمية وتحفيزية للصحة النفسية
+          </p>
+          {isAdmin && (
+            <Link
+              to="/videos/manage"
+              className="inline-block mt-6 px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors"
+            >
+              <i className="fas fa-plus ml-2"></i>
+              إضافة فيديو
+            </Link>
+          )}
+        </div>
+      </section>
 
-        {showFilters && (
-          <div className="absolute top-16 right-0 bg-[var(--bg-secondary)] rounded-2xl shadow-xl p-6 w-80 border border-[var(--border-color)]">
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4 text-right">الفلاتر</h3>
-
-            <div className="mb-6">
-              <label className="block text-[var(--text-primary)] mb-2 text-right">البحث</label>
-              <input
-                type="text"
-                placeholder="ابحث في الفيديوهات..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--accent-amber)] focus:outline-none transition-colors text-[var(--text-primary)] bg-[var(--bg-primary)]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[var(--text-primary)] mb-2 text-right">الفئة</label>
-              <div className="grid grid-cols-2 gap-3">
-                {categories.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => {
-                      setSelectedCategory(category);
-                      setShowFilters(false); // Close the menu after selection
-                    }}
-                    className={`px-4 py-2 rounded-xl transition-colors text-center ${
-                      selectedCategory === category
-                        ? 'bg-[var(--accent-amber)] text-white'
-                        : 'bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+      {/* Featured Videos */}
+      {featuredVideos.length > 0 && (
+        <section className="py-12 bg-[var(--bg-secondary)]">
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-8 text-right">
+              <i className="fas fa-star text-[var(--primary-color)] ml-2"></i>
+              فيديوهات مميزة
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredVideos.map((video, index) => (
+                <AnimatedItem key={video._id} type="slideUp" delay={index * 0.05}>
+                  <VideoCard video={video} getYouTubeEmbed={getYouTubeEmbed} formatDuration={formatDuration} />
+                </AnimatedItem>
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        </section>
+      )}
 
+      {/* All Videos */}
+      <section className="py-12 bg-[var(--bg-primary)]">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-8 text-right">
+            <i className="fas fa-video text-[var(--primary-color)] ml-2"></i>
+            جميع الفيديوهات
+          </h2>
 
-      <section className="py-8">
-        <div className="max-w-lg mx-auto px-4">
-          {filteredVideos.length > 0 ? (
-            <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl aspect-[9/16] mx-auto video-container" id="video-container">
-              {/* Video Player */}
-              <div className="w-full h-full flex items-center justify-center bg-gray-900 relative">
-                <img 
-                  src={currentVideo?.thumbnail} 
-                  alt={currentVideo?.title} 
-                  className="w-full h-full object-cover"
-                />
-                
-                {/* Play/Pause Overlay */}
-                {!isPlaying && (
-                  <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                    <button
-                      onClick={togglePlay}
-                      className="w-16 h-16 bg-white bg-opacity-80 rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-opacity-100 transition-all"
-                    >
-                      <i className="fas fa-play text-xl"></i>
-                    </button>
-                  </div>
-                )}
-
-                {/* Duration Overlay */}
-                <div className="absolute bottom-4 right-4 bg-black bg-opacity-70 text-white text-sm px-2 py-1 rounded">
-                  {currentVideo?.duration}
-                </div>
-              </div>
-
-              {/* Action Buttons - Like only */}
-              <div className="absolute right-4 bottom-24 flex flex-col gap-6">
-                <button
-                  onClick={toggleLike}
-                  className={`w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white hover:bg-opacity-70 transition-all ${
-                    likedVideos[currentVideo?.id] ? 'text-[var(--accent-red)]' : ''
-                  }`}
-                >
-                  <i className={`fas ${likedVideos[currentVideo?.id] ? 'fa-heart' : 'fa-heart'} text-xl`}></i>
-                </button>
-              </div>
-
-              {/* Info Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6 text-white">
-                <h3 className="text-xl font-bold mb-2">{currentVideo?.title}</h3>
-                <p className="text-sm text-gray-200 mb-3 line-clamp-2">{currentVideo?.description}</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1">
-                    <i className="fas fa-heart"></i> {currentVideo?.likes}
-                  </span>
-                  <span className="text-gray-300">
-                    {currentVideo?.channel} • {currentVideo?.date}
-                  </span>
-                </div>
-              </div>
-
-              {/* Progress Indicator */}
-              <div className="absolute top-4 left-4 flex gap-1">
-                {filteredVideos.map((_, index) => (
-                  <div 
-                    key={index}
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      index === currentVideoIndex ? 'bg-white' : 'bg-gray-400'
-                    }`}
-                  ></div>
-                ))}
-              </div>
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
+            </div>
+          ) : videos.length === 0 ? (
+            <div className="text-center py-20">
+              <i className="fas fa-video text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">لا توجد فيديوهات بعد</h3>
+              <p className="text-[var(--text-secondary)]">تابعنا للحصول على فيديوهات جديدة قريباً</p>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <i className="fas fa-search text-6xl text-[var(--text-secondary)] mb-4"></i>
-              <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">لا توجد فيديوهات مطابقة</h3>
-              <p className="text-[var(--text-secondary)]">حاول تغيير الفلاتر أو معاودة البحث</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {videos.map((video, index) => (
+                <AnimatedItem key={video._id} type="slideUp" delay={index * 0.05}>
+                  <VideoCard video={video} getYouTubeEmbed={getYouTubeEmbed} formatDuration={formatDuration} />
+                </AnimatedItem>
+              ))}
             </div>
           )}
         </div>
       </section>
+    </div>
+  );
+};
+
+// Video Card Component
+const VideoCard = ({ video, getYouTubeEmbed, formatDuration }) => {
+  const [isPlaying, setIsPlaying] = React.useState(false);
+
+  return (
+    <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl overflow-hidden border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/50 transition-all duration-300 hover:shadow-xl">
+      {/* Video Thumbnail/Player */}
+      <div className="relative aspect-video bg-[var(--bg-secondary)]">
+        {isPlaying ? (
+          <iframe
+            src={getYouTubeEmbed(video.videoUrl)}
+            title={video.title}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <>
+            {video.thumbnailUrl ? (
+              <img
+                src={video.thumbnailUrl}
+                alt={video.title}
+                className="w-full h-full object-cover cursor-pointer"
+                onClick={() => setIsPlaying(true)}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center cursor-pointer"
+                onClick={() => setIsPlaying(true)}
+              >
+                <div className="w-20 h-20 bg-[var(--primary-color)] rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+                  <i className="fas fa-play text-3xl text-white ml-1"></i>
+                </div>
+              </div>
+            )}
+            {video.duration && (
+              <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 text-white text-xs rounded">
+                {formatDuration(video.duration)}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-5">
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 line-clamp-2">{video.title}</h3>
+        <p className="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">{video.description}</p>
+
+        {/* Meta */}
+        <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+          <div className="flex items-center gap-2">
+            <i className="fas fa-eye"></i>
+            <span>{video.views || 0} مشاهدة</span>
+          </div>
+          {video.category && (
+            <span className="px-2 py-1 bg-[var(--bg-secondary)] rounded-full">{video.category}</span>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

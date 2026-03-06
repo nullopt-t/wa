@@ -12,6 +12,7 @@ const ArticlesPage = () => {
   const { error: showError, success } = useToast();
 
   const [articles, setArticles] = useState([]);
+  const [featuredArticles, setFeaturedArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -37,6 +38,15 @@ const ArticlesPage = () => {
       setAllTags(Array.from(tagsSet));
     } catch (error) {
       console.error('Failed to load tags:', error);
+    }
+  }, []);
+
+  const loadFeaturedArticles = useCallback(async () => {
+    try {
+      const data = await articlesAPI.getAll({ limit: 6, featured: 'true', status: 'published' });
+      setFeaturedArticles(data.articles || []);
+    } catch (error) {
+      console.error('Failed to load featured articles:', error);
     }
   }, []);
 
@@ -67,6 +77,9 @@ const ArticlesPage = () => {
         params.tag = filters.tags.join(',');
       }
 
+      // Exclude featured articles from main list (they're shown separately)
+      params.excludeFeatured = 'true';
+
       const data = await articlesAPI.getAll(params);
       setArticles(data.articles);
       setPagination({
@@ -91,7 +104,8 @@ const ArticlesPage = () => {
   // Load tags once on mount
   useEffect(() => {
     loadAllTags();
-  }, [loadAllTags]);
+    loadFeaturedArticles();
+  }, [loadAllTags, loadFeaturedArticles]);
 
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen py-8">
@@ -105,7 +119,7 @@ const ArticlesPage = () => {
             <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
               مقالات تعليمية ونصائح حول الصحة النفسية والعافية العقلية
             </p>
-            {isAuthenticated && (
+            {isAuthenticated && user?.role === 'admin' && (
               <button
                 onClick={() => navigate('/articles/manage')}
                 className="mt-6 px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center gap-2 mx-auto"
@@ -116,6 +130,25 @@ const ArticlesPage = () => {
             )}
           </div>
         </AnimatedItem>
+
+        {/* Featured Articles Section */}
+        {featuredArticles.length > 0 && (
+          <AnimatedItem type="slideUp" delay={0.15}>
+            <div className="mb-12">
+              <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-6 text-right flex items-center gap-2">
+                <i className="fas fa-star text-yellow-500"></i>
+                مقالات مميزة
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredArticles.map((article, index) => (
+                  <AnimatedItem key={article._id} type="slideUp" delay={index * 0.05}>
+                    <ArticleCard article={article} />
+                  </AnimatedItem>
+                ))}
+              </div>
+            </div>
+          </AnimatedItem>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
@@ -290,7 +323,7 @@ const ArticlesPage = () => {
                         >
                           عرض جميع المقالات
                         </button>
-                        {filters.author === 'mine' && (
+                        {filters.author === 'mine' && user?.role === 'admin' && (
                           <button
                             onClick={() => navigate('/articles/manage')}
                             className="px-6 py-2 text-[var(--primary-color)] hover:text-[var(--primary-hover)] transition-colors flex items-center gap-2"

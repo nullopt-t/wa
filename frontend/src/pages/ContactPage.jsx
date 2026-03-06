@@ -27,7 +27,7 @@ const ContactPage = () => {
                   </div>
                   <div className="text-right">
                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">البريد الإلكتروني</h3>
-                    <p className="text-[var(--text-secondary)]">info@waey.com</p>
+                    <p className="text-[var(--text-secondary)]">info@waey-mentalhealth.com</p>
                   </div>
                 </div>
 
@@ -37,7 +37,7 @@ const ContactPage = () => {
                   </div>
                   <div className="text-right">
                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">الهاتف</h3>
-                    <p className="text-[var(--text-secondary)]" style={{ direction: 'ltr' }}>+966 123 456 7890</p>
+                    <p className="text-[var(--text-secondary)]" style={{ direction: 'ltr' }}>+20 2 1234 5678</p>
                   </div>
                 </div>
 
@@ -47,7 +47,17 @@ const ContactPage = () => {
                   </div>
                   <div className="text-right">
                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">الموقع</h3>
-                    <p className="text-[var(--text-secondary)]">الرياض، المملكة العربية السعودية</p>
+                    <p className="text-[var(--text-secondary)]">القاهرة، جمهورية مصر العربية</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 p-6 bg-[var(--bg-primary)] rounded-xl">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center text-white text-xl flex-shrink-0">
+                    <i className="fas fa-headset"></i>
+                  </div>
+                  <div className="text-right">
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">خط المساعدة</h3>
+                    <p className="text-[var(--text-secondary)]" style={{ direction: 'ltr' }}>16000 (مجاني 24/7)</p>
                   </div>
                 </div>
               </div>
@@ -55,17 +65,20 @@ const ContactPage = () => {
               <div className="p-6 bg-[var(--bg-primary)] rounded-xl">
                 <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4 text-right">تابعنا على وسائل التواصل</h3>
                 <div className="flex justify-center gap-4">
-                  <a href="https://www.facebook.com/waey" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white transition-colors">
+                  <a href="https://www.facebook.com/waey.mentalhealth.egypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#1877F2] hover:text-white transition-colors">
                     <i className="fab fa-facebook-f"></i>
                   </a>
-                  <a href="https://www.instagram.com/waey" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white transition-colors">
+                  <a href="https://www.instagram.com/waey.egypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#E4405F] hover:text-white transition-colors">
                     <i className="fab fa-instagram"></i>
                   </a>
-                  <a href="https://www.twitter.com/waey" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white transition-colors">
+                  <a href="https://www.twitter.com/waey_egypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#1DA1F2] hover:text-white transition-colors">
                     <i className="fab fa-twitter"></i>
                   </a>
-                  <a href="https://www.youtube.com/waey" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white transition-colors">
+                  <a href="https://www.youtube.com/waeyegypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#FF0000] hover:text-white transition-colors">
                     <i className="fab fa-youtube"></i>
+                  </a>
+                  <a href="https://www.tiktok.com/@waey.egypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#000000] hover:text-white transition-colors">
+                    <i className="fab fa-tiktok"></i>
                   </a>
                 </div>
               </div>
@@ -104,6 +117,8 @@ const ContactPage = () => {
                     <option value="" className="bg-[var(--bg-primary)] text-[var(--text-primary)]">اختر موضوع الرسالة</option>
                     <option value="support" className="bg-[var(--bg-primary)] text-[var(--text-primary)]">الدعم الفني</option>
                     <option value="feedback" className="bg-[var(--bg-primary)] text-[var(--text-primary)]">ملاحظات واقتراحات</option>
+                    <option value="consultation" className="bg-[var(--bg-primary)] text-[var(--text-primary)]">استشارة نفسية</option>
+                    <option value="therapist" className="bg-[var(--bg-primary)] text-[var(--text-primary)]">احجز مع معالج</option>
                     <option value="partnership" className="bg-[var(--bg-primary)] text-[var(--text-primary)]">شراكات</option>
                     <option value="general" className="bg-[var(--bg-primary)] text-[var(--text-primary)]">استفسار عام</option>
                   </select>

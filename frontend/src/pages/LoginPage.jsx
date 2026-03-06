@@ -6,7 +6,7 @@ import { authAPI } from '../api.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const { success, error: showError } = useToast();
   const navigate = useNavigate();
   const emailRef = useRef(null);
@@ -18,6 +18,32 @@ const LoginPage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showResendVerification, setShowResendVerification] = useState(false);
+
+  // Immediate redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.role === 'therapist') {
+        navigate('/therapist/dashboard');
+      } else {
+        navigate('/user-dashboard');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Redirect based on user role after login
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.role === 'therapist') {
+        navigate('/therapist/dashboard');
+      } else {
+        navigate('/user-dashboard');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // Auto-focus on email field and prevent browser validation styling
   useEffect(() => {
@@ -100,8 +126,7 @@ const LoginPage = () => {
 
       if (result.success) {
         success('تم تسجيل الدخول بنجاح!');
-        // Navigate to dashboard
-        navigate('/dashboard');
+        // Redirect handled by useEffect
       } else {
         showError(result.message || 'حدث خطأ أثناء تسجيل الدخول');
       }

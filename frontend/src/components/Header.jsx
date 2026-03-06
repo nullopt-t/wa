@@ -68,8 +68,6 @@ const Header = () => {
             <div className="hidden xl:flex items-center gap-6">
               <Link to="/" className={`font-medium ${location.pathname === '/' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الرئيسية</Link>
               <Link to="/categories" className={`font-medium ${location.pathname === '/categories' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الأقسام</Link>
-              <Link to="/articles" className={`font-medium ${location.pathname === '/articles' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>المقالات</Link>
-              <Link to="/future-messages" className={`font-medium ${location.pathname.startsWith('/future-messages') ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>رسالة مستقبلية</Link>
               <Link to="/about" className={`font-medium ${location.pathname === '/about' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>عن وعي</Link>
               <Link to="/contact" className={`font-medium ${location.pathname === '/contact' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>تواصل معنا</Link>
             </div>
@@ -344,20 +342,6 @@ const Header = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   الأقسام
-                </Link>
-                <Link
-                  to="/articles"
-                  className={`font-medium py-3 px-4 rounded-lg ${location.pathname === '/articles' ? 'text-[#c5a98e] bg-[var(--bg-primary)]/50' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] hover:bg-[var(--bg-primary)]/30 transition-colors`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  المقالات
-                </Link>
-                <Link
-                  to="/future-messages"
-                  className={`font-medium py-3 px-4 rounded-lg ${location.pathname.startsWith('/future-messages') ? 'text-[#c5a98e] bg-[var(--bg-primary)]/50' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] hover:bg-[var(--bg-primary)]/30 transition-colors`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  رسالة مستقبلية
                 </Link>
                 <Link
                   to="/about"
