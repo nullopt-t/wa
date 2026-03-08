@@ -1,73 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../context/ToastContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
+import { storiesAPI } from '../services/communityApi.js';
 
 const StoriesPage = () => {
+  const { success, error: showError } = useToast();
+  const { isAuthenticated } = useAuth();
   const [activeFilter, setActiveFilter] = useState('all');
   const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [stories, setStories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, total: 0 });
 
-  const stories = [
-    {
-      id: 1,
-      author: 'علي فوزي',
-      avatar: 'CF',
-      date: '15 يناير 2026',
-      content: 'أنا كنت فاكر إن الرجولة يعني أكتم... كنت شايف إن الوجع لو ماطلعش بيطلع في شكل تاني. لكنني تعلمت أن مشاركة المشاعر ليست ضعفًا، بل قوة حقيقية.',
-      views: 245,
-      comments: 18,
-      likes: 42,
-      category: 'recovery',
-      readTime: 5
-    },
-    {
-      id: 2,
-      author: 'هشام مصطفى',
-      avatar: 'HM',
-      date: '12 يناير 2026',
-      content: 'العلاقة دي علمتني أخاف قبل ما أتكلم وأحسب كل كلمة.. طلعت بدرس مهم: عمري ما أجي على نفسي عشان حد. تعلمت أن أضع حدودًا لعلاقتي مع الآخرين.',
-      views: 189,
-      comments: 24,
-      likes: 36,
-      category: 'relationships',
-      readTime: 4
-    },
-    {
-      id: 3,
-      author: 'أحمد المتولي',
-      avatar: 'AM',
-      date: '10 يناير 2026',
-      content: 'الاكتئاب مش دايماً دموع.. أصعب خطوة كانت إني أقول: أنا محتاج دكتور. العلاج مش ضعف، هو خطوة الشفاء والتعافي.',
-      views: 312,
-      comments: 31,
-      likes: 58,
-      category: 'depression',
-      readTime: 6
-    },
-    {
-      id: 4,
-      author: 'إسلام فؤاد',
-      avatar: 'EF',
-      date: '8 يناير 2026',
-      content: 'أصعب يوم في التعافي مش أول يوم.. لكن فخور إني مكمل. كل يوم أختار أن أعيش، هو انتصار جديد على الأفكار السلبية.',
-      views: 276,
-      comments: 22,
-      likes: 47,
-      category: 'addiction',
-      readTime: 7
-    },
-    {
-      id: 5,
-      author: 'نورا علي',
-      avatar: 'NA',
-      date: '5 يناير 2026',
-      content: 'أصعب يوم في التعافي مش أول يوم.. لكن فخور إني مكمل. تعلمت أن أحب نفسي حتى في أسوأ الأوقات.',
-      views: 198,
-      comments: 15,
-      likes: 33,
-      category: 'anxiety',
-      readTime: 4
+  // Load stories
+  useEffect(() => {
+    loadStories();
+  }, [activeFilter]);
+
+  const loadStories = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        category: activeFilter === 'all' ? '' : activeFilter,
+        sort: 'newest',
+        page: 1,
+        limit: 12,
+      };
+      
+      const data = await storiesAPI.getAll(params);
+      setStories(data.stories || []);
+      setPagination(data.pagination || { currentPage: 1, totalPages: 1, total: 0 });
+    } catch (error) {
+      console.error('Failed to load stories:', error);
+      showError('فشل تحميل القصص');
+      setStories([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const stats = {
+    total: stories.length,
+    readers: stories.reduce((acc, s) => acc + (s.views || 0), 0),
+    engagement: stories.reduce((acc, s) => acc + (s.likes?.length || 0), 0),
+  };
 
   const filters = [
     { id: 'all', label: 'الكل', icon: 'fa-layer-group', color: 'from-blue-500 to-cyan-500' },
@@ -217,7 +195,13 @@ const StoriesPage = () => {
 
               {showSubmitForm && (
                 <div className="mt-12 text-right">
-                  <StoryForm onClose={() => setShowSubmitForm(false)} />
+                  <StoryForm 
+                    onClose={() => setShowSubmitForm(false)} 
+                    onSuccess={() => {
+                      setShowSubmitForm(false);
+                      loadStories();
+                    }} 
+                  />
                 </div>
               )}
             </div>
@@ -362,7 +346,9 @@ const StoryCard = ({ story, delay }) => {
 };
 
 // Story Form Component
-const StoryForm = ({ onClose }) => {
+const StoryForm = ({ onClose, onSuccess }) => {
+  const { success, error: showError } = useToast();
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -370,11 +356,26 @@ const StoryForm = ({ onClose }) => {
     isAnonymous: false,
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle submission logic here
-    console.log('Story submitted:', formData);
-    onClose();
+    
+    if (!formData.category) {
+      showError('يرجى اختيار تصنيف القصة');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await storiesAPI.create(formData);
+      success('تم إرسال قصتك بنجاح! ستظهر بعد المراجعة');
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error('Failed to submit story:', error);
+      showError(error.message || 'فشل إرسال القصة');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -453,10 +454,20 @@ const StoryForm = ({ onClose }) => {
       <div className="flex gap-4 pt-4">
         <button
           type="submit"
-          className="flex-1 px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-bold hover:shadow-xl hover:shadow-amber-500/40 transition-all hover:scale-105"
+          disabled={submitting}
+          className="flex-1 px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-bold hover:shadow-xl hover:shadow-amber-500/40 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <i className="fas fa-paper-plane ml-2"></i>
-          نشر القصة
+          {submitting ? (
+            <>
+              <i className="fas fa-spinner fa-spin ml-2"></i>
+              جاري الإرسال...
+            </>
+          ) : (
+            <>
+              <i className="fas fa-paper-plane ml-2"></i>
+              نشر القصة
+            </>
+          )}
         </button>
         <button
           type="button"

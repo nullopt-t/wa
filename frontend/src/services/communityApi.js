@@ -163,10 +163,83 @@ export const reportsAPI = {
   }),
 };
 
+// Stories API
+export const storiesAPI = {
+  // Get all stories
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/stories${queryString ? `?${queryString}` : ''}`, {
+      method: 'GET',
+    });
+  },
+
+  // Get single story
+  getById: (id) => apiRequest(`/stories/${id}`, {
+    method: 'GET',
+  }),
+
+  // Create story
+  create: (storyData) => apiRequest('/stories', {
+    method: 'POST',
+    body: JSON.stringify(storyData),
+  }),
+
+  // Update story
+  update: (id, storyData) => apiRequest(`/stories/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(storyData),
+  }),
+
+  // Delete story
+  delete: (id) => apiRequest(`/stories/${id}`, {
+    method: 'DELETE',
+  }),
+
+  // Get user's stories
+  getByUser: (userId, page = 1) => apiRequest(`/stories/user/${userId}?page=${page}`, {
+    method: 'GET',
+  }),
+
+  // Like/Unlike story
+  like: (id) => apiRequest(`/stories/${id}/like`, {
+    method: 'POST',
+  }),
+
+  // Save/Unsave story
+  save: (id) => apiRequest(`/stories/${id}/save`, {
+    method: 'POST',
+  }),
+
+  // Get saved stories
+  getSaved: (page = 1) => apiRequest(`/stories/saved/list?page=${page}`, {
+    method: 'GET',
+  }),
+
+  // Admin: Get all stories
+  getAllForAdmin: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/stories/admin/all${queryString ? `?${queryString}` : ''}`, {
+      method: 'GET',
+    });
+  },
+
+  // Admin: Moderate story
+  moderate: (id, status) => apiRequest(`/stories/admin/${id}/moderate?status=${status}`, {
+    method: 'PATCH',
+  }),
+
+  // Admin: Get statistics
+  getStats: () => apiRequest('/stories/admin/stats', {
+    method: 'GET',
+  }),
+};
+
 export default {
   categories: categoriesAPI,
   posts: postsAPI,
   comments: commentsAPI,
+  reports: reportsAPI,
+  stories: storiesAPI,
 };
 
 // Users API (Admin)

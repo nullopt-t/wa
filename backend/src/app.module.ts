@@ -17,6 +17,7 @@ import { FutureMessageModule } from './future-message/future-message.module';
 import { ChatModule } from './chat/chat.module';
 import { VideoModule } from './video/video.module';
 import { CommentModule } from './comment/comment.module';
+import { StoryModule } from './story/story.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { CommentModule } from './comment/comment.module';
     ChatModule,
     VideoModule,
     CommentModule,
+    StoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
