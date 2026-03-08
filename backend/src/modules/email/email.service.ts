@@ -66,6 +66,7 @@ export class EmailService {
       firstName,
       verificationUrl,
       email,
+      currentYear: new Date().getFullYear(),
     });
 
     const mailOptions = {
@@ -91,6 +92,7 @@ export class EmailService {
     const html = this.renderTemplate(this.templates.passwordReset, {
       firstName,
       resetUrl,
+      currentYear: new Date().getFullYear(),
     });
 
     const mailOptions = {
@@ -116,6 +118,7 @@ export class EmailService {
     const html = this.renderTemplate(this.templates.welcome, {
       firstName,
       dashboardUrl,
+      currentYear: new Date().getFullYear(),
     });
 
     const mailOptions = {
@@ -154,7 +157,7 @@ export class EmailService {
       deliveredDate: this.formatDate(deliveredDate),
       recipientEmail,
       dashboardUrl,
-      new Date: new Date(),
+      currentYear: new Date().getFullYear(),
     });
 
     const mailOptions = {
