@@ -16,11 +16,11 @@ export class EmailService {
   };
 
   constructor(private configService: ConfigService) {
-    // Load email templates
+    // Load email templates (EJS format)
     this.templates = {
-      verification: this.loadTemplate('verification.template.html'),
-      passwordReset: this.loadTemplate('password-reset.template.html'),
-      welcome: this.loadTemplate('welcome.template.html'),
+      verification: this.loadTemplate('verification.template.ejs'),
+      passwordReset: this.loadTemplate('password-reset.template.ejs'),
+      welcome: this.loadTemplate('welcome.template.ejs'),
       futureMessage: this.loadTemplate('future-message.template.ejs'),
     };
 
