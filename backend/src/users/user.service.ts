@@ -2,10 +2,7 @@ import { Injectable, NotFoundException, Logger, BadRequestException } from '@nes
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
-import { RegisterUserDto, RegisterTherapistDto, UserRole, ChangePasswordDto } from '../auth/dto/auth.dto';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject } from '@nestjs/common';
-import { Cache } from 'cache-manager';
+import { RegisterUserDto, RegisterTherapistDto, RegisterUserResponse, UserRole, ChangePasswordDto } from '../auth/dto/auth.dto';
 import { HashService } from '../modules/hash/hash.service';
 
 @Injectable()
@@ -14,45 +11,21 @@ export class UserService {
 
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private hashService: HashService,
   ) { }
 
-  async findByEmail(email: string): Promise<(Omit<User, 'password'> & { password: string }) | { success: boolean; message: string; emailSent: boolean } | null> {
-    // Try to get from cache first
-    const cachedUser = await this.cacheManager.get<Omit<User, 'password'>>(`user:email:${email}`);
-    if (cachedUser) {
-      // Get the full user from DB to include password for validation
-      const user = await this.userModel.findOne({ email }).exec();
-      if (user) {
-        return user.toObject();
-      }
-    }
-
+  async findByEmail(email: string): Promise<(Omit<User, 'password'> & { password: string }) | RegisterUserResponse | null> {
     const user = await this.userModel.findOne({ email }).exec();
     if (user) {
-      // Return full user object with password for validation
-      const userObj = user.toObject();
-      // Cache the user for 10 minutes (without password)
-      const { password, ...userWithoutPassword } = userObj;
-      await this.cacheManager.set(`user:email:${email}`, userWithoutPassword, 600000); // 10 minutes in milliseconds
-      return userObj; // Return full user object with password
+      return user.toObject();
     }
     return null;
   }
 
   async findById(id: string): Promise<Omit<User, 'password'> | null> {
-    // Try to get from cache first
-    const cachedUser = await this.cacheManager.get<Omit<User, 'password'>>(`user:id:${id}`);
-    if (cachedUser) {
-      return cachedUser;
-    }
-
     const user = await this.userModel.findById(id).exec();
     if (user) {
       const { password, ...userWithoutPassword } = user.toObject();
-      // Cache the user for 10 minutes (without password)
-      await this.cacheManager.set(`user:id:${id}`, userWithoutPassword, 600000); // 10 minutes in milliseconds
       return userWithoutPassword;
     }
     return null;
@@ -119,15 +92,6 @@ export class UserService {
       const userObjectWithoutPassword = createdUser.toObject();
       const { password, ...result } = userObjectWithoutPassword;
 
-      // Cache the newly created user (with error handling)
-      try {
-        await this.cacheManager.set(`user:email:${userData.email}`, result, 600000); // 10 minutes
-        await this.cacheManager.set(`user:id:${createdUser._id.toString()}`, result, 600000); // 10 minutes
-      } catch (cacheError) {
-        // If caching fails, log the error but don't fail the registration
-        this.logger.error('Error caching user:', cacheError);
-      }
-
       this.logger.log('User creation completed successfully');
       return result as Omit<User, 'password'>;
     } catch (error) {
@@ -167,12 +131,6 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Invalidate the cached user
-    await this.cacheManager.del(`user:id:${id}`);
-    if (updateData.email) {
-      await this.cacheManager.del(`user:email:${updateData.email}`);
-    }
-
     const { password, ...result } = updatedUser.toObject();
     return result as Omit<User, 'password'>;
   }
@@ -181,13 +139,6 @@ export class UserService {
     const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
     if (!deletedUser) {
       throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    // Invalidate the cached user
-    await this.cacheManager.del(`user:id:${id}`);
-    const userObj = deletedUser.toObject();
-    if (userObj.email) {
-      await this.cacheManager.del(`user:email:${userObj.email}`);
     }
   }
 
@@ -224,10 +175,6 @@ export class UserService {
     // Update the password
     await this.userModel.findByIdAndUpdate(userId, { password: hashedNewPassword });
 
-    // Invalidate cached user
-    await this.cacheManager.del(`user:id:${userId}`);
-    await this.cacheManager.del(`user:email:${user.email}`);
-
     return { message: 'Password changed successfully' };
   }
 
@@ -240,9 +187,5 @@ export class UserService {
 
     // Update the password
     await this.userModel.findOneAndUpdate({ email }, { password: hashedPassword });
-
-    // Invalidate cached user
-    await this.cacheManager.del(`user:id:${user._id}`);
-    await this.cacheManager.del(`user:email:${email}`);
   }
 }
