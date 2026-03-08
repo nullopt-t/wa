@@ -314,10 +314,6 @@ const StoryCard = ({ story, delay, isAuthenticated, onLikeSuccess }) => {
                 <i className="far fa-clock"></i>
                 {story.readTime} دقائق
               </span>
-              <span className="flex items-center gap-1.5">
-                <i className="far fa-eye"></i>
-                {story.views}
-              </span>
             </div>
             
             <div className="flex items-center gap-2">
