@@ -1,6 +1,6 @@
 // services/therapistApi.js
 import apiRequest from '../api.js';
-import { getApiUrl } from '../config.js';
+import { API_URL } from '../config.js';
 
 export const therapistAPI = {
   // Get full dashboard data
@@ -27,7 +27,7 @@ export const therapistAPI = {
   // Upload avatar
   uploadAvatar: (formData) => {
     const token = localStorage.getItem('token');
-    return fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/therapist/profile/avatar`, {
+    return fetch(`${API_URL}/therapist/profile/avatar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

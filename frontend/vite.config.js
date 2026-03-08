@@ -13,17 +13,17 @@ export default defineConfig({
     strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
       },
       '/upload': {
-        target: 'http://localhost:4000',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
       },
       '/uploads': {
-        target: 'http://localhost:4000',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
       },

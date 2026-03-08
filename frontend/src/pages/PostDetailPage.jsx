@@ -6,6 +6,7 @@ import AnimatedItem from '../components/AnimatedItem.jsx';
 import PostCard from '../components/community/PostCard.jsx';
 import CommentSection from '../components/community/CommentSection.jsx';
 import { postsAPI } from '../services/communityApi.js';
+import { API_URL } from '../config.js';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -31,8 +32,7 @@ const PostDetailPage = () => {
     try {
       setLoading(true);
       // Use environment variable for API URL
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-      let apiUrl = `${API_BASE_URL}/community/posts/detail/${postId}`;
+      let apiUrl = `${API_URL}/community/posts/detail/${postId}`;
 
       console.log('Fetching from:', apiUrl);
       const response = await fetch(apiUrl);

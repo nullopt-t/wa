@@ -4,8 +4,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import { io } from 'socket.io-client';
 import DOMPurify from 'dompurify';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
+import { API_URL, SOCKET_URL } from '../config.js';
 
 const ChatbotPage = () => {
   const { isAuthenticated, user, token } = useAuth();

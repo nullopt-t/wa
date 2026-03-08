@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { getApiUrl } from '../../config.js';
+import { getApiUrl, API_URL } from '../../config.js';
 
 // Quill editor modules configuration - NO image button since we have separate cover image
 const quillModules = {
@@ -124,8 +124,7 @@ const ArticleForm = ({ article, onSubmit, onCancel, disabled = false }) => {
       const formDataUpload = new FormData();
       formDataUpload.append('image', file);
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-      const response = await fetch(`${API_BASE_URL}/upload/article-cover`, {
+      const response = await fetch(`${API_URL}/upload/article-cover`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

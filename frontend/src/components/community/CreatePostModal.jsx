@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../config.js';
 
 const CreatePostModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -85,8 +86,7 @@ const CreatePostModal = ({ onClose, onSubmit }) => {
           formDataImages.append('images', image);
         });
 
-        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+        const uploadResponse = await fetch(`${API_URL}/upload`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
