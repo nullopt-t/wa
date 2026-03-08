@@ -146,11 +146,11 @@ const AdminStories = () => {
         <div className="grid gap-4 md:gap-6">
           {stories.map((story, index) => (
             <AnimatedItem key={story._id} type="slideUp" delay={index * 0.05}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-4 md:p-6 border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/50 transition-all">
+              <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-4 md:p-6 border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/50 transition-all overflow-hidden">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-3 md:gap-4 flex-1">
-                    <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-bold text-base md:text-lg flex-shrink-0">
+                  <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
+                    <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-bold text-base md:text-lg flex-shrink-0 overflow-hidden">
                       {story.authorId?.avatar ? (
                         <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${story.authorId.avatar}`} alt={story.authorId?.firstName} className="w-full h-full object-cover rounded-xl md:rounded-2xl" />
                       ) : (
@@ -158,15 +158,15 @@ const AdminStories = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-base md:text-lg font-bold text-[var(--text-primary)] truncate">{story.authorId?.firstName || 'مجهول'}</h3>
+                      <h3 className="text-base md:text-lg font-bold text-[var(--text-primary)] truncate max-w-full">{story.authorId?.firstName || 'مجهول'}</h3>
                       <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-[var(--text-secondary)] mt-1">
-                        <span className="truncate">{story.authorId?.email}</span>
-                        <span>•</span>
-                        <span className="whitespace-nowrap">{new Date(story.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <span className="truncate max-w-[150px] sm:max-w-[200px] break-all">{story.authorId?.email}</span>
+                        <span className="flex-shrink-0">•</span>
+                        <span className="whitespace-nowrap flex-shrink-0">{new Date(story.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-wrap justify-center sm:justify-end">
+                  <div className="flex gap-2 flex-wrap justify-center sm:justify-end flex-shrink-0">
                     {getStatusBadge(story.status)}
                     {getCategoryBadge(story.category)}
                   </div>
@@ -174,28 +174,28 @@ const AdminStories = () => {
 
                 {/* Title & Content */}
                 <div className="mb-6">
-                  <h4 className="text-lg md:text-xl font-bold text-[var(--text-primary)] mb-3">{story.title}</h4>
-                  <div className="bg-[var(--bg-secondary)] rounded-xl p-4 md:p-5 border border-[var(--border-color)]/20">
-                    <p className="text-sm md:text-base text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words">
+                  <h4 className="text-lg md:text-xl font-bold text-[var(--text-primary)] mb-3 break-words max-w-full">{story.title}</h4>
+                  <div className="bg-[var(--bg-secondary)] rounded-xl p-4 md:p-5 border border-[var(--border-color)]/20 max-h-64 overflow-y-auto">
+                    <p className="text-sm md:text-base text-[var(--text-primary)] leading-relaxed break-words break-all">
                       {story.content}
                     </p>
                   </div>
                 </div>
 
                 {/* Stats */}
-                <div className="flex flex-wrap items-center gap-4 md:gap-6 text-xs md:text-sm text-[var(--text-secondary)] mb-6 pb-4 md:pb-6 border-b border-[var(--border-color)]/20">
-                  <span className="flex items-center gap-1.5 md:gap-2">
+                <div className="flex flex-wrap items-center gap-3 md:gap-6 text-xs md:text-sm text-[var(--text-secondary)] mb-6 pb-4 md:pb-6 border-b border-[var(--border-color)]/20">
+                  <span className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                     <i className="far fa-eye"></i>
-                    {story.views} مشاهدة
+                    {story.views}
                   </span>
-                  <span className="flex items-center gap-1.5 md:gap-2">
+                  <span className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                     <i className="far fa-clock"></i>
-                    {story.readTime} دقائق
+                    {story.readTime} د
                   </span>
                   {story.likes?.length > 0 && (
-                    <span className="flex items-center gap-1.5 md:gap-2">
+                    <span className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                       <i className="far fa-heart"></i>
-                      {story.likes.length} إعجاب
+                      {story.likes.length}
                     </span>
                   )}
                 </div>
@@ -208,20 +208,20 @@ const AdminStories = () => {
                         setStoryToModerate(story);
                         setShowApproveDialog(true);
                       }}
-                      className="flex-1 px-4 md:px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center gap-2 text-sm md:text-base"
+                      className="flex-1 px-4 md:px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap"
                     >
                       <i className="fas fa-check-circle"></i>
-                      اعتماد القصة
+                      اعتماد
                     </button>
                     <button
                       onClick={() => {
                         setStoryToModerate(story);
                         setShowRejectDialog(true);
                       }}
-                      className="flex-1 px-4 md:px-6 py-3 border-2 border-red-500 text-red-500 rounded-xl font-semibold hover:bg-red-500/10 transition-all flex items-center justify-center gap-2 text-sm md:text-base"
+                      className="flex-1 px-4 md:px-6 py-3 border-2 border-red-500 text-red-500 rounded-xl font-semibold hover:bg-red-500/10 transition-all flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap"
                     >
                       <i className="fas fa-times-circle"></i>
-                      رفض القصة
+                      رفض
                     </button>
                   </div>
                 )}
@@ -229,14 +229,14 @@ const AdminStories = () => {
                 {story.status === 'approved' && (
                   <div className="text-center py-3 text-green-500 text-sm md:text-base">
                     <i className="fas fa-check-circle ml-2"></i>
-                    قصة معتمدة
+                    معتمدة
                   </div>
                 )}
 
                 {story.status === 'rejected' && (
                   <div className="text-center py-3 text-red-500 text-sm md:text-base">
                     <i className="fas fa-times-circle ml-2"></i>
-                    قصة مرفوضة
+                    مرفوضة
                   </div>
                 )}
               </div>
