@@ -14,8 +14,8 @@ export class Post {
   @Prop({ required: true, maxlength: 5000 })
   content: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Category', required: true })
-  categoryId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'Category', required: false })
+  categoryId?: Types.ObjectId;
 
   @Prop([String])
   tags?: string[];

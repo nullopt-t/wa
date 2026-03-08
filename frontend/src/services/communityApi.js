@@ -4,29 +4,29 @@ import { apiRequest } from '../api.js';
 // Categories API
 export const categoriesAPI = {
   // Get all categories
-  getAll: () => apiRequest('/categories', {
+  getAll: () => apiRequest('/community/categories', {
     method: 'GET',
   }),
 
   // Get single category
-  getById: (id) => apiRequest(`/categories/${id}`, {
+  getById: (id) => apiRequest(`/community/categories/${id}`, {
     method: 'GET',
   }),
 
   // Create category (admin)
-  create: (categoryData) => apiRequest('/categories', {
+  create: (categoryData) => apiRequest('/community/categories', {
     method: 'POST',
     body: JSON.stringify(categoryData),
   }),
 
   // Update category (admin)
-  update: (id, categoryData) => apiRequest(`/categories/${id}`, {
+  update: (id, categoryData) => apiRequest(`/community/categories/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(categoryData),
   }),
 
   // Delete category (admin)
-  delete: (id) => apiRequest(`/categories/${id}`, {
+  delete: (id) => apiRequest(`/community/categories/${id}`, {
     method: 'DELETE',
   }),
 };

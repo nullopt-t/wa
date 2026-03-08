@@ -6,6 +6,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import EditUserModal from '../../components/admin/EditUserModal.jsx';
 import AdminFilters from '../../components/admin/AdminFilters.jsx';
 import { usersAPI } from '../../services/communityApi.js';
+import { getApiUrl } from '../../config.js';
 
 const AdminUsers = () => {
   const { success, error: showError } = useToast();
@@ -47,13 +48,23 @@ const AdminUsers = () => {
 
   const handleEditSave = async (updatedData) => {
     try {
+      // Check if user is trying to deactivate themselves
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (userToEdit._id === currentUser._id && !updatedData.isActive) {
+        showError('لا يمكنك تعطيل حسابك الخاص!');
+        return;
+      }
+
       await usersAPI.update(userToEdit._id, updatedData);
       success('تم تحديث المستخدم بنجاح');
       setShowEditModal(false);
       setUserToEdit(null);
       loadUsers();
     } catch (error) {
-      showError('فشل تحديث المستخدم');
+      // Show specific error message
+      const errorMessage = error.message || 'فشل تحديث المستخدم';
+      showError(errorMessage);
+      console.error('Update user error:', error);
     }
   };
 
@@ -294,7 +305,7 @@ const AdminUsers = () => {
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold flex-shrink-0">
                               {avatar ? (
-                                <img src={avatar.startsWith('/') ? `http://localhost:4000${avatar}` : avatar} alt={displayName} className="w-full h-full rounded-full object-cover" />
+                                <img src={getApiUrl(avatar)} alt={displayName} className="w-full h-full rounded-full object-cover" />
                               ) : (
                                 initial
                               )}

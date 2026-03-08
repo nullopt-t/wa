@@ -7,7 +7,6 @@ import { settingsAPI } from '../../services/communityApi.js';
 const AdminSettings = () => {
   const { success, error: showError } = useToast();
   const [settings, setSettings] = useState({
-    siteName: 'وعي',
     siteDescription: 'منصة الصحة النفسية العربية',
     maintenanceMode: false,
     allowRegistrations: true,
@@ -48,19 +47,6 @@ const AdminSettings = () => {
               الإعدادات العامة
             </h2>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-                  اسم الموقع
-                </label>
-                <input
-                  type="text"
-                  name="siteName"
-                  value={settings.siteName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                   وصف الموقع

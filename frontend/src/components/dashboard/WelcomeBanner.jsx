@@ -1,4 +1,5 @@
 import React from 'react';
+import { getApiUrl } from '../../config.js';
 
 const WelcomeBanner = ({ therapist, stats }) => {
   // Get greeting based on time of day
@@ -31,8 +32,8 @@ const WelcomeBanner = ({ therapist, stats }) => {
           {/* Profile Badge */}
           <div className="flex items-center gap-3 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl">
             {therapist?.avatar ? (
-              <img 
-                src={therapist.avatar.startsWith('/') ? `http://localhost:4000${therapist.avatar}` : therapist.avatar} 
+              <img
+                src={getApiUrl(therapist.avatar)}
                 alt={therapist.firstName}
                 className="w-12 h-12 rounded-full object-cover border-2 border-white/50"
                 onError={(e) => {

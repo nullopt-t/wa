@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { profileAPI } from '../api.js';
+import { getApiUrl } from '../config.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
-
-const API_BASE_URL = 'http://localhost:4000';
-const API_ENDPOINT = '/api';
 
 const ProfileSettingsPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -53,7 +51,7 @@ const ProfileSettingsPage = () => {
   // Load user data
   useEffect(() => {
     if (user) {
-      const fullAvatarUrl = user.avatar?.startsWith('/') ? `http://localhost:4000${user.avatar}` : user.avatar || '';
+      const fullAvatarUrl = getApiUrl(user.avatar) || '';
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',

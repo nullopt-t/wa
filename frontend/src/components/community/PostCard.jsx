@@ -5,6 +5,7 @@ import { postsAPI } from '../../services/communityApi.js';
 import CommentSection from './CommentSection.jsx';
 import ReportModal from './ReportModal.jsx';
 import { createPortal } from 'react-dom';
+import { getApiUrl } from '../../config.js';
 
 const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) => {
   const navigate = useNavigate();
@@ -14,16 +15,19 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
   const [showReportModal, setShowReportModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showCopiedTooltip, setShowCopiedTooltip] = useState(false);
-  const [localViews, setLocalViews] = useState(post.views || 0);
   const [localCommentsCount, setLocalCommentsCount] = useState(post.commentsCount || 0);
   const contentRef = useRef(null);
   const cardRef = useRef(null);
   const [needsExpand, setNeedsExpand] = useState(false);
-  const viewTrackedRef = useRef(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const postId = post._id || post.id;
+
+  // Sync comments count when post prop changes
+  useEffect(() => {
+    setLocalCommentsCount(post.commentsCount || 0);
+  }, [post.commentsCount]);
 
   // Check if current user is the post author
   const userId = user?.id || user?._id;
@@ -84,64 +88,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
     return num.toString();
   };
 
-  // Track view when post scrolls into viewport (with Intersection Observer)
-  useEffect(() => {
-    const cardElement = cardRef.current;
-    if (!cardElement) return;
-
-    // Check localStorage first
-    const hasViewed = localStorage.getItem(`viewed_post_${postId}`);
-    if (hasViewed || viewTrackedRef.current) {
-      return; // Already tracked
-    }
-
-    // Create Intersection Observer to track when post is actually visible
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        
-        // Post is at least 50% visible for 1 second
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-          // Debounce: wait 1 second to ensure user actually sees it
-          setTimeout(() => {
-            if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && !viewTrackedRef.current) {
-              viewTrackedRef.current = true;
-              localStorage.setItem(`viewed_post_${postId}`, 'true');
-
-              // Optimistic update
-              setLocalViews(prev => prev + 1);
-
-              // Track view on server
-              postsAPI.trackView(postId)
-                .then(data => {
-                  if (data && data.views) {
-                    setLocalViews(data.views);
-                  }
-                })
-                .catch(err => console.error('Failed to track view:', err));
-
-              // Stop observing
-              observer.disconnect();
-            }
-          }, 1000); // 1 second visibility threshold
-        }
-      },
-      {
-        root: null, // viewport
-        rootMargin: '0px',
-        threshold: [0.5, 0.75, 1.0], // Trigger at 50%, 75%, 100% visibility
-      }
-    );
-
-    observer.observe(cardElement);
-
-    // Cleanup
-    return () => {
-      observer.disconnect();
-    };
-  }, [postId]);
-
-  // Check if content needs expand button - FIXED LOGIC
+  // Check if content needs expand button
   useEffect(() => {
     // Don't show button if already expanded
     if (isExpanded) {
@@ -164,7 +111,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
   // Get avatar URL (convert relative to absolute if needed)
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    return avatarPath.startsWith('/') ? `http://localhost:4000${avatarPath}` : avatarPath;
+    return getApiUrl(avatarPath);
   };
 
   const authorAvatar = getAvatarUrl(post.authorId?.avatar);
@@ -419,7 +366,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
             {post.images.length === 1 && (
               <div className="relative overflow-hidden rounded-xl cursor-pointer" onClick={() => openImageModal(0)}>
                 <img
-                  src={post.images[0].startsWith('/') ? `http://localhost:4000${post.images[0]}` : post.images[0]}
+                  src={getApiUrl(post.images[0])}
                   alt="Post image"
                   className="w-full max-h-[500px] object-cover hover:scale-105 transition-transform duration-300"
                 />
@@ -430,13 +377,13 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
             {post.images.length === 2 && (
               <div className="grid grid-cols-2 gap-2">
                 {post.images.map((image, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="relative overflow-hidden rounded-xl cursor-pointer"
                     onClick={() => openImageModal(index)}
                   >
                     <img
-                      src={image.startsWith('/') ? `http://localhost:4000${image}` : image}
+                      src={getApiUrl(image)}
                       alt={`Post image ${index + 1}`}
                       className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -449,36 +396,36 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
             {post.images.length >= 3 && (
               <div className="grid grid-cols-2 gap-2">
                 {/* First Image - Full Height */}
-                <div 
+                <div
                   className="row-span-2 relative overflow-hidden rounded-xl cursor-pointer"
                   onClick={() => openImageModal(0)}
                 >
                   <img
-                    src={post.images[0].startsWith('/') ? `http://localhost:4000${post.images[0]}` : post.images[0]}
+                    src={getApiUrl(post.images[0])}
                     alt="Post image 1"
                     className="w-full h-full min-h-[300px] object-cover hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                
+
                 {/* Second Image */}
-                <div 
+                <div
                   className="relative overflow-hidden rounded-xl cursor-pointer"
                   onClick={() => openImageModal(1)}
                 >
                   <img
-                    src={post.images[1].startsWith('/') ? `http://localhost:4000${post.images[1]}` : post.images[1]}
+                    src={getApiUrl(post.images[1])}
                     alt="Post image 2"
                     className="w-full h-40 object-cover hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                
+
                 {/* Third Image with "+X" overlay */}
-                <div 
+                <div
                   className="relative overflow-hidden rounded-xl cursor-pointer"
                   onClick={() => openImageModal(2)}
                 >
                   <img
-                    src={post.images[2].startsWith('/') ? `http://localhost:4000${post.images[2]}` : post.images[2]}
+                    src={getApiUrl(post.images[2])}
                     alt="Post image 3"
                     className="w-full h-40 object-cover hover:scale-105 transition-transform duration-300"
                   />
@@ -558,12 +505,6 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
               <i className="far fa-comment"></i>
               <span className="text-sm">{formatNumber(localCommentsCount)}</span>
             </button>
-
-            {/* Views */}
-            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-              <i className="far fa-eye"></i>
-              <span className="text-sm">{formatNumber(localViews)}</span>
-            </div>
           </div>
 
           {/* Mobile Action Buttons */}
@@ -676,7 +617,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, onNext, onPrev }) => {
       {/* Image Container - Centers the image */}
       <div className="flex-1 flex items-center justify-center p-4 md:p-8" style={{ zIndex: 10000 }}>
         <img
-          src={images[currentIndex].startsWith('/') ? `http://localhost:4000${images[currentIndex]}` : images[currentIndex]}
+          src={getApiUrl(images[currentIndex])}
           alt={`Post image ${currentIndex + 1}`}
           className="max-w-full max-h-full object-contain"
           onClick={(e) => e.stopPropagation()}

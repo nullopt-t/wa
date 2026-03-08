@@ -1,5 +1,5 @@
 // api.js
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 // Generic function to handle API requests
 export const apiRequest = async (endpoint, options = {}) => {
@@ -137,7 +137,8 @@ export const profileAPI = {
 
   uploadAvatar: (userId, formData) => {
     const token = localStorage.getItem('token');
-    return fetch(`http://localhost:4000/api/users/${userId}/avatar`, {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+    return fetch(`${API_URL}/api/users/${userId}/avatar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

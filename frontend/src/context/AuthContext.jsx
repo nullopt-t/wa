@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../api.js';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -46,7 +48,7 @@ export const AuthProvider = ({ children }) => {
           // Verify token in background (don't block UI)
           authAPI.getProfile().then(profile => {
             if (profile.avatar && profile.avatar.startsWith('/')) {
-              profile.avatar = `http://localhost:4000${profile.avatar}`;
+              profile.avatar = `${API_URL}${profile.avatar}`;
             }
             setUser(profile);
             localStorage.setItem('user', JSON.stringify(profile));
@@ -69,7 +71,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const profile = await authAPI.getProfile();
         if (profile.avatar && profile.avatar.startsWith('/')) {
-          profile.avatar = `http://localhost:4000${profile.avatar}`;
+          profile.avatar = `${API_URL}${profile.avatar}`;
         }
         setUser(profile);
         localStorage.setItem('user', JSON.stringify(profile));
@@ -83,7 +85,7 @@ export const AuthProvider = ({ children }) => {
 
             const profile = await authAPI.getProfile();
             if (profile.avatar && profile.avatar.startsWith('/')) {
-              profile.avatar = `http://localhost:4000${profile.avatar}`;
+              profile.avatar = `${API_URL}${profile.avatar}`;
             }
             setUser(profile);
             localStorage.setItem('user', JSON.stringify(profile));
@@ -119,7 +121,7 @@ export const AuthProvider = ({ children }) => {
       setRefreshToken(refresh_token);
 
       if (userData.avatar && userData.avatar.startsWith('/')) {
-        userData.avatar = `http://localhost:4000${userData.avatar}`;
+        userData.avatar = `${API_URL}${userData.avatar}`;
       }
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));

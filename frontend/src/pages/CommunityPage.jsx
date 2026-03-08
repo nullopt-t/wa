@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { postsAPI, categoriesAPI } from '../services/communityApi.js';
+import { postsAPI } from '../services/communityApi.js';
 import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import PostCard from '../components/community/PostCard.jsx';
@@ -34,7 +34,6 @@ const CommunityPage = () => {
   const { success, error: showError } = useToast();
 
   const [posts, setPosts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -48,10 +47,24 @@ const CommunityPage = () => {
     total: 0,
   });
   const [filters, setFilters] = useState({
-    category: '',
     tag: '',
     sort: 'createdAt',
   });
+  const [trendingTags, setTrendingTags] = useState([]);
+
+  // Load trending tags on mount
+  useEffect(() => {
+    loadTrendingTags();
+  }, []);
+
+  const loadTrendingTags = async () => {
+    try {
+      const tags = await postsAPI.getTrendingTags(10);
+      setTrendingTags(tags);
+    } catch (error) {
+      console.error('Failed to load trending tags:', error);
+    }
+  };
 
   // AbortController for cancelling pending requests
   const abortControllerRef = useRef(null);
@@ -72,15 +85,10 @@ const CommunityPage = () => {
     };
   }, []);
 
-  // Load categories
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
   // Load posts when filters change (resets to page 1) - with debouncing
   useEffect(() => {
     console.log('Filters changed:', filters);
-    
+
     // Clear any pending debounce
     if (filterDebounceRef.current) {
       clearTimeout(filterDebounceRef.current);
@@ -100,15 +108,6 @@ const CommunityPage = () => {
     };
   }, [filters]);
 
-  const loadCategories = async () => {
-    try {
-      const data = await categoriesAPI.getAll();
-      setCategories(data);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-    }
-  };
-
   const loadPosts = async (page = 1, resetPosts = false) => {
     try {
       setLoading(true);
@@ -126,7 +125,6 @@ const CommunityPage = () => {
       const params = {
         page,
         limit: 20,
-        ...(filters.category && { category: filters.category }),
         ...(filters.tag && { tag: filters.tag }),
         sort: filters.sort,
       };
@@ -308,43 +306,46 @@ const CommunityPage = () => {
           <div className="hidden lg:block lg:col-span-1">
             <AnimatedItem type="slideRight" delay={0.2}>
               <CommunitySidebar
-                categories={categories}
-                selectedCategory={filters.category}
                 selectedTag={filters.tag}
-                onSelectCategory={(categoryId) => setFilters({ ...filters, category: categoryId })}
                 onSelectTag={(tag) => setFilters({ ...filters, tag })}
-                onClearFilters={() => setFilters({ category: '', tag: '', sort: 'createdAt' })}
                 onClearTagFilter={handleClearTagFilter}
               />
             </AnimatedItem>
           </div>
 
-          {/* Mobile Filter Bar */}
+          {/* Mobile Filter Bar - Trending Tags */}
           <div className="lg:hidden mb-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              <button
-                onClick={() => setFilters({ category: '', tag: '', sort: 'createdAt' })}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  !filters.category && !filters.tag
-                    ? 'bg-[var(--primary-color)] text-white'
-                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
-                }`}
-              >
-                الكل
-              </button>
-              {categories.slice(0, 5).map((category) => (
+            <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-4 border border-[var(--border-color)]/30 mb-4">
+              <h3 className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <i className="fas fa-fire text-red-500"></i>
+                الوسوم الشائعة
+              </h3>
+              <div className="flex flex-wrap gap-2">
                 <button
-                  key={category._id}
-                  onClick={() => setFilters({ ...filters, category: category._id })}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    filters.category === category._id
+                  onClick={() => setFilters({ tag: '', sort: 'createdAt' })}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    !filters.tag
                       ? 'bg-[var(--primary-color)] text-white'
-                      : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
+                      : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--primary-color)] hover:text-white'
                   }`}
                 >
-                  {category.nameAr}
+                  الكل
                 </button>
-              ))}
+                {trendingTags.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setFilters({ ...filters, tag: item.tag })}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      filters.tag === item.tag
+                        ? 'bg-[var(--primary-color)] text-white'
+                        : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--primary-color)] hover:text-white'
+                    }`}
+                  >
+                    #{item.tag}
+                    <span className="text-[10px] opacity-60 mr-1">({item.count})</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -413,7 +414,6 @@ const CommunityPage = () => {
       {/* Create Post Modal */}
       {showCreateModal && (
         <CreatePostModal
-          categories={categories}
           onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreatePost}
         />
@@ -423,7 +423,6 @@ const CommunityPage = () => {
       {showEditModal && postToEdit && (
         <EditPostModal
           post={postToEdit}
-          categories={categories}
           onClose={() => {
             setShowEditModal(false);
             setPostToEdit(null);

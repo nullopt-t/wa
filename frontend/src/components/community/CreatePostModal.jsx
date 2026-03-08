@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const CreatePostModal = ({ categories, onClose, onSubmit }) => {
+const CreatePostModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    categoryId: '',
     tags: '',
     isAnonymous: false,
   });
@@ -86,7 +85,8 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
           formDataImages.append('images', image);
         });
 
-        const uploadResponse = await fetch('http://localhost:4000/api/upload', {
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -162,10 +162,6 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
       newErrors.content = 'المحتوى يجب أن يكون أقل من 5000 حرف';
     }
 
-    if (!formData.categoryId) {
-      newErrors.categoryId = 'يرجى اختيار قسم';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -178,13 +174,12 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
     }
 
     setLoading(true);
-    
+
     try {
       // Submit post with already uploaded images
       await onSubmit({
         title: formData.title,
         content: formData.content,
-        categoryId: formData.categoryId,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         images: uploadedImages,
         isAnonymous: formData.isAnonymous,
@@ -237,31 +232,6 @@ const CreatePostModal = ({ categories, onClose, onSubmit }) => {
               />
               {errors.title && (
                 <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-              )}
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block text-lg font-medium text-[var(--text-primary)] mb-2">
-                القسم <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 bg-[var(--bg-secondary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] ${
-                  errors.categoryId ? 'border-red-500' : 'border-[var(--border-color)]'
-                }`}
-              >
-                <option value="">اختر القسم...</option>
-                {categories.map((category) => (
-                  <option key={category._id} value={category._id}>
-                    {category.nameAr}
-                  </option>
-                ))}
-              </select>
-              {errors.categoryId && (
-                <p className="text-red-500 text-sm mt-1">{errors.categoryId}</p>
               )}
             </div>
 

@@ -50,6 +50,10 @@ export class Report {
 
   @Prop({ maxlength: 1000 })
   adminNotes?: string;
+
+  // Store content snapshot at time of reporting (in case content is deleted)
+  @Prop({ type: String, maxlength: 5000 })
+  contentSnapshot?: string;
 }
 
 export const ReportSchema = SchemaFactory.createForClass(Report);

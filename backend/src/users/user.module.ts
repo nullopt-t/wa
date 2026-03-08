@@ -10,7 +10,7 @@ import { HashModule } from '../modules/hash/hash.module';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    RedisCacheModule, // Import CacheModule to make CACHE_MANAGER available
+    RedisCacheModule,
     HashModule,
   ],
   controllers: [UserController, ProfileController],

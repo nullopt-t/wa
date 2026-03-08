@@ -383,8 +383,9 @@ export class PostService {
 
   // Get trending tags (most used in approved posts)
   async getTrendingTags(limit = 10): Promise<any[]> {
-    const tags = await this.postModel.aggregate([
-      { $match: { status: 'approved' } },
+    // First try to get tags from approved posts
+    let tags = await this.postModel.aggregate([
+      { $match: { status: 'approved', tags: { $exists: true, $ne: [] } } },
       { $unwind: '$tags' },
       {
         $group: {
@@ -395,6 +396,22 @@ export class PostService {
       { $sort: { count: -1 } },
       { $limit: limit },
     ]).exec();
+
+    // If no tags found, try all posts (for development/testing)
+    if (tags.length === 0) {
+      tags = await this.postModel.aggregate([
+        { $match: { tags: { $exists: true, $ne: [] } } },
+        { $unwind: '$tags' },
+        {
+          $group: {
+            _id: '$tags',
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: limit },
+      ]).exec();
+    }
 
     return tags.map(tag => ({
       tag: tag._id,

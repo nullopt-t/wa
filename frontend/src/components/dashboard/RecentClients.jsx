@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getApiUrl } from '../../config.js';
 
 const RecentClients = ({ clients }) => {
   const getProgressBadge = (progress) => {
@@ -67,8 +68,8 @@ const RecentClients = ({ clients }) => {
                   <td className="py-4">
                     <div className="flex items-center gap-3">
                       {client.avatar ? (
-                        <img 
-                          src={client.avatar.startsWith('/') ? `http://localhost:4000${client.avatar}` : client.avatar} 
+                        <img
+                          src={getApiUrl(client.avatar)}
                           alt={client.firstName}
                           className="w-10 h-10 rounded-full object-cover"
                           onError={(e) => {

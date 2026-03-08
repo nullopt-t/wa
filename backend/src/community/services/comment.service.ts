@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { InjectModel, InjectConnection } from '@nestjs/mongoose';
+import { Model, Types, Connection } from 'mongoose';
 import { Comment, CommentDocument } from '../schemas/comment.schema';
 import { Post, PostDocument } from '../schemas/post.schema';
 import { CreateCommentDto, UpdateCommentDto } from '../dto/comment.dto';
@@ -10,6 +10,7 @@ export class CommentService {
   constructor(
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
+    @InjectConnection() private connection: Connection,
   ) {}
 
   // Create comment
@@ -129,32 +130,56 @@ export class CommentService {
       .exec();
   }
 
-  // Delete comment
+  // Delete comment (soft delete - just hide it)
   async delete(userId: string, id: string): Promise<void> {
     const comment = await this.commentModel.findById(id).exec();
-    
+
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
 
-    // Check if user owns the comment
+    // Check if user owns the comment (admins can delete any comment)
     if (comment.authorId.toString() !== userId) {
-      throw new ForbiddenException('You can only delete your own comments');
+      // Check if user is admin using direct connection
+      const userModel = this.connection.model('User');
+      const user = await userModel.findById(userId).exec();
+      if (!user || user.role !== 'admin') {
+        throw new ForbiddenException('You can only delete your own comments');
+      }
     }
 
-    // Decrement post's commentsCount
-    await this.postModel.findByIdAndUpdate(comment.postId, {
-      $inc: { commentsCount: -1 },
+    // Soft delete: Just hide the comment by changing status
+    // Don't actually remove from database (preserves reports and context)
+    const updateResult = await this.commentModel.findByIdAndUpdate(id, {
+      status: 'deleted',
+      content: '[تم حذف هذا التعليق]', // Replace content with placeholder
     }).exec();
 
-    // If it's a reply, decrement parent comment's replies count
-    if (comment.parentId) {
-      await this.commentModel.findByIdAndUpdate(comment.parentId, {
-        $inc: { repliesCount: -1 },
-      }).exec();
-    }
+    // Only decrement count if comment wasn't already deleted
+    if (updateResult && comment.status !== 'deleted') {
+      // Decrement post's commentsCount
+      try {
+        const countUpdate = await this.postModel.findByIdAndUpdate(comment.postId, {
+          $inc: { commentsCount: -1 },
+        }).exec();
+        console.log(`Updated post ${comment.postId} commentsCount:`, countUpdate);
+      } catch (err) {
+        console.error('Failed to decrement commentsCount:', err);
+      }
 
-    await this.commentModel.findByIdAndDelete(id).exec();
+      // If it's a reply, decrement parent comment's replies count
+      if (comment.parentId) {
+        try {
+          await this.commentModel.findByIdAndUpdate(comment.parentId, {
+            $inc: { repliesCount: -1 },
+          }).exec();
+        } catch (err) {
+          console.error('Failed to decrement repliesCount:', err);
+        }
+      }
+    } else if (comment.status === 'deleted') {
+      console.log(`Comment ${id} already deleted, skipping count decrement`);
+    }
   }
 
   // Like comment

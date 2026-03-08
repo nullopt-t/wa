@@ -1,5 +1,6 @@
 // services/therapistApi.js
 import apiRequest from '../api.js';
+import { getApiUrl } from '../config.js';
 
 export const therapistAPI = {
   // Get full dashboard data
@@ -26,22 +27,12 @@ export const therapistAPI = {
   // Upload avatar
   uploadAvatar: (formData) => {
     const token = localStorage.getItem('token');
-    return fetch('http://localhost:4000/api/therapist/profile/avatar', {
+    return fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/therapist/profile/avatar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
       body: formData,
-    }).then(async (response) => {
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'حدث خطأ أثناء رفع الصورة');
-        }
-        return data;
-      }
-      return response;
     });
   },
 };

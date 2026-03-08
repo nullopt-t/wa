@@ -10,6 +10,9 @@ RUN npm ci --only=production
 # Copy the rest of the application code
 COPY . .
 
+# Create upload directories
+RUN mkdir -p ./data/uploads/posts ./data/uploads/articles
+
 # Expose port 3000
 EXPOSE 3000
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
 import { User } from './schemas/user.schema';
@@ -34,7 +34,7 @@ export class UserController {
   ): Promise<Omit<User, 'password'>> {
     // Create a copy of the DTO with proper typing for the service
     const updateData: Partial<User> = {};
-    
+
     // Copy each field individually to handle type conversions
     Object.keys(updateUserDto).forEach(key => {
       if (key === 'birthDate' && updateUserDto[key] && typeof updateUserDto[key] === 'string') {
@@ -48,7 +48,32 @@ export class UserController {
         updateData[key] = updateUserDto[key];
       }
     });
-    
+
+    return this.userService.update(id, updateData);
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async patch(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto
+  ): Promise<Omit<User, 'password'>> {
+    // Same as PUT but allows partial updates
+    const updateData: Partial<User> = {};
+
+    Object.keys(updateUserDto).forEach(key => {
+      if (key === 'birthDate' && updateUserDto[key] && typeof updateUserDto[key] === 'string') {
+        const dateValue = new Date(updateUserDto[key]);
+        if (!isNaN(dateValue.getTime())) {
+          updateData[key] = dateValue;
+        } else {
+          throw new BadRequestException('Invalid date format for birthDate');
+        }
+      } else if (updateUserDto[key] !== undefined) {
+        updateData[key] = updateUserDto[key];
+      }
+    });
+
     return this.userService.update(id, updateData);
   }
 

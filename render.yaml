@@ -1,0 +1,63 @@
+services:
+  # Backend API - NestJS
+  - type: web
+    name: waey-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+        required: true
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: waey-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: 30d
+      - key: CLIENT_URL
+        fromService:
+          type: web
+          name: waey-frontend
+          property: host
+      - key: CORS_ORIGINS
+        fromService:
+          type: web
+          name: waey-frontend
+          property: host
+
+  # Frontend - React/Vite Static Site
+  - type: web
+    name: waey-frontend
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: waey-backend
+          property: host
+
+  # Redis Cache
+  - type: redis
+    name: waey-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: noeviction

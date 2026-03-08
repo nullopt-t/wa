@@ -10,8 +10,8 @@ export class CreatePostDto {
   content: string;
 
   @IsMongoId()
-  @IsNotEmpty()
-  categoryId: string;
+  @IsOptional()
+  categoryId?: string;
 
   @IsArray()
   @IsOptional()

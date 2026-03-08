@@ -30,14 +30,10 @@ const PostDetailPage = () => {
   const loadPostData = async () => {
     try {
       setLoading(true);
-      // Try relative URL first (works with Vite proxy)
-      let apiUrl = `/api/community/posts/detail/${postId}`;
-      
-      // Fallback to absolute URL if needed
-      if (window.location.hostname === 'localhost') {
-        apiUrl = 'http://localhost:4000' + apiUrl;
-      }
-      
+      // Use environment variable for API URL
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      let apiUrl = `${API_BASE_URL}/community/posts/detail/${postId}`;
+
       console.log('Fetching from:', apiUrl);
       const response = await fetch(apiUrl);
       
@@ -216,6 +212,7 @@ const PostDetailPage = () => {
                   postId={postId}
                   postAuthorId={post.authorId?._id}
                   onCommentsChange={() => {}}
+                  onPostUpdate={loadPostData}
                 />
               </div>
             </AnimatedItem>

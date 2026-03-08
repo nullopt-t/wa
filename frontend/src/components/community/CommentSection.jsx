@@ -6,7 +6,7 @@ import CommentCard from './CommentCard.jsx';
 import ConfirmDialog from '../ConfirmDialog.jsx';
 import CommentTree from './CommentTree.jsx';
 
-const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
+const CommentSection = ({ postId, postAuthorId, onCommentsChange, onPostUpdate }) => {
   const { isAuthenticated, user } = useAuth();
   const { success, error: showError } = useToast();
 
@@ -130,6 +130,10 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange }) => {
       await commentsAPI.delete(commentToDelete);
       success('تم حذف التعليق بنجاح');
       loadComments();
+      // Refresh post data to update commentsCount
+      if (onPostUpdate) {
+        onPostUpdate();
+      }
     } catch (error) {
       showError(error.message || 'فشل حذف التعليق');
     } finally {

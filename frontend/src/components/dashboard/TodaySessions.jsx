@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getApiUrl } from '../../config.js';
 
 const TodaySessions = ({ sessions }) => {
   const [filter, setFilter] = useState('all');
@@ -101,8 +102,8 @@ const TodaySessions = ({ sessions }) => {
             >
               <div className="flex items-center gap-4">
                 {session.client?.avatar ? (
-                  <img 
-                    src={session.client.avatar.startsWith('/') ? `http://localhost:4000${session.client.avatar}` : session.client.avatar} 
+                  <img
+                    src={getApiUrl(session.client.avatar)}
                     alt={session.client.firstName}
                     className="w-12 h-12 rounded-full object-cover"
                     onError={(e) => {

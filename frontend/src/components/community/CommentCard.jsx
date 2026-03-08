@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ReportModal from './ReportModal.jsx';
+import { getApiUrl } from '../../config.js';
 
 const CommentCard = ({ comment, onLike, onDelete, onEdit, onReply, isAuthenticated, isDeleting = false, isPostAuthor = false, isReply = false }) => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const CommentCard = ({ comment, onLike, onDelete, onEdit, onReply, isAuthenticat
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    return avatarPath.startsWith('/') ? `http://localhost:4000${avatarPath}` : avatarPath;
+    return getApiUrl(avatarPath);
   };
 
   const authorAvatar = getAvatarUrl(comment.authorId?.avatar);

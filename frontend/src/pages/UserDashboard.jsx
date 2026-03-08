@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
+import { apiRequest } from '../api.js';
 
 const UserDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { error: showError } = useToast();
   const [dailyMood, setDailyMood] = useState(null);
-  const [recentActivity, setRecentActivity] = useState([]);
   const [recommendedContent, setRecommendedContent] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Redirect admin users to admin dashboard
   useEffect(() => {
@@ -17,31 +20,144 @@ const UserDashboard = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Show loading while auth is checking
-  if (authLoading) {
-    return (
-      <div className="bg-[var(--bg-primary)] min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
-      </div>
-    );
-  }
-
-  // Load user data from AuthContext
+  // Load real data
   useEffect(() => {
-    // Mock recent activity (replace with real API call)
-    setRecentActivity([
-      { id: 1, type: 'article', title: 'كيفية التعامل مع التوتر', date: '2024-01-20' },
-      { id: 2, type: 'habit', title: 'تم تسجيل عادة جديدة', date: '2024-01-19' },
-      { id: 3, type: 'community', title: 'تم نشر منشور في المجتمع', date: '2024-01-18' }
-    ]);
-
-    // Mock recommended content (replace with real API call)
-    setRecommendedContent([
-      { id: 1, title: 'مقالات عن إدارة التوتر', category: 'مقالات' },
-      { id: 2, title: 'تمارين اليقظة الذهنية', category: 'تمارين' },
-      { id: 3, title: 'بناء علاقات صحية', category: 'أدلة' }
-    ]);
+    loadDashboardData();
   }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Get user's preferences and history from localStorage
+      const userHistory = JSON.parse(localStorage.getItem('userReadingHistory') || '[]');
+      const userLikes = JSON.parse(localStorage.getItem('userLikes') || '[]');
+      const userSaves = JSON.parse(localStorage.getItem('userSaves') || '[]');
+      const todayMood = localStorage.getItem(`mood-${new Date().toDateString()}`);
+      
+      // Determine user interests based on their activity
+      const interests = [];
+      
+      // Get tags from history and likes
+      userHistory.forEach(item => {
+        if (item.tags) interests.push(...item.tags);
+      });
+      userLikes.forEach(item => {
+        if (item.tags) interests.push(...item.tags);
+      });
+      
+      // Count tag frequency
+      const tagCounts = {};
+      interests.forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+      
+      // Get top 3 interests
+      const topInterests = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([tag]) => tag);
+      
+      // Load articles and videos
+      const articlesData = await apiRequest('/articles?limit=20&status=published', { method: 'GET' }).catch(() => ({ articles: [] }));
+      const videosData = await apiRequest('/videos?limit=20', { method: 'GET' }).catch(() => ({ videos: [] }));
+      
+      const articles = articlesData.articles || [];
+      const videos = videosData.videos || [];
+      
+      // Score content based on user preferences
+      const scoreContent = (item) => {
+        let score = 0;
+        
+        // Boost if user liked/saved similar content
+        if (userLikes.some(liked => liked._id === item._id)) score += 10;
+        if (userSaves.some(saved => saved._id === item._id)) score += 10;
+        
+        // Boost if matches user's top interests
+        if (item.tags) {
+          item.tags.forEach(tag => {
+            if (topInterests.includes(tag)) score += 5;
+          });
+        }
+        
+        // Boost if featured
+        if (item.isFeatured) score += 3;
+        
+        // Boost recent content
+        const daysSinceCreated = (Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceCreated < 7) score += 2;
+        
+        // Mood-based recommendations
+        if (todayMood !== null) {
+          const mood = parseInt(todayMood);
+          // If feeling down (0-1), recommend uplifting content
+          if (mood <= 1 && item.tags?.some(t => ['سعادة', 'تحفيز', 'إيجابية'].includes(t))) {
+            score += 8;
+          }
+          // If feeling good (3-4), recommend educational content
+          if (mood >= 3 && item.tags?.some(t => ['تعليم', 'تطوير', 'نصائح'].includes(t))) {
+            score += 5;
+          }
+        }
+        
+        return score;
+      };
+      
+      // Combine and score all content
+      const allContent = [
+        ...articles.map(a => ({ 
+          id: a._id, 
+          title: a.title, 
+          category: 'مقالات',
+          type: 'article',
+          slug: a.slug || a._id,
+          tags: a.tags || [],
+          isFeatured: a.isFeatured,
+          createdAt: a.createdAt,
+          score: scoreContent(a)
+        })),
+        ...videos.map(v => ({ 
+          id: v._id, 
+          title: v.title, 
+          category: 'فيديوهات',
+          type: 'video',
+          url: v.videoUrl,
+          tags: v.tags || [],
+          isFeatured: v.isFeatured,
+          createdAt: v.createdAt,
+          score: scoreContent(v)
+        }))
+      ];
+      
+      // Sort by score (highest first) and pick top 5
+      const sorted = allContent.sort((a, b) => b.score - a.score);
+      setRecommendedContent(sorted.slice(0, 5));
+      
+      // Load today's mood if exists
+      if (todayMood) {
+        setDailyMood(parseInt(todayMood));
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      showError('فشل تحميل البيانات');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMoodSelect = async (moodIndex) => {
+    const moods = ['حزين', 'سيء', 'عادي', 'جيد', 'سعيد'];
+    const moodText = moods[moodIndex] || 'جيد';
+    
+    setDailyMood(moodIndex);
+    
+    // Save to localStorage
+    const today = new Date().toDateString();
+    localStorage.setItem(`mood-${today}`, moodIndex.toString());
+    
+    // TODO: Send to backend when mood tracking API is available
+    console.log(`Mood saved: ${moodText} (${moodIndex})`);
+  };
 
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen">
@@ -70,75 +186,37 @@ const UserDashboard = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Quick Stats and Goals */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Quick Stats */}
+          {/* Left Column - Quick Actions */}
+          <div className="lg:col-span-2">
+            {/* Quick Actions */}
             <AnimatedItem type="slideUp" delay={0.2}>
               <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">إحصائيات سريعة</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-[var(--bg-secondary)] p-4 rounded-xl text-center">
-                    <div className="text-2xl font-bold text-[var(--primary-color)]">12</div>
-                    <div className="text-[var(--text-secondary)]">أيام متصلة</div>
-                  </div>
-                  <div className="bg-[var(--bg-secondary)] p-4 rounded-xl text-center">
-                    <div className="text-2xl font-bold text-[var(--primary-color)]">24</div>
-                    <div className="text-[var(--text-secondary)]">تمارين أداءت</div>
-                  </div>
-                  <div className="bg-[var(--bg-secondary)] p-4 rounded-xl text-center">
-                    <div className="text-2xl font-bold text-[var(--primary-color)]">8</div>
-                    <div className="text-[var(--text-secondary)]">مقالات قرأت</div>
-                  </div>
-                  <div className="bg-[var(--bg-secondary)] p-4 rounded-xl text-center">
-                    <div className="text-2xl font-bold text-[var(--primary-color)]">5</div>
-                    <div className="text-[var(--text-secondary)]">مشاركات</div>
-                  </div>
-                </div>
-              </div>
-            </AnimatedItem>
-
-            {/* Therapy Goals */}
-            <AnimatedItem type="slideUp" delay={0.3}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">أهداف العلاج</h2>
-                <div className="space-y-4">
-                  {user?.therapyGoals?.map((goal, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-[var(--bg-secondary)] rounded-xl">
-                      <span className="text-[var(--text-primary)]">{goal}</span>
-                      <div className="flex space-x-2">
-                        <button className="px-3 py-1 bg-[var(--primary-color)] text-white rounded-lg text-sm">تحديث</button>
-                        <button className="px-3 py-1 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-lg text-sm border border-[var(--border-color)]">حذف</button>
-                      </div>
-                    </div>
-                  ))}
-                  <button className="w-full py-3 border-2 border-dashed border-[var(--border-color)] rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors">
-                    <i className="fas fa-plus ml-2"></i> إضافة هدف جديد
-                  </button>
-                </div>
-              </div>
-            </AnimatedItem>
-
-            {/* Recent Activity */}
-            <AnimatedItem type="slideUp" delay={0.4}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">النشاط الأخير</h2>
-                <div className="space-y-4">
-                  {recentActivity.map(activity => (
-                    <div key={activity.id} className="flex items-center p-4 bg-[var(--bg-secondary)] rounded-xl">
-                      <div className="w-10 h-10 bg-[var(--primary-color)] rounded-full flex items-center justify-center text-white mr-4">
-                        {activity.type === 'article' && <i className="fas fa-book"></i>}
-                        {activity.type === 'habit' && <i className="fas fa-check-circle"></i>}
-                        {activity.type === 'community' && <i className="fas fa-comments"></i>}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[var(--text-primary)] font-medium">{activity.title}</div>
-                        <div className="text-[var(--text-secondary)] text-sm">{activity.date}</div>
-                      </div>
-                      <button className="text-[var(--primary-color)] hover:text-[var(--primary-hover)]">
-                        <i className="fas fa-arrow-left"></i>
-                      </button>
-                    </div>
-                  ))}
+                <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">الوصول السريع</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <Link to="/categories" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
+                    <i className="fas fa-compass text-[var(--primary-color)] text-2xl block mb-2"></i>
+                    <span className="text-[var(--text-primary)]">التصنيفات</span>
+                  </Link>
+                  <Link to="/community" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
+                    <i className="fas fa-users text-[var(--primary-color)] text-2xl block mb-2"></i>
+                    <span className="text-[var(--text-primary)]">المجتمع</span>
+                  </Link>
+                  <Link to="/articles" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
+                    <i className="fas fa-newspaper text-[var(--primary-color)] text-2xl block mb-2"></i>
+                    <span className="text-[var(--text-primary)]">المقالات</span>
+                  </Link>
+                  <Link to="/videos" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
+                    <i className="fas fa-video text-[var(--primary-color)] text-2xl block mb-2"></i>
+                    <span className="text-[var(--text-primary)]">الفيديوهات</span>
+                  </Link>
+                  <Link to="/chatbot" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
+                    <i className="fas fa-robot text-[var(--primary-color)] text-2xl block mb-2"></i>
+                    <span className="text-[var(--text-primary)]">المساعد</span>
+                  </Link>
+                  <Link to="/profile-settings" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
+                    <i className="fas fa-user text-[var(--primary-color)] text-2xl block mb-2"></i>
+                    <span className="text-[var(--text-primary)]">الملف الشخصي</span>
+                  </Link>
                 </div>
               </div>
             </AnimatedItem>
@@ -150,21 +228,37 @@ const UserDashboard = () => {
             <AnimatedItem type="slideRight" delay={0.2}>
               <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
                 <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">مood اليوم</h2>
-                <div className="text-center mb-6">
-                  <div className="text-6xl mb-4">😊</div>
-                  <p className="text-[var(--text-primary)]">أنا بخير اليوم</p>
-                </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {['😢', '😞', '😐', '🙂', '😄'].map((emoji, index) => (
+                {dailyMood !== null ? (
+                  <div className="text-center mb-6">
+                    <div className="text-6xl mb-4">
+                      {['😢', '😞', '😐', '🙂', '😄'][dailyMood] || '😊'}
+                    </div>
+                    <p className="text-[var(--text-primary)]">
+                      {['حزين', 'سيء', 'عادي', 'جيد', 'سعيد'][dailyMood] || 'بخير'}
+                    </p>
                     <button
-                      key={index}
-                      className={`py-3 rounded-xl text-2xl ${index === 3 ? 'bg-[var(--primary-color)]' : 'bg-[var(--bg-secondary)]'}`}
-                      onClick={() => setDailyMood(index)}
+                      onClick={() => setDailyMood(null)}
+                      className="mt-4 text-sm text-[var(--primary-color)] hover:underline"
                     >
-                      {emoji}
+                      تغيير المزاج
                     </button>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[var(--text-secondary)] text-center mb-4">كيف تشعر اليوم؟</p>
+                    <div className="grid grid-cols-5 gap-2">
+                      {['😢', '😞', '😐', '🙂', '😄'].map((emoji, index) => (
+                        <button
+                          key={index}
+                          className="py-3 rounded-xl text-2xl bg-[var(--bg-secondary)] hover:bg-[var(--primary-color)] hover:scale-110 transition-all"
+                          onClick={() => handleMoodSelect(index)}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </AnimatedItem>
 
@@ -172,68 +266,34 @@ const UserDashboard = () => {
             <AnimatedItem type="slideRight" delay={0.3}>
               <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
                 <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">مقترحات لك</h2>
-                <div className="space-y-4">
-                  {recommendedContent.map(item => (
-                    <Link 
-                      key={item.id} 
-                      to="#" 
-                      className="block p-4 bg-[var(--bg-secondary)] rounded-xl hover:bg-[var(--bg-primary)] transition-colors"
-                    >
-                      <div className="text-[var(--text-primary)] font-medium">{item.title}</div>
-                      <div className="text-[var(--text-secondary)] text-sm">{item.category}</div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </AnimatedItem>
-
-            {/* Quick Actions */}
-            <AnimatedItem type="slideRight" delay={0.4}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">الوصول السريع</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <Link to="/categories" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
-                    <i className="fas fa-compass text-[var(--primary-color)] text-2xl block mb-2"></i>
-                    <span className="text-[var(--text-primary)]">التصنيفات</span>
-                  </Link>
-                  <Link to="/community" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
-                    <i className="fas fa-users text-[var(--primary-color)] text-2xl block mb-2"></i>
-                    <span className="text-[var(--text-primary)]">المجتمع</span>
-                  </Link>
-                  <Link to="/habits" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
-                    <i className="fas fa-check-circle text-[var(--primary-color)] text-2xl block mb-2"></i>
-                    <span className="text-[var(--text-primary)]">العادات</span>
-                  </Link>
-                  <Link to="/chatbot" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
-                    <i className="fas fa-robot text-[var(--primary-color)] text-2xl block mb-2"></i>
-                    <span className="text-[var(--text-primary)]">المساعد</span>
-                  </Link>
-                  <Link to="/profile-settings" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
-                    <i className="fas fa-user text-[var(--primary-color)] text-2xl block mb-2"></i>
-                    <span className="text-[var(--text-primary)]">الملف الشخصي</span>
-                  </Link>
-                  <Link to="/account-settings" className="p-4 bg-[var(--bg-secondary)] rounded-xl text-center hover:bg-[var(--bg-primary)] transition-colors">
-                    <i className="fas fa-cog text-[var(--primary-color)] text-2xl block mb-2"></i>
-                    <span className="text-[var(--text-primary)]">إعدادات الحساب</span>
-                  </Link>
-                </div>
-              </div>
-            </AnimatedItem>
-
-            {/* Support Resources */}
-            <AnimatedItem type="slideRight" delay={0.5}>
-              <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-                <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">الدعم الطارئ</h2>
-                <div className="space-y-3">
-                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-                    <div className="text-[var(--text-primary)] font-medium">الخط الساخن لل emergenies</div>
-                    <div className="text-red-500 font-bold text-lg">1234</div>
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--primary-color)]"></div>
                   </div>
-                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                    <div className="text-[var(--text-primary)] font-medium">الدعم النفسي</div>
-                    <div className="text-yellow-500 font-bold text-lg">5678</div>
+                ) : recommendedContent.length > 0 ? (
+                  <div className="space-y-3">
+                    {recommendedContent.map((item) => (
+                      <Link
+                        key={item.id}
+                        to={item.type === 'article' ? `/articles/${item.slug || item.id}` : '/videos'}
+                        className="block p-4 bg-[var(--bg-secondary)] rounded-xl hover:bg-[var(--bg-primary)] transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="text-[var(--text-primary)] font-medium">{item.title}</div>
+                            <div className="text-[var(--text-secondary)] text-sm">{item.category}</div>
+                          </div>
+                          <i className={`fas ${item.type === 'article' ? 'fa-newspaper' : 'fa-video'} text-[var(--primary-color)]`}></i>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center py-8 text-[var(--text-secondary)]">
+                    <i className="fas fa-inbox text-4xl mb-2"></i>
+                    <p>لا توجد توصيات حالياً</p>
+                  </div>
+                )}
               </div>
             </AnimatedItem>
           </div>

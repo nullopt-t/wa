@@ -32,8 +32,7 @@ const AdminLayout = ({ children, title }) => {
     { path: '/admin/users', icon: 'fa-users', label: 'المستخدمين' },
     { path: '/admin/articles', icon: 'fa-newspaper', label: 'المقالات' },
     { path: '/videos/manage', icon: 'fa-video', label: 'الفيديوهات' },
-    { path: '/admin/categories', icon: 'fa-folder', label: 'الأقسام' },
-    { path: '/admin/comments', icon: 'fa-comments', label: 'التعليقات' },
+    { path: '/admin/reports', icon: 'fa-flag', label: 'البلاغات' },
   ];
 
   return (

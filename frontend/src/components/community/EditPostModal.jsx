@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
-const EditPostModal = ({ post, categories, onClose, onSubmit }) => {
+const EditPostModal = ({ post, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: post?.title || '',
     content: post?.content || '',
-    categoryId: post?.categoryId?._id || '',
     tags: post?.tags?.join(', ') || '',
     isAnonymous: post?.isAnonymous || false,
   });
@@ -16,7 +15,6 @@ const EditPostModal = ({ post, categories, onClose, onSubmit }) => {
       setFormData({
         title: post.title || '',
         content: post.content || '',
-        categoryId: post.categoryId?._id || '',
         tags: post.tags?.join(', ') || '',
         isAnonymous: post.isAnonymous || false,
       });
@@ -51,10 +49,6 @@ const EditPostModal = ({ post, categories, onClose, onSubmit }) => {
       newErrors.content = 'المحتوى يجب أن يكون أقل من 5000 حرف';
     }
 
-    if (!formData.categoryId) {
-      newErrors.categoryId = 'يرجى اختيار قسم';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -71,7 +65,6 @@ const EditPostModal = ({ post, categories, onClose, onSubmit }) => {
       await onSubmit({
         title: formData.title,
         content: formData.content,
-        categoryId: formData.categoryId,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         isAnonymous: formData.isAnonymous,
       });
@@ -123,31 +116,6 @@ const EditPostModal = ({ post, categories, onClose, onSubmit }) => {
               />
               {errors.title && (
                 <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-              )}
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block text-lg font-medium text-[var(--text-primary)] mb-2">
-                القسم <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 bg-[var(--bg-secondary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] ${
-                  errors.categoryId ? 'border-red-500' : 'border-[var(--border-color)]'
-                }`}
-              >
-                <option value="">اختر القسم...</option>
-                {categories.map((category) => (
-                  <option key={category._id} value={category._id}>
-                    {category.nameAr}
-                  </option>
-                ))}
-              </select>
-              {errors.categoryId && (
-                <p className="text-red-500 text-sm mt-1">{errors.categoryId}</p>
               )}
             </div>
 

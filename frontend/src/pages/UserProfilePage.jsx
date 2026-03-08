@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import PostCard from '../components/community/PostCard.jsx';
 import { postsAPI } from '../services/communityApi.js';
+import { getApiUrl } from '../config.js';
 
 const UserProfilePage = () => {
   const { userId } = useParams();
@@ -155,7 +156,7 @@ const UserProfilePage = () => {
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white text-3xl font-bold flex-shrink-0">
                 {userProfile?.avatar ? (
                   <img
-                    src={userProfile.avatar.startsWith('/') ? `http://localhost:4000${userProfile.avatar}` : userProfile.avatar}
+                    src={getApiUrl(userProfile.avatar)}
                     alt={userProfile?.firstName}
                     className="w-full h-full object-cover rounded-full"
                   />

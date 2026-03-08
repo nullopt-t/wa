@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import ThemeToggle from './ThemeToggle';
 import NotificationsBell from './dashboard/NotificationsBell.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import { getApiUrl } from '../config.js';
 
 const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -105,7 +106,7 @@ const Header = () => {
                   >
                     {user?.avatar ? (
                       <img
-                        src={user.avatar.startsWith('/') ? `http://localhost:4000${user.avatar}` : user.avatar}
+                        src={getApiUrl(user.avatar)}
                         alt={user.firstName}
                         className="w-full h-full rounded-full object-cover"
                       />
@@ -122,8 +123,8 @@ const Header = () => {
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white text-2xl font-bold overflow-hidden flex-shrink-0">
                             {user?.avatar ? (
-                              <img 
-                                src={user.avatar.startsWith('/') ? `http://localhost:4000${user.avatar}` : user.avatar} 
+                              <img
+                                src={getApiUrl(user.avatar)}
                                 alt={user.firstName}
                                 className="w-full h-full object-cover"
                               />
@@ -233,8 +234,8 @@ const Header = () => {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden">
                   {user?.avatar ? (
-                    <img 
-                      src={user.avatar.startsWith('/') ? `http://localhost:4000${user.avatar}` : user.avatar} 
+                    <img
+                      src={getApiUrl(user.avatar)}
                       alt={user.firstName}
                       className="w-full h-full object-cover"
                     />

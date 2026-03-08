@@ -149,11 +149,27 @@ export class UpdateUserDto {
 
   @IsBoolean()
   @IsOptional()
+  isActive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isVerified?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
   emailNotifications?: boolean;
 
   @IsBoolean()
   @IsOptional()
   shareDataForResearch?: boolean;
+
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
+  @IsString()
+  @IsOptional()
+  role?: string; // 'user', 'admin', 'therapist'
 }
 
 export class ChangePasswordDto {

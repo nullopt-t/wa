@@ -18,17 +18,21 @@ export class ReportService {
   async create(userId: string, createReportDto: CreateReportDto): Promise<Report> {
     const { targetType, targetId, reason, description } = createReportDto;
 
-    // Verify target exists
+    let contentSnapshot = '';
+
+    // Verify target exists and get content snapshot
     if (targetType === 'post') {
       const post = await this.postModel.findById(targetId).exec();
       if (!post) {
         throw new NotFoundException('Post not found');
       }
+      contentSnapshot = post.content?.substring(0, 5000) || '';
     } else if (targetType === 'comment') {
       const comment = await this.commentModel.findById(targetId).exec();
       if (!comment) {
         throw new NotFoundException('Comment not found');
       }
+      contentSnapshot = comment.content?.substring(0, 5000) || '';
     }
 
     // Check if user already reported this target
@@ -41,6 +45,11 @@ export class ReportService {
       .exec();
 
     if (existingReport) {
+      // If existing report has no contentSnapshot, update it
+      if (!existingReport.contentSnapshot && contentSnapshot) {
+        existingReport.contentSnapshot = contentSnapshot;
+        await existingReport.save();
+      }
       throw new BadRequestException('You have already reported this content');
     }
 
@@ -51,7 +60,19 @@ export class ReportService {
       reason,
       description,
       status: ReportStatus.PENDING,
+      contentSnapshot, // Save content snapshot
     });
+
+    // Auto-hide reported content
+    if (targetType === 'comment') {
+      await this.commentModel.findByIdAndUpdate(targetId, {
+        status: 'reported',
+      });
+    } else if (targetType === 'post') {
+      await this.postModel.findByIdAndUpdate(targetId, {
+        status: 'reported',
+      });
+    }
 
     return createdReport.save();
   }

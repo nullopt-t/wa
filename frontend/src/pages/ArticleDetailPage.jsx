@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import ArticleCard from '../components/articles/ArticleCard.jsx';
 import { articlesAPI } from '../services/communityApi.js';
+import { getApiUrl } from '../config.js';
 
 const ArticleDetailPage = () => {
   const { articleId } = useParams();
@@ -92,7 +93,7 @@ const ArticleDetailPage = () => {
 
   const getCoverImageUrl = (coverImagePath) => {
     if (!coverImagePath) return null;
-    return coverImagePath.startsWith('/') ? `http://localhost:4000${coverImagePath}` : coverImagePath;
+    return getApiUrl(coverImagePath);
   };
 
   const coverImage = article ? getCoverImageUrl(article.coverImage) : null;
@@ -168,7 +169,7 @@ const ArticleDetailPage = () => {
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
                     {article.authorId?.avatar ? (
                       <img
-                        src={article.authorId.avatar.startsWith('/') ? `http://localhost:4000${article.authorId.avatar}` : article.authorId.avatar}
+                        src={getApiUrl(article.authorId.avatar)}
                         alt={article.authorId?.firstName}
                         className="w-full h-full object-cover"
                       />

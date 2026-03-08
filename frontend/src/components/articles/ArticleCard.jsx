@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { articlesAPI } from '../../services/communityApi.js';
+import { getApiUrl } from '../../config.js';
 
 const ArticleCard = ({ article, featured = false }) => {
   const navigate = useNavigate();
@@ -59,12 +60,12 @@ const ArticleCard = ({ article, featured = false }) => {
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    return avatarPath.startsWith('/') ? `http://localhost:4000${avatarPath}` : avatarPath;
+    return getApiUrl(avatarPath);
   };
 
   const getCoverImageUrl = (coverImagePath) => {
     if (!coverImagePath) return null;
-    return coverImagePath.startsWith('/') ? `http://localhost:4000${coverImagePath}` : coverImagePath;
+    return getApiUrl(coverImagePath);
   };
 
   const authorAvatar = getAvatarUrl(article.authorId?.avatar);

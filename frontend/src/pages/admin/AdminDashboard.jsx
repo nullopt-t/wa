@@ -12,7 +12,7 @@ const AdminDashboard = () => {
     users: 0,
     articles: 0,
     videos: 0,
-    comments: 0,
+    reports: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,24 +29,24 @@ const AdminDashboard = () => {
         apiRequest('/users', { method: 'GET' }).catch(() => ({ users: [], total: 0 })),
         apiRequest('/articles?limit=1', { method: 'GET' }).catch(() => ({ articles: [], total: 0 })),
         apiRequest('/videos?limit=1', { method: 'GET' }).catch(() => ({ videos: [], total: 0 })),
-        apiRequest('/comments', { method: 'GET' }).catch(() => ({ comments: [], total: 0 })),
+        apiRequest('/community/reports?limit=1', { method: 'GET' }).catch(() => ({ reports: [], total: 0 })),
       ];
-      
-      const [usersData, articlesData, videosData, commentsData] = await Promise.all(promises);
-      
+
+      const [usersData, articlesData, videosData, reportsData] = await Promise.all(promises);
+
       console.log('Dashboard Stats:', {
         users: usersData,
         articles: articlesData,
         videos: videosData,
-        comments: commentsData,
+        reports: reportsData,
       });
-      
+
       // Get counts from API responses
       setStats({
         users: usersData?.total || usersData?.users?.length || 0,
         articles: articlesData?.total || articlesData?.articles?.length || 0,
         videos: videosData?.total || videosData?.videos?.length || 0,
-        comments: commentsData?.total || commentsData?.comments?.length || 0,
+        reports: reportsData?.total || reportsData?.reports?.length || 0,
       });
     } catch (error) {
       console.error('Failed to load stats:', error);
@@ -78,11 +78,11 @@ const AdminDashboard = () => {
       link: '/videos/manage',
     },
     {
-      title: 'التعليقات',
-      value: stats.comments,
-      icon: 'fa-comments',
+      title: 'البلاغات',
+      value: stats.reports,
+      icon: 'fa-flag',
       color: 'from-orange-500 to-orange-600',
-      link: '/admin/comments',
+      link: '/admin/reports',
     },
   ];
 
@@ -102,10 +102,10 @@ const AdminDashboard = () => {
       color: 'from-blue-500 to-blue-600',
     },
     {
-      title: 'التعليقات المبلغ عنها',
+      title: 'مراجعة البلاغات',
       icon: 'fa-flag',
-      link: '/admin/comments?filter=reported',
-      description: 'مراجعة التعليقات المبلغ عنها',
+      link: '/admin/reports',
+      description: 'مراجعة المحتوى المبلغ عنه',
       color: 'from-red-500 to-red-600',
     },
     {

@@ -46,9 +46,8 @@ import ArticleManagementPage from './pages/ArticleManagementPage.jsx';
 import VideoManagementPage from './pages/VideoManagementPage.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
-import AdminCategories from './pages/admin/AdminCategories.jsx';
 import AdminArticles from './pages/admin/AdminArticles.jsx';
-import AdminComments from './pages/admin/AdminComments.jsx';
+import AdminReports from './pages/admin/AdminReports.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
 import CreateFutureMessagePage from './pages/CreateFutureMessagePage.jsx';
 import FutureMessagesListPage from './pages/FutureMessagesListPage.jsx';
@@ -146,17 +145,10 @@ function AppWrapper() {
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
-            <Route path="/admin/categories" element={
+            <Route path="/admin/reports" element={
               <AnimatedRoute>
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminCategories />
-                </ProtectedRoute>
-              </AnimatedRoute>
-            } />
-            <Route path="/admin/comments" element={
-              <AnimatedRoute>
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminComments />
+                  <AdminReports />
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
