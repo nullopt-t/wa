@@ -185,10 +185,6 @@ const AdminStories = () => {
                 {/* Stats */}
                 <div className="flex flex-wrap items-center gap-3 md:gap-6 text-xs md:text-sm text-[var(--text-secondary)] mb-6 pb-4 md:pb-6 border-b border-[var(--border-color)]/20">
                   <span className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
-                    <i className="far fa-eye"></i>
-                    {story.views}
-                  </span>
-                  <span className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                     <i className="far fa-clock"></i>
                     {story.readTime} د
                   </span>
