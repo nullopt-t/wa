@@ -22,12 +22,15 @@ const StoriesPage = () => {
   const loadStories = async () => {
     try {
       setLoading(true);
-      const params = {
-        category: activeFilter === 'all' ? '' : activeFilter,
-        sort: 'newest',
-        page: 1,
-        limit: 12,
-      };
+      const params = {};
+      
+      if (activeFilter && activeFilter !== 'all') {
+        params.category = activeFilter;
+      }
+      
+      params.sort = 'newest';
+      params.page = 1;
+      params.limit = 12;
       
       const data = await storiesAPI.getAll(params);
       setStories(data.stories || []);

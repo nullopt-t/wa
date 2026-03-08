@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsMongoId, IsArray, MinLength, MaxLength, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsMongoId, IsArray, MinLength, MaxLength, IsNumber, IsInt } from 'class-validator';
 
 export class CreateStoryDto {
   @IsString()
@@ -79,8 +79,10 @@ export class StoryFilterDto {
   sort?: string;
 
   @IsOptional()
+  @IsInt()
   page?: number;
 
   @IsOptional()
+  @IsInt()
   limit?: number;
 }
