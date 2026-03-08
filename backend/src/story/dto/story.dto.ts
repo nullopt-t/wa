@@ -75,6 +75,10 @@ export class StoryFilterDto {
   category?: string;
 
   @IsOptional()
+  @IsEnum(['pending', 'approved', 'rejected', 'hidden'])
+  status?: string;
+
+  @IsOptional()
   @IsEnum(['newest', 'oldest', 'most-viewed', 'most-liked'])
   sort?: string;
 
