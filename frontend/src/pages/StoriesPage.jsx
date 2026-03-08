@@ -41,11 +41,11 @@ const StoriesPage = () => {
     }
   };
 
-  const stats = {
-    total: stories.length,
-    readers: stories.reduce((acc, s) => acc + (s.views || 0), 0),
-    engagement: stories.reduce((acc, s) => acc + (s.likes?.length || 0), 0),
-  };
+  const statsCards = [
+    { label: 'قصة مشتركة', value: stories.length, icon: 'fa-book-open', color: 'from-amber-500 to-orange-500' },
+    { label: 'قارئ', value: stories.reduce((acc, s) => acc + (s.views || 0), 0), icon: 'fa-eye', color: 'from-blue-500 to-cyan-500' },
+    { label: 'تفاعل', value: stories.reduce((acc, s) => acc + (s.likes?.length || 0), 0), icon: 'fa-heart', color: 'from-pink-500 to-rose-500' },
+  ];
 
   const filters = [
     { id: 'all', label: 'الكل', icon: 'fa-layer-group', color: 'from-blue-500 to-cyan-500' },
@@ -56,15 +56,9 @@ const StoriesPage = () => {
     { id: 'addiction', label: 'الإدمان', icon: 'fa-chain-broken', color: 'from-red-500 to-rose-500' },
   ];
 
-  const filteredStories = activeFilter === 'all' 
-    ? stories 
+  const filteredStories = activeFilter === 'all'
+    ? stories
     : stories.filter(s => s.category === activeFilter);
-
-  const stats = [
-    { label: 'قصة مشتركة', value: stories.length, icon: 'fa-book-open', color: 'from-amber-500 to-orange-500' },
-    { label: 'قارئ', value: stories.reduce((acc, s) => acc + s.views, 0), icon: 'fa-eye', color: 'from-blue-500 to-cyan-500' },
-    { label: 'تفاعل', value: stories.reduce((acc, s) => acc + s.likes + s.comments, 0), icon: 'fa-heart', color: 'from-pink-500 to-rose-500' },
-  ];
 
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen relative overflow-hidden">
@@ -92,7 +86,7 @@ const StoriesPage = () => {
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mt-12 max-w-3xl mx-auto">
-              {stats.map((stat, index) => (
+              {statsCards.map((stat, index) => (
                 <div key={index} className={`bg-gradient-to-br ${stat.color} bg-opacity-10 backdrop-blur-md rounded-2xl p-4 border border-white/10`}>
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <i className={`fas ${stat.icon} text-white`}></i>
@@ -161,7 +155,7 @@ const StoriesPage = () => {
             ) : (
               <div className="grid gap-6 md:grid-cols-2">
                 {filteredStories.map((story, index) => (
-                  <StoryCard key={story.id} story={story} delay={index * 0.05} isAuthenticated={isAuthenticated} />
+                  <StoryCard key={story.id || story._id} story={story} delay={index * 0.05} isAuthenticated={isAuthenticated} onLikeSuccess={() => loadStories()} />
                 ))}
               </div>
             )}
@@ -195,13 +189,7 @@ const StoriesPage = () => {
 
               {showSubmitForm && (
                 <div className="mt-12 text-right">
-                  <StoryForm 
-                    onClose={() => setShowSubmitForm(false)} 
-                    onSuccess={() => {
-                      setShowSubmitForm(false);
-                      loadStories();
-                    }} 
-                  />
+                  <StoryForm onClose={() => setShowSubmitForm(false)} onSuccess={() => { setShowSubmitForm(false); loadStories(); }} />
                 </div>
               )}
             </div>
@@ -213,7 +201,7 @@ const StoriesPage = () => {
 };
 
 // Modern Story Card Component
-const StoryCard = ({ story, delay, isAuthenticated }) => {
+const StoryCard = ({ story, delay, isAuthenticated, onLikeSuccess }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [liked, setLiked] = useState(story.isLiked || false);
   const { success, error: showError } = useToast();
@@ -227,6 +215,7 @@ const StoryCard = ({ story, delay, isAuthenticated }) => {
     try {
       const result = await storiesAPI.like(story._id);
       setLiked(result.liked);
+      onLikeSuccess?.();
     } catch (error) {
       console.error('Failed to like story:', error);
       showError(error.message || 'فشل الإعجاب بالقصة');
@@ -268,13 +257,17 @@ const StoryCard = ({ story, delay, isAuthenticated }) => {
           <div className="flex items-start justify-between gap-4 mb-6">
             <div className="flex items-center gap-4 flex-1">
               <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-amber-500/30 flex-shrink-0">
-                {story.avatar}
+                {story.authorId?.avatar ? (
+                  <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${story.authorId.avatar}`} alt={story.authorId?.firstName} className="w-full h-full object-cover rounded-2xl" />
+                ) : (
+                  story.authorId?.firstName?.charAt(0) || story.author?.charAt(0) || '?'
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-[var(--text-primary)] truncate">{story.author}</h3>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] truncate">{story.authorId?.firstName || story.author || 'مجهول'}</h3>
                 <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                   <i className="far fa-calendar"></i>
-                  <span>{story.date}</span>
+                  <span>{new Date(story.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                 </div>
               </div>
             </div>
@@ -326,15 +319,15 @@ const StoryCard = ({ story, delay, isAuthenticated }) => {
             
             <div className="flex items-center gap-2">
               <button
-                onClick={() => handleLike()}
+                onClick={handleLike}
                 className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
                   liked 
                     ? 'bg-red-500/10 text-red-500' 
                     : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-red-500'
                 }`}
               >
-                <i className={`fas ${liked ? 'fa-heart' : 'fa-heart'}`}></i>
-                <span>{story.likes?.length + (liked ? 1 : 0)}</span>
+                <i className="fas fa-heart"></i>
+                <span>{(story.likes?.length || 0) + (liked ? 1 : 0)}</span>
               </button>
             </div>
           </div>
