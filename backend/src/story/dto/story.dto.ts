@@ -9,7 +9,7 @@ export class CreateStoryDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(50)
+  @MinLength(10)
   @MaxLength(5000)
   content: string;
 

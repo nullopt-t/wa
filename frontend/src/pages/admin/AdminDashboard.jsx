@@ -13,6 +13,7 @@ const AdminDashboard = () => {
     articles: 0,
     videos: 0,
     reports: 0,
+    stories: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -30,9 +31,10 @@ const AdminDashboard = () => {
         apiRequest('/articles?limit=1', { method: 'GET' }).catch(() => ({ articles: [], total: 0 })),
         apiRequest('/videos?limit=1', { method: 'GET' }).catch(() => ({ videos: [], total: 0 })),
         apiRequest('/community/reports?limit=1', { method: 'GET' }).catch(() => ({ reports: [], total: 0 })),
+        apiRequest('/stories/admin/stats', { method: 'GET' }).catch(() => ({ totalStories: 0 })),
       ];
 
-      const [usersData, articlesData, videosData, reportsData] = await Promise.all(promises);
+      const [usersData, articlesData, videosData, reportsData, storiesData] = await Promise.all(promises);
 
       console.log('Dashboard Stats:', {
         users: usersData,
@@ -47,6 +49,7 @@ const AdminDashboard = () => {
         articles: articlesData?.total || articlesData?.articles?.length || 0,
         videos: videosData?.total || videosData?.videos?.length || 0,
         reports: reportsData?.total || reportsData?.reports?.length || 0,
+        stories: storiesData?.totalStories || 0,
       });
     } catch (error) {
       console.error('Failed to load stats:', error);
@@ -84,6 +87,13 @@ const AdminDashboard = () => {
       color: 'from-orange-500 to-orange-600',
       link: '/admin/reports',
     },
+    {
+      title: 'القصص',
+      value: stats.stories,
+      icon: 'fa-book-open',
+      color: 'from-amber-500 to-orange-600',
+      link: '/admin/stories',
+    },
   ];
 
   const quickActions = [
@@ -100,6 +110,13 @@ const AdminDashboard = () => {
       link: '/admin/articles?status=pending',
       description: 'مراجعة المقالات المعلقة',
       color: 'from-blue-500 to-blue-600',
+    },
+    {
+      title: 'مراجعة القصص',
+      icon: 'fa-book-open',
+      link: '/admin/stories?status=pending',
+      description: 'مراجعة القصص المعلقة',
+      color: 'from-amber-500 to-orange-600',
     },
     {
       title: 'مراجعة البلاغات',
