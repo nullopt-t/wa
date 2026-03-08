@@ -1,22 +1,21 @@
 # Waey Platform - Render Deployment Guide
 
-Complete guide to deploy your graduation project on Render (free tier).
+Complete guide to deploy your graduation project on Render (100% free).
 
 ---
 
-## What You'll Get
+## What You'll Get (FREE)
 
 - **Frontend**: Static site at `https://waey-frontend.onrender.com`
 - **Backend**: API at `https://waey-backend.onrender.com`
-- **Redis**: Free 25MB cache
-- **MongoDB**: Free MongoDB Atlas (you create)
-- **Auto-Seed**: Initial data populated on first deploy
+- **MongoDB**: Free MongoDB Atlas
+- **Cache**: In-memory (no Redis needed!)
 
-**Total Cost: $0/month** (Free tier)
+**Total Cost: $0/month** ✅
 
 ---
 
-## Quick Start (5 Steps)
+## Quick Start (4 Steps)
 
 ### 1. Create MongoDB Atlas (Free)
 
@@ -33,7 +32,7 @@ Complete guide to deploy your graduation project on Render (free tier).
 
 ```bash
 git add .
-git commit -m "Ready for Render deployment"
+git commit -m "Ready for deployment"
 git push origin main
 ```
 
@@ -45,25 +44,25 @@ git push origin main
 4. Select `render.yaml`
 5. Click **Apply**
 
-### 4. Configure Environment Variables
+### 4. Add MongoDB URL
 
-In Render Dashboard → `waey-backend` → **Environment**:
+1. Render Dashboard → `waey-backend` → **Environment**
+2. Edit `DATABASE_URL` → Paste MongoDB connection string
+3. **Save Changes**
 
-| Variable | Value | Required? |
-|----------|-------|-----------|
-| `DATABASE_URL` | Your MongoDB connection string | ✅ Required |
-| `SMTP_HOST` | `smtp.gmail.com` | Optional (emails) |
-| `SMTP_USER` | Your Gmail | Optional |
-| `SMTP_PASSWORD` | Gmail app password | Optional |
-| `GEMINI_API_KEY` | Your Gemini API key | Optional (chatbot) |
+### 5. Wait & Access (5-10 min)
 
-Click **Save Changes**
-
-### 5. Wait & Access
-
-- Backend deploys first (~4 min)
-- Frontend deploys after (~2 min)
+- Backend deploys first with auto-seed
+- Frontend deploys after
 - Access: `https://waey-frontend.onrender.com`
+
+---
+
+## What's Removed for Free Tier
+
+✅ **No Redis** - Uses in-memory cache
+✅ **No complex config** - Just MongoDB needed
+✅ **Auto-seed** - Initial data on first deploy
 
 ---
 
