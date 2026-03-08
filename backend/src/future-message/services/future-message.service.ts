@@ -192,13 +192,13 @@ export class FutureMessageService {
         try {
           const user = message.userId as any;
           const recipientEmail = message.recipientEmail || user.email;
-          
+
           await this.emailService.sendFutureMessageEmail(
             recipientEmail,
             user.firstName || 'عزيزي',
             message.title || 'رسالة من الماضي',
             message.message,
-            message.createdAt,
+            (message as any).createdAt,
             message.deliverAt,
             new Date(),
           );
