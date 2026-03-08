@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>رسالة من مستقبلك</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border-radius: 10px; overflow: hidden;">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 40px; text-align: center;">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background-color: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 40px;">💌</span>
+              </div>
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">رسالة من الماضي</h1>
+              <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 14px;">هذه رسالة كتبتها لنفسك في الماضي</p>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <!-- Title -->
+              <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;"><%= title %></h2>
+
+              <!-- Written Date -->
+              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-right: 4px solid #8b5cf6;">
+                <p style="color: #666666; font-size: 14px; margin: 0;">
+                  <strong>📅 كُتبت في:</strong> <%= writtenDate %>
+                </p>
+                <% if (scheduledDate) { %>
+                  <p style="color: #666666; font-size: 14px; margin: 5px 0 0 0;">
+                    <strong>⏰ موعد التسليم:</strong> <%= scheduledDate %>
+                  </p>
+                <% } %>
+              </div>
+
+              <!-- Message Content -->
+              <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 25px; border-radius: 12px; border: 1px solid #e9d5ff; margin-bottom: 30px;">
+                <p style="color: #4b5563; font-size: 16px; line-height: 1.8; margin: 0; white-space: pre-wrap; word-wrap: break-word;">
+                  <%= message %>
+                </p>
+              </div>
+
+              <!-- Motivational Quote -->
+              <div style="text-align: center; margin: 30px 0;">
+                <div style="display: inline-block; padding: 20px 30px; background-color: #fef3c7; border-radius: 12px; border: 2px dashed #f59e0b;">
+                  <p style="color: #92400e; font-size: 15px; margin: 0; font-style: italic;">
+                    ✨ "أنت الآن في المستقبل الذي كنت تحلم به بالأمس"
+                  </p>
+                </div>
+              </div>
+
+              <!-- Call to Action -->
+              <table role="presentation" style="margin: 30px auto; border-collapse: collapse;">
+                <tr>
+                  <td align="center" style="border-radius: 8px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); box-shadow: 0 4px 6px rgba(139, 92, 246, 0.3);">
+                    <a href="<%= dashboardUrl %>" style="display: inline-block; padding: 15px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px;">
+                      🚀 اذهب إلى لوحة التحكم
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Additional Info -->
+              <p style="color: #9ca3af; font-size: 14px; text-align: center; margin: 20px 0 0 0;">
+                تم تسليم هذه الرسالة في <%= deliveredDate %>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 25px; text-align: center; border-top: 1px solid #eeeeee;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0 0 10px 0;">
+                مع الحب، فريق <strong>وعي</strong> للصحة النفسية 💚
+              </p>
+              <p style="color: #9ca3af; font-size: 13px; margin: 0;">
+                © <%= new Date().getFullYear() %> منصة وعي. جميع الحقوق محفوظة.
+              </p>
+              <p style="color: #9ca3af; font-size: 12px; margin: 10px 0 0 0;">
+                📍 هذه رسالة شخصية تم إرسالها إلى <%= recipientEmail %>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

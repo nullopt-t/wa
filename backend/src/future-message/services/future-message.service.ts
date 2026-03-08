@@ -3,11 +3,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { FutureMessage, FutureMessageDocument } from '../schemas/future-message.schema';
 import { CreateFutureMessageDto, UpdateFutureMessageDto } from '../dto/future-message.dto';
+import { EmailService } from '../../modules/email/email.service';
 
 @Injectable()
 export class FutureMessageService {
   constructor(
     @InjectModel(FutureMessage.name) private futureMessageModel: Model<FutureMessageDocument>,
+    private emailService: EmailService,
   ) {}
 
   // Create future message
@@ -173,10 +175,38 @@ export class FutureMessageService {
   // Mark message as delivered
   async markAsDelivered(id: string): Promise<void> {
     try {
+      const message = await this.futureMessageModel.findById(id).populate('userId').exec();
+      
+      if (!message) {
+        throw new NotFoundException('الرسالة غير موجودة');
+      }
+
+      // Mark as delivered
       await this.futureMessageModel.findByIdAndUpdate(id, {
         isDelivered: true,
         deliveredAt: new Date(),
       }).exec();
+
+      // Send email notification if enabled
+      if (message.isEmailNotification && message.userId) {
+        try {
+          const user = message.userId as any;
+          const recipientEmail = message.recipientEmail || user.email;
+          
+          await this.emailService.sendFutureMessageEmail(
+            recipientEmail,
+            user.firstName || 'عزيزي',
+            message.title || 'رسالة من الماضي',
+            message.message,
+            message.createdAt,
+            message.deliverAt,
+            new Date(),
+          );
+        } catch (emailError) {
+          console.error('Failed to send future message email:', emailError);
+          // Don't throw - we still want to mark the message as delivered
+        }
+      }
     } catch (error) {
       console.error('Error marking message as delivered:', error);
       throw error;

@@ -49,6 +49,7 @@
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.0.0",
+    "ejs": "^5.0.1",
     "exceljs": "^4.4.0",
     "helmet": "^7.0.0",
     "json2csv": "^6.0.0-alpha.2",

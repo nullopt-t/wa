@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { readFileSync } from 'fs';
+import * as ejs from 'ejs';
 import { join } from 'path';
 
 @Injectable()
@@ -12,6 +12,7 @@ export class EmailService {
     verification: string;
     passwordReset: string;
     welcome: string;
+    futureMessage: string;
   };
 
   constructor(private configService: ConfigService) {
@@ -20,6 +21,7 @@ export class EmailService {
       verification: this.loadTemplate('verification.template.html'),
       passwordReset: this.loadTemplate('password-reset.template.html'),
       welcome: this.loadTemplate('welcome.template.html'),
+      futureMessage: this.loadTemplate('future-message.template.ejs'),
     };
 
     // Configure nodemailer transporter
@@ -46,17 +48,15 @@ export class EmailService {
   private loadTemplate(templateName: string): string {
     try {
       const templatePath = join(__dirname, 'templates', templateName);
-      return readFileSync(templatePath, 'utf-8');
+      return require('fs').readFileSync(templatePath, 'utf-8');
     } catch (error) {
       this.logger.error(`Failed to load template ${templateName}:`, error);
       return '';
     }
   }
 
-  private renderTemplate(template: string, variables: Record<string, string>): string {
-    return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-      return variables[key] || match;
-    });
+  private renderTemplate(template: string, variables: Record<string, any>): string {
+    return ejs.render(template, variables);
   }
 
   async sendVerificationEmail(email: string, firstName: string, verificationToken: string) {
@@ -132,5 +132,55 @@ export class EmailService {
     } catch (error) {
       this.logger.error(`Failed to send welcome email to ${email}:`, error);
     }
+  }
+
+  async sendFutureMessageEmail(
+    recipientEmail: string,
+    firstName: string,
+    title: string,
+    message: string,
+    writtenDate: Date,
+    scheduledDate: Date,
+    deliveredDate: Date,
+  ) {
+    const dashboardUrl = `${this.configService.get('CLIENT_URL', 'http://localhost:3000')}/future-messages`;
+
+    const html = this.renderTemplate(this.templates.futureMessage, {
+      firstName,
+      title,
+      message,
+      writtenDate: this.formatDate(writtenDate),
+      scheduledDate: this.formatDate(scheduledDate),
+      deliveredDate: this.formatDate(deliveredDate),
+      recipientEmail,
+      dashboardUrl,
+      new Date: new Date(),
+    });
+
+    const mailOptions = {
+      from: `"Waey Platform - Future Messages" <${this.configService.get('SMTP_FROM_EMAIL', 'noreply@waey.com')}>`,
+      to: recipientEmail,
+      subject: `💌 رسالة من الماضي: ${title}`,
+      html,
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Future message email sent to ${recipientEmail}: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
+    } catch (error) {
+      this.logger.error(`Failed to send future message email to ${recipientEmail}:`, error);
+      throw new Error('Failed to send future message email');
+    }
+  }
+
+  private formatDate(date: Date): string {
+    return date.toLocaleDateString('ar-EG', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 }
