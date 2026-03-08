@@ -19,5 +19,5 @@ RUN mkdir -p ./data/uploads/posts ./data/uploads/articles
 # Expose port 3000
 EXPOSE 3000
 
-# Default command
+# Default command (seed can be run manually with: npm run seed)
 CMD ["npm", "run", "start:dev"]
