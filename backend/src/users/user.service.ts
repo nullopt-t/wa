@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, Logger, BadRequestException } from '@nes
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
-import { RegisterUserDto, RegisterTherapistDto, RegisterUserResponse, UserRole, ChangePasswordDto } from '../auth/dto/auth.dto';
+import { RegisterUserDto, RegisterTherapistDto, UserRole, ChangePasswordDto } from '../auth/dto/auth.dto';
 import { HashService } from '../modules/hash/hash.service';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class UserService {
     private hashService: HashService,
   ) { }
 
-  async findByEmail(email: string): Promise<(Omit<User, 'password'> & { password: string }) | RegisterUserResponse | null> {
+  async findByEmail(email: string): Promise<(Omit<User, 'password'> & { password: string }) | null> {
     const user = await this.userModel.findOne({ email }).exec();
     if (user) {
       return user.toObject();
