@@ -1,5 +1,5 @@
 services:
-  # Backend API - NestJS
+  # Backend API - NestJS (Free Tier)
   - type: web
     name: waey-backend
     env: node
@@ -16,11 +16,6 @@ services:
       - key: DATABASE_URL
         sync: false
         required: true
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: waey-redis
-          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: REFRESH_TOKEN_SECRET
@@ -44,7 +39,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
-  # Frontend - React/Vite Static Site
+  # Frontend - React/Vite Static Site (Free Tier - Always On)
   - type: web
     name: waey-frontend
     env: static
@@ -58,10 +53,11 @@ services:
           type: web
           name: waey-backend
           property: host
+      - key: VITE_SOCKET_URL
+        fromService:
+          type: web
+          name: waey-backend
+          property: host
 
-  # Redis Cache
-  - type: redis
-    name: waey-redis
-    plan: free
-    region: oregon
-    maxmemoryPolicy: noeviction
+  # Note: Redis removed for free tier (750 hours limit)
+  # Add Redis later when upgrading to paid plan
