@@ -73,7 +73,7 @@ export class StoryService {
       const transformedStories = stories.map(story => {
         const storyObj = story.toObject();
         if (userId) {
-          storyObj.isLiked = story.likes?.some(id => id.toString() === userId) || false;
+          (storyObj as any).isLiked = story.likes?.some(id => id.toString() === userId) || false;
         }
         return storyObj;
       });
@@ -112,7 +112,7 @@ export class StoryService {
 
       const storyObj = story.toObject();
       if (userId) {
-        storyObj.isLiked = story.likes?.some(id => id.toString() === userId) || false;
+        (storyObj as any).isLiked = story.likes?.some(id => id.toString() === userId) || false;
       }
       
       return storyObj;

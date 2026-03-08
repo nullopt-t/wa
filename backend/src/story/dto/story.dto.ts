@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsMongoId, IsArray, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsMongoId, IsArray, MinLength, MaxLength, IsNumber } from 'class-validator';
 
 export class CreateStoryDto {
   @IsString()
@@ -54,6 +54,14 @@ export class UpdateStoryDto {
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
+
+  @IsOptional()
+  @IsEnum(['pending', 'approved', 'rejected', 'hidden'])
+  status?: string;
+
+  @IsOptional()
+  @IsNumber()
+  readTime?: number;
 }
 
 export class LikeStoryDto {
