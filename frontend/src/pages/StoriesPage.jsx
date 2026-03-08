@@ -161,7 +161,7 @@ const StoriesPage = () => {
             ) : (
               <div className="grid gap-6 md:grid-cols-2">
                 {filteredStories.map((story, index) => (
-                  <StoryCard key={story.id} story={story} delay={index * 0.05} />
+                  <StoryCard key={story.id} story={story} delay={index * 0.05} isAuthenticated={isAuthenticated} />
                 ))}
               </div>
             )}
@@ -213,9 +213,25 @@ const StoriesPage = () => {
 };
 
 // Modern Story Card Component
-const StoryCard = ({ story, delay }) => {
+const StoryCard = ({ story, delay, isAuthenticated }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(story.isLiked || false);
+  const { success, error: showError } = useToast();
+
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+      showError('يرجى تسجيل الدخول للإعجاب بالقصة');
+      return;
+    }
+
+    try {
+      const result = await storiesAPI.like(story._id);
+      setLiked(result.liked);
+    } catch (error) {
+      console.error('Failed to like story:', error);
+      showError(error.message || 'فشل الإعجاب بالقصة');
+    }
+  };
 
   const categoryColors = {
     recovery: 'from-green-500 to-emerald-500',
@@ -310,34 +326,17 @@ const StoryCard = ({ story, delay }) => {
             
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setLiked(!liked)}
-                className={`p-2.5 rounded-xl transition-all ${
+                onClick={() => handleLike()}
+                className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
                   liked 
                     ? 'bg-red-500/10 text-red-500' 
                     : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-red-500'
                 }`}
               >
                 <i className={`fas ${liked ? 'fa-heart' : 'fa-heart'}`}></i>
-              </button>
-              <button className="p-2.5 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl hover:text-blue-500 transition-all">
-                <i className="far fa-comment"></i>
-              </button>
-              <button className="p-2.5 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl hover:text-green-500 transition-all">
-                <i className="far fa-bookmark"></i>
+                <span>{story.likes?.length + (liked ? 1 : 0)}</span>
               </button>
             </div>
-          </div>
-
-          {/* Engagement Stats */}
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[var(--border-color)]/10 text-xs text-[var(--text-secondary)]">
-            <span className="flex items-center gap-1">
-              <i className="fas fa-heart text-red-500"></i>
-              {story.likes + (liked ? 1 : 0)}
-            </span>
-            <span className="flex items-center gap-1">
-              <i className="fas fa-comment text-blue-500"></i>
-              {story.comments}
-            </span>
           </div>
         </div>
       </div>
