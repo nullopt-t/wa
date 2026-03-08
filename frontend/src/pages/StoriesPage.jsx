@@ -241,6 +241,14 @@ const StoryCard = ({ story, delay }) => {
     addiction: 'from-red-500 to-rose-500',
   };
 
+  const categoryLabels = {
+    recovery: 'التعافي',
+    relationships: 'العلاقات',
+    depression: 'الاكتئاب',
+    anxiety: 'القلق',
+    addiction: 'الإدمان',
+  };
+
   const categoryIcons = {
     recovery: 'fa-heart',
     relationships: 'fa-users',
@@ -274,7 +282,7 @@ const StoryCard = ({ story, delay }) => {
             {/* Category Badge */}
             <span className={`px-3 py-1.5 bg-gradient-to-r ${categoryColors[story.category] || 'from-amber-500 to-orange-500'} text-white text-xs rounded-full font-medium flex items-center gap-1.5`}>
               <i className={`fas ${categoryIcons[story.category] || 'fa-book'}`}></i>
-              <span className="hidden sm:inline">{filters.find(f => f.id === story.category)?.label || 'قصة'}</span>
+              <span className="hidden sm:inline">{categoryLabels[story.category] || 'قصة'}</span>
             </span>
           </div>
 
