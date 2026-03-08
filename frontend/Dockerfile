@@ -1,7 +1,5 @@
-# Multi-stage build for Waey Frontend
-
-# Stage 1: Build the React/Vite application
-FROM node:18-alpine AS builder
+# Frontend Dockerfile for Production
+FROM node:18-alpine as builder
 
 WORKDIR /app
 
@@ -9,22 +7,26 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-# Copy the rest of the application code
+# Copy source code
 COPY . .
 
-# Build the Vite app for production
+# Build arguments for environment variables
+ARG VITE_API_URL
+ARG VITE_SOCKET_URL
+
+# Build the app
 RUN npm run build
 
-# Stage 2: Serve the application using nginx
+# Production stage with nginx
 FROM nginx:alpine
 
-# Copy the build output from the previous stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy built files from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
