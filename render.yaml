@@ -1,12 +1,12 @@
 services:
-  # Backend API - NestJS (Free Tier)
+  # Backend API - Docker (Free Tier)
   - type: web
     name: waey-backend
-    env: node
+    env: docker
     region: oregon
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm run seed && npm run start
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -60,4 +60,4 @@ services:
           property: host
 
   # Note: Redis removed for free tier (750 hours limit)
-  # Add Redis later when upgrading to paid plan
+  # App uses in-memory caching instead

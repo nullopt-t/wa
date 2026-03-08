@@ -7,7 +7,7 @@ Complete guide to deploy your graduation project on Render (100% free).
 ## What You'll Get (FREE)
 
 - **Frontend**: Static site at `https://waey-frontend.onrender.com`
-- **Backend**: API at `https://waey-backend.onrender.com`
+- **Backend**: Docker container at `https://waey-backend.onrender.com`
 - **MongoDB**: Free MongoDB Atlas
 - **Cache**: In-memory (no Redis needed!)
 
@@ -32,11 +32,11 @@ Complete guide to deploy your graduation project on Render (100% free).
 
 ```bash
 git add .
-git commit -m "Ready for deployment"
+git commit -m "Ready for Docker deployment"
 git push origin main
 ```
 
-### 3. Deploy on Render
+### 3. Deploy on Render (Docker)
 
 1. Go to https://render.com → Sign up
 2. **New +** → **Blueprint**
@@ -52,8 +52,8 @@ git push origin main
 
 ### 5. Wait & Access (5-10 min)
 
-- Backend deploys first with auto-seed
-- Frontend deploys after
+- Backend Docker builds first (~5-7 min)
+- Frontend builds after (~2 min)
 - Access: `https://waey-frontend.onrender.com`
 
 ---

@@ -1,4 +1,4 @@
-# Base node image for the backend
+# Production Dockerfile for Render
 FROM node:18-alpine
 
 WORKDIR /app
@@ -13,8 +13,16 @@ COPY . .
 # Create upload directories
 RUN mkdir -p ./data/uploads/posts ./data/uploads/articles
 
-# Expose port 3000
-EXPOSE 3000
+# Render uses PORT environment variable (default 10000)
+ENV PORT=10000
+ENV NODE_ENV=production
 
-# Start the application with auto-seed
+# Expose port
+EXPOSE 10000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:10000/health || exit 1
+
+# Seed database and start application
 CMD ["sh", "-c", "npm run seed && npm run start:prod"]
