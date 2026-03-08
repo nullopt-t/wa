@@ -10,6 +10,9 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+# Install dependencies again (in case package.json changed)
+RUN npm install
+
 # Create upload directories
 RUN mkdir -p ./data/uploads/posts ./data/uploads/articles
 
