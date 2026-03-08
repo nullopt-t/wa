@@ -5,7 +5,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { RedisCacheModule } from './modules/redis-cache/redis-cache.module';
 import { UserModule } from './users/user.module';
 import { HealthModule } from './modules/health/health.module';
 import { EmailModule } from './modules/email/email.module';
@@ -39,7 +38,6 @@ import { StoryModule } from './story/story.module';
       ttl: 60000, // 60 seconds
       limit: 10, // 10 requests per minute
     }]),
-    RedisCacheModule,
     UserModule,
     AuthModule,
     HealthModule,
