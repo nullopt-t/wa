@@ -22,7 +22,7 @@ import { StoryModule } from './story/story.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env'],
+      ignoreEnvFile: true,
     }),
     MongooseModule.forRoot(process.env.DATABASE_URL, {
       // Connection retry options
