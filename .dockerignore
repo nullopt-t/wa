@@ -1,0 +1,5 @@
+# Ignore everything by default
+/*
+
+# But allow backend directory
+!backend/
