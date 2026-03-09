@@ -334,14 +334,14 @@ const CommunityPage = () => {
                 {trendingTags.map((item, index) => (
                   <button
                     key={index}
-                    onClick={() => setFilters({ ...filters, tag: item.tag })}
+                    onClick={() => setFilters({ ...filters, tag: item._id || item.tag })}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                      filters.tag === item.tag
+                      filters.tag === (item._id || item.tag)
                         ? 'bg-[var(--primary-color)] text-white'
                         : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--primary-color)] hover:text-white'
                     }`}
                   >
-                    #{item.tag}
+                    #{item._id || item.tag}
                     <span className="text-[10px] opacity-60 mr-1">({item.count})</span>
                   </button>
                 ))}

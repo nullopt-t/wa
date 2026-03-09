@@ -62,15 +62,15 @@ const CommunitySidebar = ({
               {trendingTags.map((item, index) => (
                 <button
                   key={index}
-                  onClick={() => handleTagClick(item.tag)}
+                  onClick={() => handleTagClick(item._id || item.tag)}
                   className={`px-3 py-1 text-xs rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
-                    selectedTag === item.tag
+                    selectedTag === (item._id || item.tag)
                       ? 'bg-[var(--primary-color)] text-white'
                       : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--primary-color)] hover:text-white'
                   }`}
                   title={`${item.count} منشورات`}
                 >
-                  #{item.tag}
+                  #{item._id || item.tag}
                   <span className="text-[10px] opacity-60">({item.count})</span>
                 </button>
               ))}
