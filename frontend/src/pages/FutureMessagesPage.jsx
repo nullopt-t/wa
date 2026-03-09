@@ -25,10 +25,12 @@ const FutureMessagesPage = () => {
     try {
       setLoading(true);
       const data = await futureMessagesAPI.getAll(filter === 'delivered');
-      setMessages(data);
+      // Ensure data is an array
+      setMessages(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load future messages:', error);
       showError('فشل تحميل الرسائل');
+      setMessages([]);
     } finally {
       setLoading(false);
     }

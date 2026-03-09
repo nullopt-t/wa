@@ -1,7 +1,7 @@
 // api.js
 import { API_URL as CONFIG_API_URL } from './config.js';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL + '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Generic function to handle API requests
 export const apiRequest = async (endpoint, options = {}) => {
@@ -148,7 +148,7 @@ export const profileAPI = {
 
   uploadAvatar: (userId, formData) => {
     const token = localStorage.getItem('token');
-    return fetch(`${CONFIG_API_URL}/api/users/${userId}/avatar`, {
+    return fetch(`${CONFIG_API_URL}/users/${userId}/avatar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
