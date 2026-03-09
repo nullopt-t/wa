@@ -31,6 +31,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    sourcemap: true, // Enable sourcemaps for debugging
+    minify: false, // Disable minification for easier debugging
   },
   optimizeDeps: {
     include: ['react', 'react-dom'],
