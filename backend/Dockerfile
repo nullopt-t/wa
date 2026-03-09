@@ -3,12 +3,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install dependencies
+# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production
+
+# Install ALL dependencies (needed for seed script)
+RUN npm install
 
 # Copy the rest of the application code
 COPY . .
+
+# Build the app
+RUN npm run build
 
 # Create upload directories
 RUN mkdir -p ./data/uploads/posts ./data/uploads/articles

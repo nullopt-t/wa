@@ -37,6 +37,5 @@ docs/
 Dockerfile.dev
 docker-compose*.yml
 
-# Seed scripts (not needed in production)
-seed-*.js
+# Remove scripts (not needed in production)
 remove-*.js
