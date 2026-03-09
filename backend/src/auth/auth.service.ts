@@ -51,16 +51,16 @@ export class AuthService {
 
   async login(user: any) {
     const payload = { email: user.email, sub: user._id, role: user.role };
-    
+
     // Generate access token
     const accessToken = this.jwtService.sign(payload);
-    
+
     // Generate refresh token with longer expiry
     const refreshToken = this.jwtService.sign(payload, {
       secret: process.env.REFRESH_TOKEN_SECRET || 'defaultRefreshSecret',
       expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '30d',
     });
-    
+
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -70,6 +70,9 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        countryCode: user.countryCode,
       },
     };
   }
