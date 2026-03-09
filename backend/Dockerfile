@@ -21,7 +21,7 @@ RUN mkdir -p ./data/uploads/posts ./data/uploads/articles
 ENV NODE_ENV=production
 
 # Expose port
-# EXPOSE 8081
+EXPOSE 8080
 
 # Health check
 # HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
