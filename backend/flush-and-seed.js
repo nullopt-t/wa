@@ -38,19 +38,30 @@ async function flushAndSeed() {
     const User = mongoose.model('User', new mongoose.Schema({
       email: { type: String, required: true, unique: true },
       password: { type: String, required: true },
-      firstName: String,
-      lastName: String,
+      firstName: { type: String, required: true },
+      lastName: { type: String, required: true },
       role: { type: String, enum: ['user', 'admin', 'therapist'], default: 'user' },
-      isVerified: { type: Boolean, default: true },
-      isActive: { type: Boolean, default: true },
-      isProfilePublic: { type: Boolean, default: true },
-      avatar: String,
       phone: String,
-      countryCode: String,
+      countryCode: { type: String, default: '+20' },
+      birthDate: Date,
+      gender: String,
+      licenseNumber: String,
+      specialty: String,
+      yearsOfExperience: Number,
+      education: [String],
+      certifications: [String],
+      clinicAddress: String,
+      avatar: String,
+      isActive: { type: Boolean, default: true },
+      isVerified: { type: Boolean, default: false },
+      isApproved: { type: Boolean, default: false },
+      isProfilePublic: { type: Boolean, default: true },
+      emailNotifications: { type: Boolean, default: true },
+      shareDataForResearch: { type: Boolean, default: false },
     }, { timestamps: true }));
 
     const hashedPassword = await bcrypt.hash('admin123', 10);
-    await User.create({
+    const adminUser = await User.create({
       email: 'admin@waey.com',
       password: hashedPassword,
       firstName: 'Admin',
@@ -58,27 +69,53 @@ async function flushAndSeed() {
       role: 'admin',
       isVerified: true,
       isActive: true,
+      isApproved: true,
       isProfilePublic: true,
+      countryCode: '+20',
     });
     console.log('✅ Admin user created (email: admin@waey.com, password: admin123)');
 
-    // ==================== Seed Categories ====================
+    // ==================== Seed Community Categories ====================
     console.log('\n📁 Seeding Community Categories...');
-    const Category = mongoose.model('Category', new mongoose.Schema({
-      nameAr: { type: String, required: true, unique: true },
-      nameEn: String,
+    const CommunityCategory = mongoose.model('CommunityCategory', new mongoose.Schema({
+      name: { type: String, required: true, unique: true },
+      nameAr: { type: String, required: true },
       description: String,
       icon: String,
       color: String,
-      order: Number,
+      order: { type: Number, default: 0 },
       isActive: { type: Boolean, default: true },
     }, { timestamps: true }));
 
+    const communityCategories = [
+      { name: 'General', nameAr: 'عام', icon: 'fa-users', color: '#10b981', order: 1 },
+      { name: 'Psychological Support', nameAr: 'دعم نفسي', icon: 'fa-heart', color: '#f59e0b', order: 2 },
+      { name: 'Relationships', nameAr: 'علاقات', icon: 'fa-users', color: '#8b5cf6', order: 3 },
+      { name: 'Self Development', nameAr: 'تطوير الذات', icon: 'fa-star', color: '#3b82f6', order: 4 },
+    ];
+
+    for (const cat of communityCategories) {
+      await CommunityCategory.create(cat);
+      console.log(`  ✅ Created community category: ${cat.nameAr}`);
+    }
+
+    // ==================== Seed Categories (for articles/videos) ====================
+    console.log('\n📁 Seeding Categories...');
+    const Category = mongoose.model('Category', new mongoose.Schema({
+      name: { type: String, required: true },
+      nameAr: { type: String, required: true },
+      icon: { type: String, required: true },
+      color: { type: String, required: true },
+      order: { type: Number, default: 0 },
+      isActive: { type: Boolean, default: true },
+      articlesCount: { type: Number, default: 0 },
+      videosCount: { type: Number, default: 0 },
+    }, { timestamps: true }));
+
     const categories = [
-      { nameAr: 'عام', nameEn: 'General', icon: 'fa-users', color: '#10b981', order: 1 },
-      { nameAr: 'دعم نفسي', nameEn: 'Psychological Support', icon: 'fa-heart', color: '#f59e0b', order: 2 },
-      { nameAr: 'علاقات', nameEn: 'Relationships', icon: 'fa-users', color: '#8b5cf6', order: 3 },
-      { nameAr: 'تطوير الذات', nameEn: 'Self Development', icon: 'fa-star', color: '#3b82f6', order: 4 },
+      { name: 'Mental Health', nameAr: 'الصحة النفسية', icon: 'fa-brain', color: '#10b981', order: 1 },
+      { name: 'Relaxation', nameAr: 'الاسترخاء', icon: 'fa-spa', color: '#3b82f6', order: 2 },
+      { name: 'Self Care', nameAr: 'العناية بالذات', icon: 'fa-heart', color: '#f59e0b', order: 3 },
     ];
 
     for (const cat of categories) {
@@ -102,14 +139,16 @@ async function flushAndSeed() {
       status: {
         type: String,
         enum: ['pending', 'approved', 'rejected', 'hidden'],
-        default: 'approved'
+        default: 'pending'
       },
       likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
       views: { type: Number, default: 0 },
+      viewers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      commentsCount: { type: Number, default: 0 },
+      savedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
       readTime: { type: Number, default: 0 },
+      featuredImage: String,
     }, { timestamps: true }));
-
-    const adminUser = await User.findOne({ email: 'admin@waey.com' });
 
     const stories = [
       {
@@ -169,14 +208,19 @@ async function flushAndSeed() {
       slug: { type: String, required: true, unique: true },
       excerpt: { type: String, required: true, maxlength: 500 },
       content: { type: String, required: true },
-      authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-      tags: [String],
-      status: { type: String, enum: ['draft', 'published'], default: 'published' },
+      authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      tags: { type: [String], default: [] },
       views: { type: Number, default: 0 },
       likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-      isFeatured: { type: Boolean, default: false },
-      readTime: { type: Number, default: 5 },
       bookmarks: { type: Number, default: 0 },
+      status: {
+        type: String,
+        enum: ['draft', 'published', 'archived'],
+        default: 'draft'
+      },
+      publishedAt: Date,
+      readTime: { type: Number, default: 0 },
+      isFeatured: { type: Boolean, default: false },
       order: { type: Number, default: 0 },
     }, { timestamps: true }));
 
@@ -185,19 +229,23 @@ async function flushAndSeed() {
         title: 'مقدمة في الصحة النفسية',
         slug: 'introduction-to-mental-health',
         excerpt: 'دليل شامل لفهم أساسيات الصحة النفسية وأهميتها في حياتنا اليومية',
-        content: 'الصحة النفسية هي جزء أساسي من صحتنا العامة...',
+        content: 'الصحة النفسية هي جزء أساسي من صحتنا العامة. تشمل صحتنا النفسية رفاهيتنا العاطفية والنفسية والاجتماعية. إنها تؤثر على كيفية تفكيرنا وشعورنا وتصرفنا. تساعد الصحة النفسية في تحديد كيفية تعاملنا مع التوتر، والتواصل مع الآخرين، واتخاذ الخيارات. الصحة النفسية مهمة في كل مرحلة من مراحل الحياة، من الطفولة والمراهقة إلى البلوغ.',
         tags: ['صحة نفسية', 'توعية'],
         isFeatured: true,
         readTime: 5,
+        status: 'published',
+        publishedAt: new Date(),
       },
       {
         title: 'كيفية التعامل مع التوتر',
         slug: 'how-to-deal-with-stress',
         excerpt: 'نصائح عملية للتعامل مع التوتر والضغوط اليومية',
-        content: 'التوتر هو استجابة طبيعية للتحديات...',
+        content: 'التوتر هو استجابة طبيعية للتحديات والتغييرات في حياتنا. ومع ذلك، يمكن أن يكون للتوتر المزمن آثار سلبية على صحتنا النفسية والجسدية. إليك بعض النصائح العملية للتعامل مع التوتر: 1) ممارسة التمارين الرياضية بانتظام، 2) تقنيات الاسترخاء مثل التنفس العميق والتأمل، 3) الحفاظ على نظام غذائي صحي، 4) النوم الكافي، 5) التواصل مع الأصدقاء والعائلة، 6) طلب المساعدة المهنية عند الحاجة.',
         tags: ['توتر', 'إدارة الضغوط'],
         isFeatured: true,
         readTime: 4,
+        status: 'published',
+        publishedAt: new Date(),
       },
     ];
 
@@ -216,10 +264,13 @@ async function flushAndSeed() {
       description: String,
       videoUrl: { type: String, required: true },
       thumbnailUrl: String,
-      category: String,
-      duration: Number,
+      addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
       views: { type: Number, default: 0 },
+      duration: { type: Number, default: 0 },
       isFeatured: { type: Boolean, default: false },
+      isActive: { type: Boolean, default: true },
+      category: String,
+      tags: [String],
       order: { type: Number, default: 0 },
     }, { timestamps: true }));
 
@@ -232,6 +283,7 @@ async function flushAndSeed() {
         category: 'تقنيات الاسترخاء',
         duration: 300,
         isFeatured: true,
+        isActive: true,
       },
       {
         title: 'كيف تبني عادات صحية',
@@ -241,17 +293,29 @@ async function flushAndSeed() {
         category: 'تطوير الذات',
         duration: 600,
         isFeatured: true,
+        isActive: true,
       },
     ];
 
     for (const video of videos) {
-      await Video.create(video);
+      await Video.create({
+        ...video,
+        addedBy: adminUser._id,
+      });
       console.log(`  ✅ Created video: ${video.title}`);
     }
 
     console.log('\n✅ Database flushed and seeded successfully!');
+    console.log('\n📋 Summary:');
+    console.log('  - 1 Admin user (admin@waey.com / admin123)');
+    console.log('  - 4 Community categories');
+    console.log('  - 3 Categories');
+    console.log('  - 5 Stories');
+    console.log('  - 2 Articles');
+    console.log('  - 2 Videos');
+    
     await mongoose.disconnect();
-    console.log('👋 Disconnected from MongoDB');
+    console.log('\n👋 Disconnected from MongoDB');
     process.exit(0);
   } catch (error) {
     console.error('❌ Error flushing and seeding database:', error);
