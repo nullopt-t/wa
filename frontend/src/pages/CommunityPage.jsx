@@ -50,21 +50,6 @@ const CommunityPage = () => {
     tag: '',
     sort: 'createdAt',
   });
-  const [trendingTags, setTrendingTags] = useState([]);
-
-  // Load trending tags on mount
-  useEffect(() => {
-    loadTrendingTags();
-  }, []);
-
-  const loadTrendingTags = async () => {
-    try {
-      const tags = await postsAPI.getTrendingTags(10);
-      setTrendingTags(tags);
-    } catch (error) {
-      console.error('Failed to load trending tags:', error);
-    }
-  };
 
   // AbortController for cancelling pending requests
   const abortControllerRef = useRef(null);
@@ -313,41 +298,7 @@ const CommunityPage = () => {
             </AnimatedItem>
           </div>
 
-          {/* Mobile Filter Bar - Trending Tags */}
-          <div className="lg:hidden mb-4">
-            <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-4 border border-[var(--border-color)]/30 mb-4">
-              <h3 className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <i className="fas fa-fire text-red-500"></i>
-                الوسوم الشائعة
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilters({ tag: '', sort: 'createdAt' })}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    !filters.tag
-                      ? 'bg-[var(--primary-color)] text-white'
-                      : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--primary-color)] hover:text-white'
-                  }`}
-                >
-                  الكل
-                </button>
-                {trendingTags.map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setFilters({ ...filters, tag: item._id || item.tag })}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                      filters.tag === (item._id || item.tag)
-                        ? 'bg-[var(--primary-color)] text-white'
-                        : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--primary-color)] hover:text-white'
-                    }`}
-                  >
-                    #{item._id || item.tag}
-                    <span className="text-[10px] opacity-60 mr-1">({item.count})</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          {/* Mobile Filter Bar - Trending Tags - REMOVED */}
 
           {/* Main Feed */}
           <div className="lg:col-span-3">

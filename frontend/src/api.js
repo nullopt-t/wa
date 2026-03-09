@@ -23,7 +23,7 @@ export const apiRequest = async (endpoint, options = {}) => {
   try {
     const response = await fetch(url, config);
 
-    // If response is not JSON, return as is
+    // If response is not JSON, try to parse it anyway for API endpoints
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await response.json();
@@ -53,6 +53,8 @@ export const apiRequest = async (endpoint, options = {}) => {
       }
       return data;
     } else {
+      // For non-JSON responses from API endpoints, try to parse as JSON anyway
+      // This handles cases where content-type header is missing or incorrect
       if (!response.ok) {
         if (response.status === 500) {
           throw new Error('حدث خطأ في الخادم، يرجى المحاولة لاحقاً');
@@ -60,7 +62,14 @@ export const apiRequest = async (endpoint, options = {}) => {
           throw new Error('حدث خطأ أثناء معالجة الطلب');
         }
       }
-      return response;
+      // Try to parse as JSON, return empty object if it fails
+      try {
+        const data = await response.json();
+        return data;
+      } catch {
+        console.warn('Response was not JSON, returning empty object');
+        return {};
+      }
     }
   } catch (error) {
     // Handle network errors
