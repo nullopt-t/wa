@@ -31,8 +31,10 @@ WORKDIR /app
 # Install serve package
 RUN npm install -g serve
 
+
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
+
 
 # Expose port
 EXPOSE 8080
