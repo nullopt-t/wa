@@ -30,9 +30,10 @@ const ArticlesPage = () => {
     try {
       const data = await articlesAPI.getAll({ limit: 100, status: 'published' });
       const tagsSet = new Set();
-      const articlesArray = data.articles || data || [];
+      // Handle both { articles: [...] } and direct array response
+      const articlesArray = Array.isArray(data) ? data : (data?.articles || []);
       articlesArray.forEach(article => {
-        if (article.tags) {
+        if (article.tags && Array.isArray(article.tags)) {
           article.tags.forEach(tag => tagsSet.add(tag));
         }
       });
@@ -45,9 +46,11 @@ const ArticlesPage = () => {
   const loadFeaturedArticles = useCallback(async () => {
     try {
       const data = await articlesAPI.getAll({ limit: 6, featured: 'true', status: 'published' });
-      setFeaturedArticles(data.articles || data || []);
+      const articlesArray = Array.isArray(data) ? data : (data?.articles || []);
+      setFeaturedArticles(articlesArray);
     } catch (error) {
       console.error('Failed to load featured articles:', error);
+      setFeaturedArticles([]);
     }
   }, []);
 
@@ -82,12 +85,13 @@ const ArticlesPage = () => {
       params.excludeFeatured = 'true';
 
       const data = await articlesAPI.getAll(params);
-      const articlesArray = data.articles || data || [];
+      // Handle both { articles: [...], totalPages, ... } and direct array response
+      const articlesArray = Array.isArray(data) ? data : (data?.articles || []);
       setArticles(articlesArray);
       setPagination({
-        currentPage: data.currentPage || 1,
-        totalPages: data.totalPages || 1,
-        total: data.total || 0,
+        currentPage: data?.currentPage || 1,
+        totalPages: data?.totalPages || 1,
+        total: data?.total || 0,
       });
     } catch (error) {
       console.error('Failed to load articles:', error);
