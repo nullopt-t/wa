@@ -120,13 +120,14 @@ export const AuthProvider = ({ children }) => {
       setToken(access_token);
       setRefreshToken(refresh_token);
 
-      if (userData.avatar && userData.avatar.startsWith('/')) {
+      // Handle avatar URL if present
+      if (userData && userData.avatar && userData.avatar.startsWith('/')) {
         userData.avatar = `${API_URL}${userData.avatar}`;
       }
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData || {});
+      localStorage.setItem('user', JSON.stringify(userData || {}));
 
-      return { success: true, user: userData };
+      return { success: true, user: userData || {} };
     } catch (error) {
       console.error('Login error:', error);
       return { success: false, message: error.message };
