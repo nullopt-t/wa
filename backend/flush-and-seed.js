@@ -34,7 +34,7 @@ async function flushAndSeed() {
     console.log('✅ All collections dropped\n');
 
     // ==================== Seed Admin User ====================
-    console.log('👤 Seeding Admin User...');
+    console.log('👤 Seeding Users...');
     const User = mongoose.model('User', new mongoose.Schema({
       email: { type: String, required: true, unique: true },
       password: { type: String, required: true },
@@ -73,7 +73,21 @@ async function flushAndSeed() {
       isProfilePublic: true,
       countryCode: '+20',
     });
-    console.log('✅ Admin user created (email: admin@waey.com, password: admin123)');
+
+    // Create a test user
+    const testUser = await User.create({
+      email: 'user@waey.com',
+      password: hashedPassword,
+      firstName: 'Test',
+      lastName: 'User',
+      role: 'user',
+      isVerified: true,
+      isActive: true,
+      isProfilePublic: true,
+    });
+
+    console.log('✅ Admin user created (admin@waey.com / admin123)');
+    console.log('✅ Test user created (user@waey.com / admin123)');
 
     // ==================== Seed Community Categories ====================
     console.log('\n📁 Seeding Community Categories...');
@@ -88,10 +102,10 @@ async function flushAndSeed() {
     }, { timestamps: true }));
 
     const communityCategories = [
-      { name: 'General', nameAr: 'عام', icon: 'fa-users', color: '#10b981', order: 1 },
-      { name: 'Psychological Support', nameAr: 'دعم نفسي', icon: 'fa-heart', color: '#f59e0b', order: 2 },
-      { name: 'Relationships', nameAr: 'علاقات', icon: 'fa-users', color: '#8b5cf6', order: 3 },
-      { name: 'Self Development', nameAr: 'تطوير الذات', icon: 'fa-star', color: '#3b82f6', order: 4 },
+      { name: 'General', nameAr: 'عام', description: 'General discussions', icon: 'fa-users', color: '#10b981', order: 1 },
+      { name: 'Psychological Support', nameAr: 'دعم نفسي', description: 'Mental health support', icon: 'fa-heart', color: '#f59e0b', order: 2 },
+      { name: 'Relationships', nameAr: 'علاقات', description: 'Relationship advice', icon: 'fa-users', color: '#8b5cf6', order: 3 },
+      { name: 'Self Development', nameAr: 'تطوير الذات', description: 'Personal growth', icon: 'fa-star', color: '#3b82f6', order: 4 },
     ];
 
     for (const cat of communityCategories) {
@@ -121,6 +135,129 @@ async function flushAndSeed() {
     for (const cat of categories) {
       await Category.create(cat);
       console.log(`  ✅ Created category: ${cat.nameAr}`);
+    }
+
+    // ==================== Seed Community Posts ====================
+    console.log('\n📝 Seeding Community Posts...');
+    const Post = mongoose.model('Post', new mongoose.Schema({
+      authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      title: { type: String, required: true, maxlength: 200 },
+      content: { type: String, required: true, maxlength: 5000 },
+      categoryId: mongoose.Schema.Types.ObjectId,
+      tags: [String],
+      images: [String],
+      likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      views: { type: Number, default: 0 },
+      viewers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      commentsCount: { type: Number, default: 0 },
+      savedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected', 'hidden'],
+        default: 'approved'
+      },
+      reports: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Report' }],
+      isPinned: { type: Boolean, default: false },
+      isClosed: { type: Boolean, default: false },
+      isAnonymous: { type: Boolean, default: false },
+      lastActivityAt: Date,
+    }, { timestamps: true }));
+
+    const posts = [
+      {
+        title: 'كيف تتعامل مع نوبات الهلع؟',
+        content: 'أعاني من نوبات هلع متكررة وأبحث عن نصائح للتعامل معها...',
+        tags: ['قلق', 'صحة نفسية'],
+        status: 'approved',
+        isPinned: true,
+      },
+      {
+        title: 'تجربتي مع العلاج النفسي',
+        content: 'أردت مشاركة تجربتي الإيجابية مع العلاج النفسي لتشجيع الآخرين...',
+        tags: ['علاج', 'تجارب شخصية'],
+        status: 'approved',
+      },
+      {
+        title: 'نصائح للنوم الأفضل',
+        content: 'بعد سنوات من الأرق، تعلمت هذه العادات التي ساعدتني...',
+        tags: ['نوم', 'صحة'],
+        status: 'approved',
+      },
+    ];
+
+    for (const post of posts) {
+      await Post.create({
+        ...post,
+        authorId: testUser._id,
+      });
+      console.log(`  ✅ Created post: ${post.title}`);
+    }
+
+    // ==================== Seed Community Comments ====================
+    console.log('\n💬 Seeding Community Comments...');
+    const CommunityComment = mongoose.model('CommunityComment', new mongoose.Schema({
+      postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
+      authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      parentId: mongoose.Schema.Types.ObjectId,
+      content: { type: String, required: true, maxlength: 2000 },
+      likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'hidden'],
+        default: 'approved'
+      },
+      isAnonymous: { type: Boolean, default: false },
+      repliesCount: { type: Number, default: 0 },
+    }, { timestamps: true }));
+
+    const allPosts = await Post.find();
+    if (allPosts.length > 0) {
+      const comments = [
+        { postId: allPosts[0]._id, content: 'شكراً لمشاركتك، هذا مفيد جداً', authorId: adminUser._id },
+        { postId: allPosts[0]._id, content: 'أنا أيضاً أعاني من نفس المشكلة', authorId: testUser._id },
+        { postId: allPosts[1]._id, content: 'قصة ملهمة جداً!', authorId: adminUser._id },
+      ];
+
+      for (const comment of comments) {
+        await CommunityComment.create(comment);
+        console.log(`  ✅ Created comment on post`);
+      }
+    }
+
+    // ==================== Seed Reports ====================
+    console.log('\n🚩 Seeding Reports...');
+    const Report = mongoose.model('Report', new mongoose.Schema({
+      reporterId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      targetType: { type: String, enum: ['post', 'comment'], required: true },
+      targetId: { type: mongoose.Schema.Types.ObjectId, required: true },
+      reason: {
+        type: String,
+        enum: ['spam', 'harassment', 'hate_speech', 'misinformation', 'self_harm', 'violence', 'sexual_content', 'copyright', 'other'],
+        required: true
+      },
+      description: { type: String, maxlength: 500 },
+      status: {
+        type: String,
+        enum: ['pending', 'reviewed', 'resolved', 'dismissed'],
+        default: 'pending'
+      },
+      reviewedBy: mongoose.Schema.Types.ObjectId,
+      reviewedAt: Date,
+      adminNotes: { type: String, maxlength: 1000 },
+      contentSnapshot: { type: String, maxlength: 5000 },
+    }, { timestamps: true }));
+
+    // Create one sample report
+    if (allPosts.length > 0) {
+      await Report.create({
+        reporterId: testUser._id,
+        targetType: 'post',
+        targetId: allPosts[0]._id,
+        reason: 'spam',
+        description: 'يبدو كإعلان تجاري',
+        status: 'pending',
+      });
+      console.log('  ✅ Created sample report');
     }
 
     // ==================== Seed Stories ====================
@@ -257,6 +394,33 @@ async function flushAndSeed() {
       console.log(`  ✅ Created article: ${article.title}`);
     }
 
+    // ==================== Seed Article Comments ====================
+    console.log('\n💬 Seeding Article Comments...');
+    const ArticleComment = mongoose.model('ArticleComment', new mongoose.Schema({
+      content: { type: String, required: true },
+      authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      articleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Article' },
+      postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
+      status: { type: String, default: 'active' },
+      likes: { type: Number, default: 0 },
+      reports: { type: Number, default: 0 },
+      likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      reportedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      parentCommentId: mongoose.Schema.Types.ObjectId,
+      isEdited: { type: Boolean, default: false },
+    }, { timestamps: true }));
+
+    const allArticles = await Article.find();
+    if (allArticles.length > 0) {
+      await ArticleComment.create({
+        content: 'مقال مفيد جداً، شكراً للمشاركة!',
+        authorId: testUser._id,
+        articleId: allArticles[0]._id,
+        status: 'active',
+      });
+      console.log('  ✅ Created article comment');
+    }
+
     // ==================== Seed Videos ====================
     console.log('\n🎥 Seeding Videos...');
     const Video = mongoose.model('Video', new mongoose.Schema({
@@ -307,11 +471,15 @@ async function flushAndSeed() {
 
     console.log('\n✅ Database flushed and seeded successfully!');
     console.log('\n📋 Summary:');
-    console.log('  - 1 Admin user (admin@waey.com / admin123)');
+    console.log('  - 2 Users (admin + test)');
     console.log('  - 4 Community categories');
     console.log('  - 3 Categories');
+    console.log('  - 3 Community posts');
+    console.log('  - 3 Community comments');
+    console.log('  - 1 Report');
     console.log('  - 5 Stories');
     console.log('  - 2 Articles');
+    console.log('  - 1 Article comment');
     console.log('  - 2 Videos');
     
     await mongoose.disconnect();
