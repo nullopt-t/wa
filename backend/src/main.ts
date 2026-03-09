@@ -66,7 +66,7 @@ async function bootstrap() {
   });
 
   // TODO: Move all env vars to Railway environment variables
-  const port = process.env.PORT || '8080';
+  const port = process.env.PORT || '8081';
   const dbUrl = process.env.DATABASE_URL || 'mongodb+srv://hedrsag:test@cluster0.ysstcmo.mongodb.net/?appName=Cluster0';
   const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
   const geminiKey = process.env.GEMINI_API_KEY || 'AIzaSyBr1Ij8cPwW-h_wEESZns9jUU_9ZVXnqG8';
