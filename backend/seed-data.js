@@ -14,11 +14,18 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 // MongoDB connection
-const MONGODB_URI = process.env.DATABASE_URL || 'mongodb://admin:password@mongo:27017/waey?authSource=admin';
+const MONGODB_URI = process.env.DATABASE_URL;
+
+if (!MONGODB_URI) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
 
 async function seedData() {
   try {
     console.log('📡 Connecting to MongoDB...');
+    console.log("ENV DATABASE_URL:", process.env.DATABASE_URL);
+    console.log("ENV MONGO_URI:", process.env.MONGO_URI);
     await mongoose.connect(MONGODB_URI);
     console.log('✅ Connected to MongoDB');
 
@@ -86,7 +93,7 @@ async function seedData() {
       authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
       title: { type: String, required: true, maxlength: 200 },
       content: { type: String, required: true, maxlength: 5000 },
-      category: { 
+      category: {
         type: String,
         enum: ['recovery', 'relationships', 'depression', 'anxiety', 'addiction', 'other'],
         required: true,
@@ -104,7 +111,7 @@ async function seedData() {
     }, { timestamps: true }));
 
     const adminUser = await User.findOne({ email: 'admin@waey.com' });
-    
+
     const stories = [
       {
         title: 'رحلتي مع القلق',

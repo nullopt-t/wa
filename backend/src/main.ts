@@ -65,7 +65,22 @@ async function bootstrap() {
     exclude: ['uploads', 'uploads/*', 'upload', 'upload/*'],
   });
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT;
+
+  if (!port) {
+    Logger.error('PORT environment variable is not set', 'Bootstrap');
+    process.exit(1);
+  }
+
+  // Log environment variables status (not values for security)
+  Logger.log('=== Environment Variables Status ===', 'Bootstrap');
+  Logger.log(`PORT: ${port ? 'set' : 'NOT SET'}`, 'Bootstrap');
+  Logger.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'NOT SET'}`, 'Bootstrap');
+  Logger.log(`NODE_ENV: ${process.env.NODE_ENV || 'NOT SET'}`, 'Bootstrap');
+  Logger.log(`JWT_SECRET: ${process.env.JWT_SECRET ? 'set' : 'NOT SET'}`, 'Bootstrap');
+  Logger.log(`GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? 'set' : 'NOT SET'}`, 'Bootstrap');
+  Logger.log('====================================', 'Bootstrap');
+
   await app.listen(port);
   Logger.log(`Server running on port ${port}`, 'Bootstrap');
 }

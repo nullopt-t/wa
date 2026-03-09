@@ -24,7 +24,7 @@ import { StoryModule } from './story/story.module';
       isGlobal: true,
       envFilePath: ['.env'],
     }),
-    MongooseModule.forRoot(process.env.DATABASE_URL || 'mongodb://admin:password@mongo:27017/waey?authSource=admin', {
+    MongooseModule.forRoot(process.env.DATABASE_URL, {
       // Connection retry options
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
@@ -54,4 +54,4 @@ import { StoryModule } from './story/story.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

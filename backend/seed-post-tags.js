@@ -5,7 +5,12 @@
 
 const mongoose = require('mongoose');
 
-const MONGODB_URL = process.env.DATABASE_URL || 'mongodb://admin:password@localhost:27017/waey?authSource=admin';
+const MONGODB_URL = process.env.DATABASE_URL;
+
+if (!MONGODB_URL) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
 
 // Sample tags for mental health topics
 const sampleTags = [
@@ -57,16 +62,16 @@ async function seedTags() {
       const numTags = Math.floor(Math.random() * 3) + 1;
       const shuffled = sampleTags.sort(() => 0.5 - Math.random());
       const selectedTags = shuffled.slice(0, numTags);
-      
+
       post.tags = selectedTags;
       await post.save();
       updated++;
-      
+
       console.log(`Updated post "${post.title}" with tags: ${selectedTags.join(', ')}`);
     }
 
     console.log(`\n✅ Successfully added tags to ${updated} posts!`);
-    
+
     // Show trending tags
     const trending = await Post.aggregate([
       { $match: { tags: { $exists: true, $ne: [] } } },
@@ -75,10 +80,10 @@ async function seedTags() {
       { $sort: { count: -1 } },
       { $limit: 10 }
     ]);
-    
+
     console.log('\n📊 Trending tags:');
     trending.forEach(t => console.log(`  #${t._id}: ${t.count} posts`));
-    
+
   } catch (error) {
     console.error('Error:', error);
   } finally {

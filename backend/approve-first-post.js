@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
-const DB_URL = process.env.DATABASE_URL || 'mongodb://admin:password@localhost:27017/waey?authSource=admin';
+const DB_URL = process.env.DATABASE_URL;
+
+if (!DB_URL) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
 
 async function approveFirstPost() {
   try {
