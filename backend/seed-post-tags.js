@@ -5,8 +5,12 @@
 
 const mongoose = require('mongoose');
 
-// TODO: Move DATABASE_URL to Railway environment variables
-const MONGODB_URL = process.env.DATABASE_URL || 'mongodb+srv://hedrsag:test@cluster0.ysstcmo.mongodb.net/?appName=Cluster0';
+const MONGODB_URL = process.env.DATABASE_URL;
+
+if (!MONGODB_URL) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
 
 // Sample tags for mental health topics
 const sampleTags = [

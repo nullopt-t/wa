@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 
-// TODO: Move DATABASE_URL to Railway environment variables
-const DB_URL = process.env.DATABASE_URL || 'mongodb+srv://hedrsag:test@cluster0.ysstcmo.mongodb.net/?appName=Cluster0';
+const DB_URL = process.env.DATABASE_URL;
+
+if (!DB_URL) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  process.exit(1);
+}
 
 async function approveFirstPost() {
   try {

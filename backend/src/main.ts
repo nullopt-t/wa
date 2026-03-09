@@ -65,19 +65,20 @@ async function bootstrap() {
     exclude: ['uploads', 'uploads/*', 'upload', 'upload/*'],
   });
 
-  // TODO: Move all env vars to Railway environment variables
-  const port = process.env.PORT || '8081';
-  const dbUrl = process.env.DATABASE_URL || 'mongodb+srv://hedrsag:test@cluster0.ysstcmo.mongodb.net/?appName=Cluster0';
-  const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
-  const geminiKey = process.env.GEMINI_API_KEY || 'AIzaSyBr1Ij8cPwW-h_wEESZns9jUU_9ZVXnqG8';
+  const port = process.env.PORT;
 
-  // Log environment variables status (not values for security)
+  if (!port) {
+    Logger.error('PORT environment variable is not set', 'Bootstrap');
+    process.exit(1);
+  }
+
+  // Log environment variables status
   Logger.log('=== Environment Variables Status ===', 'Bootstrap');
   Logger.log(`PORT: ${port}`, 'Bootstrap');
-  Logger.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set (env)' : 'using fallback'}`, 'Bootstrap');
-  Logger.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`, 'Bootstrap');
-  Logger.log(`JWT_SECRET: ${process.env.JWT_SECRET ? 'set (env)' : 'using fallback'}`, 'Bootstrap');
-  Logger.log(`GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? 'set (env)' : 'using fallback'}`, 'Bootstrap');
+  Logger.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'NOT SET'}`, 'Bootstrap');
+  Logger.log(`NODE_ENV: ${process.env.NODE_ENV || 'NOT SET'}`, 'Bootstrap');
+  Logger.log(`JWT_SECRET: ${process.env.JWT_SECRET ? 'set' : 'NOT SET'}`, 'Bootstrap');
+  Logger.log(`GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? 'set' : 'NOT SET'}`, 'Bootstrap');
   Logger.log('====================================', 'Bootstrap');
 
   await app.listen(port);

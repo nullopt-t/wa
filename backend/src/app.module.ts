@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { Logger } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -18,6 +19,15 @@ import { VideoModule } from './video/video.module';
 import { CommentModule } from './comment/comment.module';
 import { StoryModule } from './story/story.module';
 
+const dbUrl = process.env.DATABASE_URL;
+
+if (!dbUrl) {
+  Logger.error('DATABASE_URL environment variable is not set', 'AppModule');
+  process.exit(1);
+}
+
+Logger.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'NOT SET'}`, 'AppModule');
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,19 +35,16 @@ import { StoryModule } from './story/story.module';
       ignoreEnvFile: true,
     }),
     // TODO: Move DATABASE_URL to Railway environment variables
-    MongooseModule.forRoot(
-      process.env.DATABASE_URL || 'mongodb+srv://hedrsag:test@cluster0.ysstcmo.mongodb.net/waey',
-      {
-        // Connection retry options
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000,
-        maxPoolSize: 10,
-        minPoolSize: 5,
-        connectTimeoutMS: 10000,
-        retryWrites: true,
-        retryReads: true,
-      },
-    ),
+    MongooseModule.forRoot(dbUrl, {
+      // Connection retry options
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 5,
+      connectTimeoutMS: 10000,
+      retryWrites: true,
+      retryReads: true,
+    }),
     ThrottlerModule.forRoot([{
       ttl: 60000, // 60 seconds
       limit: 10, // 10 requests per minute
