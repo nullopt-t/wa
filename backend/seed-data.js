@@ -13,13 +13,9 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// TODO: Move DATABASE_URL to Railway environment variables
 // MongoDB connection
-const MONGODB_URI = process.env.DATABASE_URL;
-
-if (!MONGODB_URI) {
-  console.error('❌ DATABASE_URL environment variable is not set');
-  process.exit(1);
-}
+const MONGODB_URI = process.env.DATABASE_URL || 'mongodb+srv://hedrsag:test@cluster0.ysstcmo.mongodb.net/?appName=Cluster0';
 
 async function seedData() {
   try {

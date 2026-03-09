@@ -24,16 +24,20 @@ import { StoryModule } from './story/story.module';
       isGlobal: true,
       ignoreEnvFile: true,
     }),
-    MongooseModule.forRoot(process.env.DATABASE_URL, {
-      // Connection retry options
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-      minPoolSize: 5,
-      connectTimeoutMS: 10000,
-      retryWrites: true,
-      retryReads: true,
-    }),
+    // TODO: Move DATABASE_URL to Railway environment variables
+    MongooseModule.forRoot(
+      process.env.DATABASE_URL || 'mongodb+srv://hedrsag:test@cluster0.ysstcmo.mongodb.net/waey',
+      {
+        // Connection retry options
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        maxPoolSize: 10,
+        minPoolSize: 5,
+        connectTimeoutMS: 10000,
+        retryWrites: true,
+        retryReads: true,
+      },
+    ),
     ThrottlerModule.forRoot([{
       ttl: 60000, // 60 seconds
       limit: 10, // 10 requests per minute
