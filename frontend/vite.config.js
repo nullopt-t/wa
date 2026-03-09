@@ -7,29 +7,29 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  server: {
-    port: 8080,
-    host: true,
-    strictPort: false,
-    proxy: {
-      '/api': {
-        target: process.env.VITE_PROXY_TARGET || 'https://wa-production-191e.up.railway.app',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path,
-      },
-      '/upload': {
-        target: process.env.VITE_PROXY_TARGET || 'https://wa-production-191e.up.railway.app',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/uploads': {
-        target: process.env.VITE_PROXY_TARGET || 'https://wa-production-191e.up.railway.app',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
-  },
+  // server: {
+  //   port: 8080,
+  //   host: true,
+  //   strictPort: false,
+  //   proxy: {
+  //     '/api': {
+  //       target: process.env.VITE_PROXY_TARGET || 'https://wa-production-191e.up.railway.app',
+  //       changeOrigin: true,
+  //       secure: false,
+  //       rewrite: (path) => path,
+  //     },
+  //     '/upload': {
+  //       target: process.env.VITE_PROXY_TARGET || 'https://wa-production-191e.up.railway.app',
+  //       changeOrigin: true,
+  //       secure: false,
+  //     },
+  //     '/uploads': {
+  //       target: process.env.VITE_PROXY_TARGET || 'https://wa-production-191e.up.railway.app',
+  //       changeOrigin: true,
+  //       secure: false,
+  //     },
+  //   },
+  // },
   build: {
     outDir: 'dist',
     sourcemap: true, // Enable sourcemaps for debugging
