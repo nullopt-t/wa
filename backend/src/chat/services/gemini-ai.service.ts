@@ -7,6 +7,10 @@ export interface AIAnalysis {
   response: string;
   crisisDetected: boolean;
   suggestions: string[];
+  quickTest?: {
+    title: string;
+    questions: string[];
+  };
   recommendTherapist: boolean;
   disclaimer: string;
 }
@@ -82,37 +86,136 @@ export class GeminiAIService {
     try {
       const prompt = `
       You are a compassionate mental health support AI.
-      
+
       Test: ${testName}
       Score: ${JSON.stringify(score)}
       Answers: ${JSON.stringify(answers)}
-      
+
       ${chatContext ? `Recent conversation context: ${chatContext}` : ''}
-      
+
       Provide (in Arabic):
       1. Interpretation of results (NOT a diagnosis)
       2. What this might mean
       3. 3-5 personalized coping suggestions
       4. Whether to consider talking to a therapist
       5. Encouraging, supportive message
-      
+
       IMPORTANT:
       - This is NOT a medical diagnosis
       - Include disclaimer
       - Be warm and empathetic
       - NO medication suggestions
-      
+
       Respond in JSON format.
       `;
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
-      
+
       return JSON.parse(response.text());
     } catch (error) {
       this.logger.error('Error interpreting test results:', error);
       return this.getFallbackTestInterpretation(testName, score);
     }
+  }
+
+  /**
+   * Interpret assessment results (PHQ-9, GAD-7, etc.)
+   */
+  async interpretAssessmentResults(
+    assessmentCode: string,
+    assessmentName: string,
+    totalScore: number,
+    maxScore: number,
+    severity: string,
+    answers: Array<{ question: number; answer: number }>,
+  ): Promise<TestInterpretation> {
+    try {
+      const prompt = `
+You are a compassionate mental health AI assistant specializing in psychological assessments.
+
+Assessment: ${assessmentName} (${assessmentCode})
+Total Score: ${totalScore}/${maxScore}
+Severity Level: ${severity}
+Answers: ${JSON.stringify(answers)}
+
+Provide a comprehensive interpretation in BOTH English and Arabic:
+
+1. **Interpretation**: What does this score mean? (NOT a diagnosis)
+2. **Explanation**: Help them understand their results in a supportive way
+3. **Recommendations**: 3-5 personalized, actionable coping strategies
+4. **Therapist Recommendation**: Should they consider professional help? (boolean)
+5. **Disclaimer**: Brief disclaimer that this is not a medical diagnosis
+
+IMPORTANT RULES:
+- Be warm, empathetic, and non-judgmental
+- NEVER diagnose or prescribe medication
+- Use simple, accessible language
+- If severity is moderate or severe, gently suggest professional help
+- Include both English and Arabic for all fields
+- Be culturally sensitive
+
+Respond in JSON format:
+{
+  "interpretation": "English interpretation",
+  "interpretationAr": "التفسير بالعربية",
+  "recommendations": ["rec1", "rec2", "rec3"],
+  "recommendationsAr": ["توصية 1", "توصية 2", "توصية 3"],
+  "recommendTherapist": true/false,
+  "disclaimer": "English disclaimer",
+  "disclaimerAr": "إخلاء المسؤولية بالعربية"
+}
+`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().trim();
+
+      // Clean response - remove markdown code blocks if present
+      const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      return JSON.parse(cleanText);
+    } catch (error) {
+      this.logger.error('Error interpreting assessment results:', error);
+      return this.getFallbackAssessmentInterpretation(assessmentCode, assessmentName, totalScore, maxScore, severity);
+    }
+  }
+
+  /**
+   * Fallback interpretation for assessments if AI fails
+   */
+  private getFallbackAssessmentInterpretation(
+    assessmentCode: string,
+    assessmentName: string,
+    totalScore: number,
+    maxScore: number,
+    severity: string,
+  ): TestInterpretation {
+    const percentage = Math.round((totalScore / maxScore) * 100);
+    return {
+      interpretation: `Your score of ${totalScore}/${maxScore} (${percentage}%) indicates ${severity.toLowerCase()} symptoms.`,
+      interpretationAr: `نتيجتك ${totalScore} من ${maxScore} (${percentage}%) تشير إلى أعراض ${severity}.`,
+      suggestions: [
+        'Consider speaking with a mental health professional',
+        'Practice self-care activities',
+        'Maintain a healthy sleep schedule',
+      ],
+      recommendations: [
+        'Consider speaking with a mental health professional',
+        'Practice self-care activities',
+        'Maintain a healthy sleep schedule',
+        'Stay connected with loved ones',
+      ],
+      recommendationsAr: [
+        'فكر في التحدث إلى أخصائي صحة نفسية',
+        'مارس أنشطة العناية بالنفس',
+        'حافظ على جدول نوم صحي',
+        'ابق على تواصل مع الأحباب',
+      ],
+      recommendTherapist: severity.toLowerCase() === 'severe' || severity.toLowerCase() === 'moderate',
+      disclaimer: 'This is not a medical diagnosis. Please consult a healthcare professional.',
+      disclaimerAr: 'هذا ليس تشخيصاً طبياً. يرجى استشارة أخصائي رعاية صحية.',
+    };
   }
 
   /**
@@ -191,6 +294,33 @@ Respond with ONLY this JSON format (no markdown, no backticks):
     - NEVER prescribe medication or diagnose
     - ALWAYS include disclaimers
     - Detect crisis and provide emergency resources
+    - Suggest psychological assessments when symptoms are detected
+    
+    **IMPORTANT: ALWAYS respond in Arabic only, even if the user writes in English.**
+    
+    **مهم جداً: اجمع المعلومات التالية بشكل طبيعي خلال المحادثة (لا تطلبها مباشرة):**
+    1. الأعراض الرئيسية (ماذا يشعر؟)
+    2. المدة (منذ متى؟)
+    3. التأثير على الحياة (عمل، نوم، علاقات)
+    4. محفزات الأعراض (ماذا يزيدها؟)
+    5. آليات التأقلم (ماذا يفعل للتكيف؟)
+    6. الدعم الاجتماعي (من يدعمه؟)
+    
+    **كيف تجمع المعلومات:**
+    - اسأل بشكل طبيعي: "هل يؤثر هذا على نومك؟" بدلاً من "ما هي المدة؟"
+    - لا تخبر المستخدم أنك تجمع معلومات
+    - اجعل الأسئلة جزءاً من المحادثة الطبيعية
+
+    Available Assessments:
+    - PHQ-9: For depression symptoms (قلة الاهتمام، الحزن، اليأس)
+    - GAD-7: For anxiety symptoms (القلق، التوتر، الخوف)
+    - PSS-4: For stress symptoms (الإجهاد، الضغط، عدم التحكم)
+
+    When to suggest assessments:
+    - User mentions depression symptoms → suggest PHQ-9
+    - User mentions anxiety symptoms → suggest GAD-7
+    - User mentions stress symptoms → suggest PSS-4
+    - User asks about their mental state → suggest relevant assessment
 
     سياق المحادثة:
     ${historyText || 'لا يوجد سياق سابق'}
@@ -207,18 +337,23 @@ Respond with ONLY this JSON format (no markdown, no backticks):
     3. ALWAYS remind user you're an AI, not a therapist
     4. If crisis detected, provide hotline numbers immediately
     5. Be warm, empathetic, and culturally sensitive
-    6. Respond in Arabic (unless user writes in English)
+    6. **ALWAYS respond in Arabic only** (even if user writes in English)
+    7. When symptoms suggest, include assessmentSuggestions array
+    8. **Gather information naturally** for potential report (symptoms, duration, impact)
 
     Respond in JSON format:
     {
       "emotions": [
         {"emotion": "حزين", "confidence": 0.85, "intensity": 7}
       ],
-      "response": "your empathetic response in Arabic",
+      "response": "your empathetic response in Arabic ONLY",
       "crisisDetected": false,
       "suggestions": ["اقتراح 1", "اقتراح 2"],
+      "assessmentSuggestions": [
+        {"code": "PHQ-9", "nameAr": "اختبار الاكتئاب", "reason": "ذكرت أعراض الاكتئاب"}
+      ],
       "recommendTherapist": false,
-      "disclaimer": "brief disclaimer in Arabic"
+      "disclaimer": "إخلاء مسؤولية بالعربية"
     }
     `;
   }
@@ -237,6 +372,7 @@ Respond with ONLY this JSON format (no markdown, no backticks):
         response: parsed.response || '',
         crisisDetected: parsed.crisisDetected || false,
         suggestions: parsed.suggestions || [],
+        quickTest: parsed.quickTest || null,
         recommendTherapist: parsed.recommendTherapist || false,
         disclaimer: parsed.disclaimer || this.getDefaultDisclaimer(),
       };
@@ -255,6 +391,7 @@ Respond with ONLY this JSON format (no markdown, no backticks):
       response: 'أنا هنا للاستماع إليك. هل تريد مشاركة المزيد عما يدور في ذهنك؟',
       crisisDetected: false,
       suggestions: ['خذ نفساً عميقاً', 'تحدث إلى شخص تثق به'],
+      quickTest: null,
       recommendTherapist: false,
       disclaimer: this.getDefaultDisclaimer(),
     };
@@ -308,7 +445,11 @@ export interface CrisisResource {
 
 export interface TestInterpretation {
   interpretation: string;
+  interpretationAr?: string;
   suggestions: string[];
+  recommendations?: string[];
+  recommendationsAr?: string[];
   recommendTherapist: boolean;
   disclaimer: string;
+  disclaimerAr?: string;
 }

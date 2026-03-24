@@ -10,6 +10,7 @@ import { AuthController } from './auth.controller';
 import { UserModule } from '../users/user.module';
 import { HashModule } from '../modules/hash/hash.module';
 import { EmailModule } from '../modules/email/email.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -17,9 +18,14 @@ import { EmailModule } from '../modules/email/email.module';
     HashModule,
     EmailModule,
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'defaultSecretKey',
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '1d' },
+    ConfigModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET') || 'defaultSecretKey',
+        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1d' },
+      }),
+      inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],

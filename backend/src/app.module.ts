@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { Logger } from '@nestjs/common';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -18,37 +19,43 @@ import { ChatModule } from './chat/chat.module';
 import { VideoModule } from './video/video.module';
 import { CommentModule } from './comment/comment.module';
 import { StoryModule } from './story/story.module';
-
-const dbUrl = process.env.DATABASE_URL;
-
-if (!dbUrl) {
-  Logger.error('DATABASE_URL environment variable is not set', 'AppModule');
-  process.exit(1);
-}
-
-Logger.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'NOT SET'}`, 'AppModule');
+import { AssessmentModule } from './assessment/assessment.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: true,
+      envFilePath: join(process.cwd(), '.env'),
+      ignoreEnvFile: false,
     }),
-    // TODO: Move DATABASE_URL to Railway environment variables
-    MongooseModule.forRoot(dbUrl, {
-      // Connection retry options
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-      minPoolSize: 5,
-      connectTimeoutMS: 10000,
-      retryWrites: true,
-      retryReads: true,
+    MongooseModule.forRootAsync({
+      useFactory: async (configService: ConfigService) => {
+        const dbUrl = configService.get<string>('DATABASE_URL');
+        if (!dbUrl) {
+          Logger.error('DATABASE_URL environment variable is not set', 'AppModule');
+          throw new Error('DATABASE_URL is required');
+        }
+        Logger.log(`Connecting to database: ${dbUrl.substring(0, dbUrl.indexOf('@'))}@...`, 'AppModule');
+        return {
+          uri: dbUrl,
+          serverSelectionTimeoutMS: 5000,
+          socketTimeoutMS: 45000,
+          maxPoolSize: 10,
+          minPoolSize: 5,
+          connectTimeoutMS: 10000,
+          retryWrites: true,
+          retryReads: true,
+        };
+      },
+      inject: [ConfigService],
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 60 seconds
-      limit: 10, // 10 requests per minute
-    }]),
+    ThrottlerModule.forRootAsync({
+      useFactory: (configService: ConfigService) => [{
+        ttl: configService.get<number>('THROTTLE_TTL') || 60000,
+        limit: configService.get<number>('THROTTLE_LIMIT') || 10,
+      }],
+      inject: [ConfigService],
+    }),
     UserModule,
     AuthModule,
     HealthModule,
@@ -61,6 +68,7 @@ Logger.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'NOT SET'}`, 'App
     VideoModule,
     CommentModule,
     StoryModule,
+    AssessmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

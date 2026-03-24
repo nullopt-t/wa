@@ -24,6 +24,28 @@ export class ChatMessage {
   emotions?: EmotionData[];
 
   @Prop()
+  suggestions?: string[];
+
+  @Prop({ type: Object })
+  quickTest?: {
+    title: string;
+    titleAr: string;
+    questions: string[];
+    questionsAr: string[];
+  };
+
+  @Prop({ type: [{
+    code: String,
+    nameAr: String,
+    reason: String,
+  }] })
+  assessmentSuggestions?: Array<{
+    code: string;
+    nameAr: string;
+    reason?: string;
+  }>;
+
+  @Prop()
   testId?: string;
 
   @Prop({ type: Object, default: null })

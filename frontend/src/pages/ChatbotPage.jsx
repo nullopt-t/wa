@@ -5,12 +5,13 @@ import { io } from 'socket.io-client';
 import DOMPurify from 'dompurify';
 
 import { API_URL, SOCKET_URL } from '../config.js';
+import { generateClinicalReportPDF } from '../utils/pdfGenerator.js';
 
 const ChatbotPage = () => {
   const { isAuthenticated, user, token } = useAuth();
-  const { error: showError } = useToast();
+  const { error: showError, success } = useToast();
   const socketRef = useRef(null);
-  
+
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +20,12 @@ const ChatbotPage = () => {
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [skipCount, setSkipCount] = useState(0);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  
+  // Show PDF button only after minimum messages
+  const MIN_MESSAGES_FOR_REPORT = 5;
+  const canGenerateReport = messages.length >= MIN_MESSAGES_FOR_REPORT;
+
   const messagesEndRef = useRef(null);
   const messagesStartRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -161,9 +168,9 @@ const ChatbotPage = () => {
             text: msg.content,
             sender: msg.role === 'user' ? 'user' : 'bot',
             timestamp: new Date(msg.createdAt),
-            emotions: msg.emotions
+            emotions: msg.emotions,
           })).reverse(); // Reverse to show oldest first
-          
+
           if (skip === 0) {
             setMessages(newMessages);
             setShouldScrollToBottom(true); // Scroll for initial load
@@ -171,7 +178,7 @@ const ChatbotPage = () => {
             setMessages(prev => [...newMessages, ...prev]);
             // Don't scroll when loading old messages
           }
-          
+
           setHasMoreMessages(messages.length === 20);
           setSkipCount(skip + messages.length);
         } else {
@@ -242,8 +249,83 @@ const ChatbotPage = () => {
     }
   }, [currentSession]);
 
+  // Export PDF - Client-side generation
+  const handleExportPDF = async () => {
+    if (!currentSession) {
+      showError('لا توجد جلسة حالية');
+      return;
+    }
+    
+    setIsGeneratingReport(true);
+    
+    try {
+      // First generate summary from backend
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/chat/sessions/${currentSession._id}/summary`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const summary = await response.json();
+        
+        // Check if this is a valid therapy session
+        if (!summary.isValidTherapySession) {
+          showError(`لا يمكن إنشاء تقرير: ${summary.reason || 'المحادثة لا تحتوي على معلومات شخصية'}`);
+          setIsGeneratingReport(false);
+          return;
+        }
+        
+        // Generate PDF on client-side with proper data extraction
+        await generateClinicalReportPDF({
+          symptom: summary.summary?.split('\n')[0]?.replace('الأعراض: ', '') || 'غير محدد',
+          symptoms: summary.summary?.split('\n').filter(l => l.includes('•')).map(l => l.replace('• ', '')) || [],
+          duration: summary.summary?.match(/المدة: (.+)/)?.[1] || 'غير محددة',
+          functionalImpact: {
+            work: summary.summary?.match(/العمل: (.+)/)?.[1] || 'غير محدد',
+            sleep: summary.summary?.match(/النوم: (.+)/)?.[1] || 'غير محدد',
+            relationships: summary.summary?.match(/العلاقات: (.+)/)?.[1] || 'غير محدد',
+          },
+          riskFactors: {
+            selfHarm: summary.summary?.match(/إيذاء النفس: (.+)/)?.[1] || 'لم تُذكر',
+            severity: summary.severity || 'متوسط',
+          },
+          preliminaryDiagnosis: 'بحاجة إلى تقييم كامل',
+          clinicalRecommendations: summary.recommendations || [],
+        });
+        
+        success('تم تحميل التقرير بنجاح!');
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showError('فشل تحميل التقرير');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (inputValue.trim() === '') {
+      return;
+    }
+
+    // Check if user is asking for a report
+    const reportKeywords = ['تقرير', 'pdf', 'تصدير', 'ارسل تقرير', 'أريد تقرير', 'صدّر'];
+    const isAskingForReport = reportKeywords.some(keyword => 
+      inputValue.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    if (isAskingForReport) {
+      // Trigger PDF export instead of sending message
+      if (!canGenerateReport) {
+        showError(`تحتاج على الأقل ${MIN_MESSAGES_FOR_REPORT} رسائل لتوليد التقرير`);
+        return;
+      }
+      await handleExportPDF();
+      setInputValue('');
       return;
     }
 
@@ -299,7 +381,7 @@ const ChatbotPage = () => {
         });
 
         const data = await response.json();
-        
+
         if (data.error) {
           setMessages(prev => [...prev, {
             id: Date.now() + 1,
@@ -317,8 +399,6 @@ const ChatbotPage = () => {
             sender: 'bot',
             timestamp: new Date(),
             emotions: data.analysis?.emotions,
-            crisisDetected: data.analysis?.crisisDetected,
-            suggestions: data.analysis?.suggestions,
           }]);
         }
       } catch (error) {
@@ -416,9 +496,38 @@ const ChatbotPage = () => {
       {/* Chat Area */}
       <main className="flex-1 max-w-6xl mx-auto w-full p-2 sm:p-3 md:p-4 flex flex-col min-h-0">
         <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-xl sm:rounded-2xl shadow-xl border border-[var(--border-color)]/30 flex-1 flex flex-col overflow-hidden">
-          
+
+          {/* Report Button - Top Right */}
+          <div className="absolute top-4 right-4 z-40">
+            <button
+              onClick={handleExportPDF}
+              disabled={!canGenerateReport || isGeneratingReport}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg transition-all text-sm font-medium ${
+                !canGenerateReport
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : isGeneratingReport
+                    ? 'bg-[var(--primary-color)]/50 text-white cursor-wait'
+                    : 'bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]'
+              }`}
+              title={
+                !canGenerateReport 
+                  ? `تحدث على الأقل ${MIN_MESSAGES_FOR_REPORT} رسائل لتوليد التقرير` 
+                  : isGeneratingReport 
+                    ? 'جاري إنشاء التقرير...' 
+                    : 'تصدير تقرير PDF'
+              }
+            >
+              {isGeneratingReport ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+              ) : (
+                <i className="fas fa-file-pdf"></i>
+              )}
+              <span>{isGeneratingReport ? 'جاري...' : 'تقرير PDF'}</span>
+            </button>
+          </div>
+
           {/* Messages */}
-          <div 
+          <div
             ref={chatContainerRef}
             className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 min-h-0 scroll-smooth"
           >
@@ -480,13 +589,30 @@ const ChatbotPage = () => {
                     
                     {!message.isCrisis && !message.isError && (
                       <>
-                        <p 
+                        <p
                           className="text-right leading-relaxed whitespace-pre-wrap break-words"
-                          dangerouslySetInnerHTML={{ 
-                            __html: DOMPurify.sanitize(message.text) 
+                          dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(message.text)
                           }}
                         />
-                        
+
+                        {/* Assessment Question - Answer Buttons */}
+                        {message.type === 'assessment_question' && message.assessmentData?.question && (
+                          <AssessmentButtons
+                            options={message.assessmentData.question.options}
+                            onSelect={handleAssessmentAnswer}
+                            disabled={assessmentState.isInAssessment && assessmentState.currentQuestion?.id !== message.assessmentData.question.id}
+                          />
+                        )}
+
+                        {/* Assessment Results */}
+                        {message.type === 'assessment_results' && message.assessmentResult && (
+                          <AssessmentResults
+                            result={message.assessmentResult}
+                            onExportPDF={() => handleExportAssessmentPDF(message.assessmentResult)}
+                          />
+                        )}
+
                         {/* Emotions Display */}
                         {message.emotions && message.emotions.length > 0 && (
                           <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-[var(--border-color)]/30">
@@ -529,6 +655,83 @@ const ChatbotPage = () => {
                                     </button>
                                   ))}
                                 </div>
+                              </div>
+                            )}
+                            
+                            {/* Quick Test - Dynamic AI-Generated Questions */}
+                            {message.quickTest && message.quickTest.questions && message.quickTest.questions.length > 0 && (
+                              <div className="mt-3 p-4 bg-gradient-to-br from-[var(--primary-color)]/5 to-[var(--secondary-color)]/5 rounded-xl border border-[var(--primary-color)]/20">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <i className="fas fa-clipboard-list text-[var(--primary-color)]"></i>
+                                  <span className="font-bold text-[var(--primary-color)] text-sm">{message.quickTest.title || 'تقييم سريع'}</span>
+                                </div>
+                                <div className="space-y-2">
+                                  {message.quickTest.questions.map((question, idx) => (
+                                    <div key={idx} className="flex items-start gap-2 text-sm">
+                                      <span className="flex-shrink-0 w-6 h-6 bg-[var(--primary-color)] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                                        {idx + 1}
+                                      </span>
+                                      <span className="text-[var(--text-primary)]">{question}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="mt-4 flex gap-2 flex-col sm:flex-row">
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('🎯 Button clicked - Starting quick test');
+                                      // Use testSessionId from quickTest if available
+                                      const sessionTestId = message.quickTest?.testSessionId;
+                                      if (sessionTestId) {
+                                        console.log('✅ Using existing test session:', sessionTestId);
+                                        setQuickTestSession({
+                                          isActive: true,
+                                          testSessionId: sessionTestId,
+                                          title: message.quickTest.titleAr,
+                                          currentQuestion: message.quickTest.questionsAr?.[0],
+                                          currentQuestionIndex: 0,
+                                          totalQuestions: message.quickTest.questionsAr?.length || 4,
+                                          isComplete: false,
+                                          result: null,
+                                        });
+                                      } else {
+                                        handleStartQuickTest(message.text.substring(0, 200));
+                                      }
+                                    }}
+                                    disabled={quickTestLoading}
+                                    className={`flex-1 px-4 py-3 bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-lg transition-all text-sm font-medium flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${
+                                      quickTestLoading 
+                                        ? 'opacity-50 cursor-not-allowed' 
+                                        : 'hover:shadow-lg hover:scale-105'
+                                    }`}
+                                  >
+                                    {quickTestLoading ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                                        <span>جاري البدء...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <i className="fas fa-play"></i>
+                                        <span>ابدأ التقييم التفاعلي</span>
+                                      </>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      inputRef.current?.focus();
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-[var(--card-bg)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-secondary)] transition-all text-sm font-medium flex items-center justify-center gap-2 cursor-pointer"
+                                  >
+                                    <i className="fas fa-comment"></i>
+                                    الإجابة في المحادثة
+                                  </button>
+                                </div>
+                                <p className="mt-3 text-xs text-[var(--text-secondary)] italic">
+                                  💬 يمكنك الإجابة على هذه الأسئلة هنا أو البدء بالتقييم التفاعلي
+                                </p>
                               </div>
                             )}
                           </div>
