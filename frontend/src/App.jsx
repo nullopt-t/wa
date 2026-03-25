@@ -50,6 +50,7 @@ import AdminArticles from './pages/admin/AdminArticles.jsx';
 import AdminReports from './pages/admin/AdminReports.jsx';
 import AdminStories from './pages/admin/AdminStories.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
+import AdminFeedback from './pages/admin/AdminFeedback.jsx';
 import CreateFutureMessagePage from './pages/CreateFutureMessagePage.jsx';
 import FutureMessagesPage from './pages/FutureMessagesPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
@@ -164,6 +165,13 @@ function AppWrapper() {
               <AnimatedRoute>
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminSettings />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/admin/feedback" element={
+              <AnimatedRoute>
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminFeedback />
                 </ProtectedRoute>
               </AnimatedRoute>
             } />

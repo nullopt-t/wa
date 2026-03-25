@@ -20,6 +20,7 @@ import { VideoModule } from './video/video.module';
 import { CommentModule } from './comment/comment.module';
 import { StoryModule } from './story/story.module';
 import { AssessmentModule } from './assessment/assessment.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { AssessmentModule } from './assessment/assessment.module';
     CommentModule,
     StoryModule,
     AssessmentModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [AppService],

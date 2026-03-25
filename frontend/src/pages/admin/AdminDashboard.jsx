@@ -14,6 +14,7 @@ const AdminDashboard = () => {
     videos: 0,
     reports: 0,
     stories: 0,
+    feedback: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -32,9 +33,10 @@ const AdminDashboard = () => {
         apiRequest('/videos?limit=1', { method: 'GET' }).catch(() => ({ videos: [], total: 0 })),
         apiRequest('/community/reports?limit=1', { method: 'GET' }).catch(() => ({ reports: [], total: 0 })),
         apiRequest('/stories/admin/stats', { method: 'GET' }).catch(() => ({ totalStories: 0 })),
+        apiRequest('/feedback/admin/stats', { method: 'GET' }).catch(() => ({ total: 0 })),
       ];
 
-      const [usersData, articlesData, videosData, reportsData, storiesData] = await Promise.all(promises);
+      const [usersData, articlesData, videosData, reportsData, storiesData, feedbackData] = await Promise.all(promises);
 
       console.log('Dashboard Stats:', {
         users: usersData,
@@ -50,6 +52,7 @@ const AdminDashboard = () => {
         videos: videosData?.total || videosData?.videos?.length || 0,
         reports: reportsData?.total || reportsData?.reports?.length || 0,
         stories: storiesData?.totalStories || 0,
+        feedback: feedbackData?.data?.total || feedbackData?.total || 0,
       });
     } catch (error) {
       console.error('Failed to load stats:', error);
@@ -94,6 +97,13 @@ const AdminDashboard = () => {
       color: 'from-amber-500 to-orange-600',
       link: '/admin/stories',
     },
+    {
+      title: 'التغذية الراجعة',
+      value: stats.feedback || 0,
+      icon: 'fa-comments',
+      color: 'from-purple-500 to-purple-600',
+      link: '/admin/feedback',
+    },
   ];
 
   const quickActions = [
@@ -124,6 +134,13 @@ const AdminDashboard = () => {
       link: '/admin/reports',
       description: 'مراجعة المحتوى المبلغ عنه',
       color: 'from-red-500 to-red-600',
+    },
+    {
+      title: 'مراجعة التغذية الراجعة',
+      icon: 'fa-comments',
+      link: '/admin/feedback',
+      description: 'مراجعة والرد على ملاحظات المستخدمين',
+      color: 'from-purple-500 to-purple-600',
     },
     {
       title: 'إعدادات المنصة',
