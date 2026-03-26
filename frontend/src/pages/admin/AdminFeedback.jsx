@@ -16,8 +16,6 @@ const AdminFeedback = () => {
   const [filterStatus, setFilterStatus] = useState('all'); // all, pending, approved, rejected
   const [filterCategory, setFilterCategory] = useState('all'); // all, praise, suggestion, complaint, technical, other
   const [searchTerm, setSearchTerm] = useState('');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [feedbackToDelete, setFeedbackToDelete] = useState(null);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [adminResponse, setAdminResponse] = useState('');
@@ -89,24 +87,6 @@ const AdminFeedback = () => {
       loadStats();
     } catch (error) {
       showError('فشل رفض الملاحظة');
-    }
-  };
-
-  const handleDeleteClick = (feedback) => {
-    setFeedbackToDelete(feedback);
-    setShowDeleteConfirm(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      await feedbackAPI.delete(feedbackToDelete._id);
-      success('تم حذف الملاحظة بنجاح');
-      setShowDeleteConfirm(false);
-      setFeedbackToDelete(null);
-      loadFeedbacks();
-      loadStats();
-    } catch (error) {
-      showError('فشل حذف الملاحظة');
     }
   };
 
@@ -344,20 +324,24 @@ const AdminFeedback = () => {
                             </button>
                           </>
                         )}
-                        <button
-                          onClick={() => handleResponseClick(feedback)}
-                          className="px-3 py-1.5 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors text-sm"
-                        >
-                          <i className="fas fa-comment ml-1"></i>
-                          رد
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(feedback)}
-                          className="px-3 py-1.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
-                        >
-                          <i className="fas fa-trash ml-1"></i>
-                          حذف
-                        </button>
+                        {feedback.adminResponse ? (
+                          <button
+                            disabled
+                            className="px-3 py-1.5 bg-gray-400 text-white rounded-lg cursor-not-allowed text-sm"
+                            title="تم إرسال الرد ولا يمكن تعديله"
+                          >
+                            <i className="fas fa-check-circle ml-1"></i>
+                            تم الرد
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleResponseClick(feedback)}
+                            className="px-3 py-1.5 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors text-sm"
+                          >
+                            <i className="fas fa-comment ml-1"></i>
+                            رد
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -367,21 +351,6 @@ const AdminFeedback = () => {
           )}
         </div>
       </div>
-
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showDeleteConfirm}
-        title="حذف الملاحظة"
-        message="هل أنت متأكد من حذف هذه الملاحظة؟ لا يمكن التراجع عن هذا الإجراء."
-        confirmText="حذف"
-        cancelText="إلغاء"
-        isDanger={true}
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => {
-          setShowDeleteConfirm(false);
-          setFeedbackToDelete(null);
-        }}
-      />
 
       {/* Response Modal */}
       {showResponseModal && selectedFeedback && (

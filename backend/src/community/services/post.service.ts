@@ -4,12 +4,14 @@ import { Model, Types } from 'mongoose';
 import { Post, PostDocument } from '../schemas/post.schema';
 import { Comment, CommentDocument } from '../schemas/comment.schema';
 import { CreatePostDto, UpdatePostDto } from '../dto/post.dto';
+import { NotificationService } from '../../notification/services/notification.service';
 
 @Injectable()
 export class PostService {
   constructor(
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
+    private notificationService: NotificationService,
   ) {}
 
   // Create new post

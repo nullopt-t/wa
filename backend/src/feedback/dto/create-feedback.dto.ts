@@ -2,12 +2,14 @@ import { IsString, IsEmail, IsNumber, IsEnum, Min, Max, MinLength, MaxLength, Is
 
 export class CreateFeedbackDto {
   @IsString()
+  @IsOptional()
   @MinLength(2)
   @MaxLength(100)
-  name: string;
+  name?: string;
 
   @IsEmail()
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @IsNumber()
   @Min(1)

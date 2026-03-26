@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { profileAPI } from '../api.js';
-import { getApiUrl } from '../config.js';
+import { getApiUrl, API_URL } from '../config.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
@@ -128,7 +128,7 @@ const ProfileSettingsPage = () => {
         const result = await profileAPI.uploadAvatar(user._id, formData);
 
         if (result.success) {
-          const fullAvatarUrl = `${API_BASE_URL}${result.avatarUrl}`;
+          const fullAvatarUrl = `${API_URL}${result.avatarUrl}`;
           setFormData(prev => ({ ...prev, avatar: fullAvatarUrl }));
           setAvatarPreview(fullAvatarUrl);
           // Update AuthContext user with new avatar

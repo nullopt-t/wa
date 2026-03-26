@@ -5,6 +5,8 @@ import { Report, ReportDocument, ReportStatus } from '../schemas/report.schema';
 import { Post, PostDocument } from '../schemas/post.schema';
 import { Comment, CommentDocument } from '../schemas/comment.schema';
 import { CreateReportDto, UpdateReportDto } from '../dto/report.dto';
+import { NotificationService } from '../../notification/services/notification.service';
+import { User, UserDocument } from '../../users/schemas/user.schema';
 
 @Injectable()
 export class ReportService {
@@ -12,6 +14,8 @@ export class ReportService {
     @InjectModel(Report.name) private reportModel: Model<ReportDocument>,
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private notificationService: NotificationService,
   ) {}
 
   // Create report (authenticated users)
@@ -63,6 +67,8 @@ export class ReportService {
       contentSnapshot, // Save content snapshot
     });
 
+    const savedReport = await createdReport.save();
+
     // Auto-hide reported content
     if (targetType === 'comment') {
       await this.commentModel.findByIdAndUpdate(targetId, {
@@ -74,7 +80,37 @@ export class ReportService {
       });
     }
 
-    return createdReport.save();
+    // Notify all admins about new report
+    await this.notifyAdminsAboutNewReport(savedReport._id.toString(), targetType, reason);
+
+    return savedReport;
+  }
+
+  /**
+   * Notify all admins about new report
+   */
+  private async notifyAdminsAboutNewReport(reportId: string, targetType: string, reason: string) {
+    try {
+      const admins = await this.userModel.find({ role: 'admin' }).exec();
+      
+      const targetTypeAr = targetType === 'post' ? 'منشور' : 'تعليق';
+      
+      for (const admin of admins) {
+        await this.notificationService.create({
+          userId: admin._id.toString(),
+          type: 'system',
+          title: 'بلاغ جديد',
+          message: `تم الإبلاغ عن ${targetTypeAr} بسبب ${reason}`,
+          actionUrl: '/admin/reports',
+          relatedModel: 'Report',
+          relatedId: reportId,
+          priority: 'high',
+        });
+      }
+    } catch (error) {
+      console.error('Error notifying admins about report:', error);
+      // Don't throw - notification failure shouldn't break report creation
+    }
   }
 
   // Get reports for a target (for admins/moderators)
@@ -133,12 +169,62 @@ export class ReportService {
       .populate('reviewedBy', 'firstName lastName')
       .exec();
 
+    // If resolved or dismissed, send notification to content author
+    if (updateReportDto.status === 'resolved' || updateReportDto.status === 'dismissed') {
+      await this.notifyContentAuthor(report, updateReportDto.status);
+    }
+
     // If resolved, take action on the reported content
     if (updateReportDto.status === 'resolved') {
       await this.takeActionOnReport(report);
     }
 
     return updated;
+  }
+
+  // Notify content author about report decision
+  private async notifyContentAuthor(report: ReportDocument, status: string) {
+    try {
+      let authorId: Types.ObjectId | null = null;
+      let targetType = '';
+      let targetId = '';
+
+      if (report.targetType === 'post') {
+        const post = await this.postModel.findById(report.targetId).exec();
+        if (post && post.authorId) {
+          authorId = post.authorId as Types.ObjectId;
+          targetType = 'Post';
+          targetId = report.targetId.toString();
+        }
+      } else if (report.targetType === 'comment') {
+        const comment = await this.commentModel.findById(report.targetId).exec();
+        if (comment && comment.authorId) {
+          authorId = comment.authorId as Types.ObjectId;
+          targetType = 'Comment';
+          targetId = report.targetId.toString();
+        }
+      }
+
+      if (authorId) {
+        const message = status === 'resolved'
+          ? `تم اتخاذ إجراء بشأن ${targetType} المبلغ عنه: تم إخفاؤه`
+          : `تم مراجعة ${targetType} المبلغ عنه: تم رفض البلاغ`;
+
+        await this.notificationService.create({
+          userId: authorId.toString(),
+          type: 'system',
+          title: status === 'resolved' ? 'إجراء على محتوى تم الإبلاغ عنه' : 'مراجعة بلاغ',
+          message,
+          actionUrl: report.targetType === 'post' ? `/community/post/${targetId}` : undefined,
+          relatedModel: 'Report',
+          relatedId: report._id.toString(),
+          priority: 'high',
+        });
+      }
+    } catch (error) {
+      console.error('Error sending report notification:', error);
+      // Don't throw - notification failure shouldn't break report update
+    }
   }
 
   // Take action on resolved report (hide/delete content)

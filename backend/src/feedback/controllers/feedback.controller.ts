@@ -21,14 +21,26 @@ export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   /**
-   * Submit feedback (public or authenticated)
+   * Submit feedback (authenticated users only, not admins)
    */
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   async create(
     @Body() createFeedbackDto: CreateFeedbackDto,
     @Request() req,
   ) {
-    const userId = req.user?.userId;
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    
+    // Prevent admins from submitting public feedback
+    if (userRole === 'admin') {
+      return {
+        success: false,
+        message: 'المسؤولين لديهم قنوات أخرى لإرسال الملاحظات',
+      };
+    }
+    
+    // Get user info from token and add to feedback
     const feedback = await this.feedbackService.create(createFeedbackDto, userId);
     return {
       success: true,
@@ -138,7 +150,7 @@ export class FeedbackController {
     }
     
     const adminUserId = req.user.userId;
-    const feedback = await this.feedbackService.updateStatus(id, updateDto, adminUserId);
+    const feedback = await this.feedbackService.updateStatusWithNotification(id, updateDto, adminUserId);
     return {
       success: true,
       message: 'تم تحديث حالة الملاحظة بنجاح',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
@@ -7,34 +7,38 @@ import { storiesAPI } from '../services/communityApi.js';
 
 const StoriesPage = () => {
   const { success, error: showError } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState('all');
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, total: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   // Load stories
   useEffect(() => {
     loadStories();
-  }, [activeFilter]);
+  }, [activeFilter, currentPage]);
 
   const loadStories = async () => {
     try {
       setLoading(true);
       const params = {};
-      
+
       if (activeFilter && activeFilter !== 'all') {
         params.category = activeFilter;
       }
-      
+
       params.sort = 'newest';
-      params.page = 1;
+      params.page = currentPage;
       params.limit = 12;
-      
+
       const data = await storiesAPI.getAll(params);
       setStories(data.stories || []);
-      setPagination(data.pagination || { currentPage: 1, totalPages: 1, total: 0 });
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotal(data.pagination?.total || 0);
     } catch (error) {
       console.error('Failed to load stories:', error);
       showError('فشل تحميل القصص');
@@ -44,11 +48,12 @@ const StoriesPage = () => {
     }
   };
 
-  const statsCards = [
-    { label: 'قصة مشتركة', value: stories.length, icon: 'fa-book-open', color: 'from-amber-500 to-orange-500' },
-    { label: 'قارئ', value: stories.reduce((acc, s) => acc + (s.views || 0), 0), icon: 'fa-eye', color: 'from-blue-500 to-cyan-500' },
-    { label: 'تفاعل', value: stories.reduce((acc, s) => acc + (s.likes?.length || 0), 0), icon: 'fa-heart', color: 'from-pink-500 to-rose-500' },
-  ];
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   const filters = [
     { id: 'all', label: 'الكل', icon: 'fa-layer-group', color: 'from-blue-500 to-cyan-500' },
@@ -62,6 +67,11 @@ const StoriesPage = () => {
   const filteredStories = activeFilter === 'all'
     ? stories
     : stories.filter(s => s.category === activeFilter);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter]);
 
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen relative overflow-hidden">
@@ -86,19 +96,6 @@ const StoriesPage = () => {
             <p className="text-xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
               مساحة آمنة لمشاركة رحلتك الشخصية. كل قصة لها قيمة، وقد تكون سببًا في شفاء شخص آخر 💚
             </p>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mt-12 max-w-3xl mx-auto">
-              {statsCards.map((stat, index) => (
-                <div key={index} className={`bg-gradient-to-br ${stat.color} bg-opacity-10 backdrop-blur-md rounded-2xl p-4 border border-white/10`}>
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <i className={`fas ${stat.icon} text-white`}></i>
-                  </div>
-                  <div className="text-3xl font-bold text-white">{stat.value}</div>
-                  <div className="text-xs text-white/80">{stat.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
       </AnimatedItem>
@@ -162,49 +159,111 @@ const StoriesPage = () => {
                 ))}
               </div>
             )}
-          </div>
-        </section>
-      </AnimatedItem>
 
-      {/* Submit Story Section */}
-      <AnimatedItem type="slideUp" delay={0.4}>
-        <section className="py-12">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-purple-500/10 backdrop-blur-md rounded-3xl p-8 md:p-12 border border-amber-500/20 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl shadow-amber-500/30">
-                <i className="fas fa-pen-fancy text-white text-3xl"></i>
-              </div>
-              
-              <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-4">
-                شارك قصتك
-              </h2>
-              <p className="text-xl text-[var(--text-secondary)] mb-8 max-w-xl mx-auto">
-                قصتك قد تكون الأمل الذي يحتاجه شخص آخر. شارك رحلتك وألهم الآخرين للشفاء والتعافي
-              </p>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-12">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--primary-color)] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <i className="fas fa-chevron-right"></i>
+                  السابق
+                </button>
 
-              <button
-                onClick={() => setShowSubmitForm(!showSubmitForm)}
-                className="px-10 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-amber-500/40 transition-all hover:scale-105 inline-flex items-center gap-3"
-              >
-                <i className="fas fa-plus"></i>
-                {showSubmitForm ? 'إغلاق النموذج' : 'ابدأ الكتابة'}
-              </button>
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
 
-              {showSubmitForm && (
-                <div className="mt-12 text-right">
-                  <StoryForm onClose={() => setShowSubmitForm(false)} onSuccess={() => { setShowSubmitForm(false); loadStories(); }} />
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`w-10 h-10 rounded-xl font-medium transition-all ${
+                          currentPage === pageNum
+                            ? 'bg-[var(--primary-color)] text-white shadow-lg scale-110'
+                            : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--primary-color)] hover:text-white'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--primary-color)] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  التالي
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+              </div>
+            )}
+
+            {/* Page info */}
+            {totalPages > 1 && (
+              <div className="text-center mt-4 text-sm text-[var(--text-secondary)]">
+                صفحة {currentPage} من {totalPages} ({total} قصة)
+              </div>
+            )}
           </div>
         </section>
       </AnimatedItem>
+
+      {/* Submit Story Section - Hidden for admins */}
+      {!user?.role || user.role !== 'admin' ? (
+        <AnimatedItem type="slideUp" delay={0.4}>
+          <section className="py-12">
+            <div className="max-w-4xl mx-auto px-4">
+              <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-purple-500/10 backdrop-blur-md rounded-3xl p-8 md:p-12 border border-amber-500/20 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl shadow-amber-500/30">
+                  <i className="fas fa-pen-fancy text-white text-3xl"></i>
+                </div>
+
+                <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-4">
+                  شارك قصتك
+                </h2>
+                <p className="text-xl text-[var(--text-secondary)] mb-8 max-w-xl mx-auto">
+                  قصتك قد تكون الأمل الذي يحتاجه شخص آخر. شارك رحلتك وألهم الآخرين للشفاء والتعافي
+                </p>
+
+                <button
+                  onClick={() => setShowSubmitForm(!showSubmitForm)}
+                  className="px-10 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-amber-500/40 transition-all hover:scale-105 inline-flex items-center gap-3"
+                >
+                  <i className="fas fa-plus"></i>
+                  {showSubmitForm ? 'إغلاق النموذج' : 'ابدأ الكتابة'}
+                </button>
+
+                {showSubmitForm && (
+                  <div className="mt-12 text-right">
+                    <StoryForm onClose={() => setShowSubmitForm(false)} onSuccess={() => { setShowSubmitForm(false); loadStories(); }} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        </AnimatedItem>
+      ) : null}
     </div>
   );
 };
 
 // Modern Story Card Component
 const StoryCard = ({ story, delay, isAuthenticated, onLikeSuccess }) => {
+  const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [liked, setLiked] = useState(story.isLiked || false);
   const { success, error: showError } = useToast();
@@ -219,6 +278,7 @@ const StoryCard = ({ story, delay, isAuthenticated, onLikeSuccess }) => {
       const result = await storiesAPI.like(story._id);
       setLiked(result.liked);
       onLikeSuccess?.();
+      success(result.liked ? 'تم الإعجاب بالقصة' : 'تم إزالة الإعجاب');
     } catch (error) {
       console.error('Failed to like story:', error);
       showError(error.message || 'فشل الإعجاب بالقصة');
@@ -251,10 +311,11 @@ const StoryCard = ({ story, delay, isAuthenticated, onLikeSuccess }) => {
 
   return (
     <AnimatedItem type="scaleIn" delay={delay}>
-      <div className="group relative bg-gradient-to-br from-[var(--card-bg)] to-[var(--bg-secondary)] backdrop-blur-md rounded-3xl border border-[var(--border-color)]/30 overflow-hidden hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 hover:-translate-y-2">
+      <div className="group relative bg-gradient-to-br from-[var(--card-bg)] to-[var(--bg-secondary)] backdrop-blur-md rounded-3xl border border-[var(--border-color)]/30 overflow-hidden hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 hover:-translate-y-2 cursor-pointer"
+           onClick={() => navigate(`/stories/${story._id}`)}>
         {/* Top gradient bar */}
         <div className={`h-2 bg-gradient-to-r ${categoryColors[story.category] || 'from-amber-500 to-orange-500'}`}></div>
-        
+
         <div className="p-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4 mb-6">
@@ -267,7 +328,7 @@ const StoryCard = ({ story, delay, isAuthenticated, onLikeSuccess }) => {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-[var(--text-primary)] truncate">{story.authorId?.firstName || story.author || 'مجهول'}</h3>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] truncate hover:text-amber-500 transition-colors">{story.authorId?.firstName || story.author || 'مجهول'}</h3>
                 <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                   <i className="far fa-calendar"></i>
                   <span>{new Date(story.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
@@ -318,10 +379,13 @@ const StoryCard = ({ story, delay, isAuthenticated, onLikeSuccess }) => {
             
             <div className="flex items-center gap-2">
               <button
-                onClick={handleLike}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLike();
+                }}
                 className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
-                  liked 
-                    ? 'bg-red-500/10 text-red-500' 
+                  liked
+                    ? 'bg-red-500/10 text-red-500'
                     : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-red-500'
                 }`}
               >

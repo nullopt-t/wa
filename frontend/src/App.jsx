@@ -18,6 +18,7 @@ import AboutPage from './pages/AboutPage.jsx';
 import VisionPage from './pages/VisionPage.jsx';
 import HabitsPage from './pages/HabitsPage.jsx';
 import StoriesPage from './pages/StoriesPage.jsx';
+import StoryDetailPage from './pages/StoryDetailPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
@@ -54,6 +55,8 @@ import AdminFeedback from './pages/admin/AdminFeedback.jsx';
 import CreateFutureMessagePage from './pages/CreateFutureMessagePage.jsx';
 import FutureMessagesPage from './pages/FutureMessagesPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
+import NotificationsPage from './pages/NotificationsPage.jsx';
+import ScrollToTop from './components/ScrollToTop.jsx';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -70,6 +73,7 @@ function AppWrapper() {
 
   return (
     <div className="flex flex-col min-h-screen" dir="rtl">
+      <ScrollToTop />
       <Header />
       <main className="flex-grow">
         <AnimatePresence mode="wait">
@@ -291,10 +295,22 @@ function AppWrapper() {
                 <StoriesPage />
               </AnimatedRoute>
             } />
+            <Route path="/stories/:id" element={
+              <AnimatedRoute>
+                <StoryDetailPage />
+              </AnimatedRoute>
+            } />
             <Route path="/feedback" element={
               <AnimatedRoute>
                 <ProtectedRoute>
                   <FeedbackPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/notifications" element={
+              <AnimatedRoute>
+                <ProtectedRoute>
+                  <NotificationsPage />
                 </ProtectedRoute>
               </AnimatedRoute>
             } />

@@ -10,8 +10,16 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 const ArticleManagementPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { success, error: showError } = useToast();
+
+  // Block regular users from creating articles (only admins and therapists can)
+  useEffect(() => {
+    if (user?.role && user.role !== 'admin' && user.role !== 'therapist') {
+      showError('نشر المقالات متاح للمسؤولين والمعالجين فقط');
+      navigate('/articles');
+    }
+  }, [user]);
 
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +48,11 @@ const ArticleManagementPage = () => {
   const loadArticles = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await articlesAPI.getAll({ limit: 100 });
+      // Only load current user's articles
+      const data = await articlesAPI.getAll({ 
+        limit: 100,
+        myArticles: 'true'  // Only user's own articles
+      });
       const articlesList = data.articles || data.data || [];
       setArticles(articlesList);
     } catch (error) {
@@ -140,17 +152,18 @@ const ArticleManagementPage = () => {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <AnimatedItem type="slideUp" delay={0.1}>
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">إدارة المقالات</h1>
-              <p className="text-[var(--text-secondary)]">أنشئ وأدر مقالاتك الصحية</p>
+              <h1 className="text-3xl md:text-4xl font-bold text-[var(--text-primary)] mb-2">إدارة المقالات</h1>
+              <p className="text-sm md:text-base text-[var(--text-secondary)]">أنشئ وأدر مقالاتك الصحية</p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
             >
               <i className="fas fa-plus"></i>
-              مقال جديد
+              <span className="hidden sm:inline">مقال جديد</span>
+              <span className="sm:hidden">جديد</span>
             </button>
           </div>
         </AnimatedItem>
@@ -178,7 +191,8 @@ const ArticleManagementPage = () => {
         ) : (
           <AnimatedItem type="slideUp" delay={0.3}>
             <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 overflow-hidden">
-              <div className="overflow-x-auto">
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-[var(--bg-secondary)]">
                     <tr>
@@ -192,22 +206,22 @@ const ArticleManagementPage = () => {
                   <tbody className="divide-y divide-[var(--border-color)]">
                     {articles.map((article) => (
                       <tr key={article._id} className="hover:bg-[var(--bg-secondary)]/50 transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 max-w-xs">
                           <div>
-                            <p className="font-medium text-[var(--text-primary)] mb-1">{article.title}</p>
-                            <p className="text-sm text-[var(--text-secondary)] truncate max-w-md">{article.excerpt}</p>
+                            <p className="font-medium text-[var(--text-primary)] mb-1 break-words">{article.title}</p>
+                            <p className="text-sm text-[var(--text-secondary)] truncate">{article.excerpt}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">{getStatusBadge(article.status)}</td>
-                        <td className="px-6 py-4 text-[var(--text-secondary)]">
+                        <td className="px-6 py-4 text-[var(--text-secondary)] whitespace-nowrap">
                           <i className="far fa-heart ml-1"></i>
                           {Array.isArray(article.likes) ? article.likes.length : (article.likes || 0)}
                         </td>
-                        <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">
+                        <td className="px-6 py-4 text-sm text-[var(--text-secondary)] whitespace-nowrap">
                           {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('ar-EG') : '-'}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-shrink-0">
                             <button
                               onClick={() => navigate(`/articles/${article.slug || article._id}`)}
                               className="p-2 text-[var(--primary-color)] hover:bg-[var(--primary-color)]/10 rounded-lg transition-colors"
@@ -238,6 +252,54 @@ const ArticleManagementPage = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-[var(--border-color)]">
+                {articles.map((article) => (
+                  <div key={article._id} className="p-4 hover:bg-[var(--bg-secondary)]/50 transition-colors min-w-0">
+                    <div className="flex justify-between items-start mb-3 gap-2">
+                      <h3 className="font-medium text-[var(--text-primary)] flex-1 break-words max-w-full">{article.title}</h3>
+                      <div className="flex-shrink-0">{getStatusBadge(article.status)}</div>
+                    </div>
+                    <p className="text-sm text-[var(--text-secondary)] mb-3 line-clamp-2 break-words">{article.excerpt}</p>
+                    <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] mb-3">
+                      <span className="flex items-center gap-1 flex-shrink-0">
+                        <i className="far fa-heart"></i>
+                        {Array.isArray(article.likes) ? article.likes.length : (article.likes || 0)}
+                      </span>
+                      <span className="flex-shrink-0">
+                        {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('ar-EG') : '-'}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 pt-3 border-t border-[var(--border-color)]">
+                      <button
+                        onClick={() => navigate(`/articles/${article.slug || article._id}`)}
+                        className="flex-1 px-2 py-2 text-[var(--primary-color)] bg-[var(--primary-color)]/10 rounded-lg transition-colors text-xs font-medium whitespace-nowrap"
+                      >
+                        <i className="fas fa-eye ml-1"></i>
+                        عرض
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingArticle(article);
+                          setShowCreateModal(true);
+                        }}
+                        className="flex-1 px-2 py-2 text-blue-500 bg-blue-500/10 rounded-lg transition-colors text-xs font-medium whitespace-nowrap"
+                      >
+                        <i className="fas fa-pen ml-1"></i>
+                        تعديل
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(article)}
+                        className="flex-1 px-2 py-2 text-red-500 bg-red-500/10 rounded-lg transition-colors text-xs font-medium whitespace-nowrap"
+                      >
+                        <i className="fas fa-trash ml-1"></i>
+                        حذف
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </AnimatedItem>

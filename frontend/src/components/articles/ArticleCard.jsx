@@ -1,27 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
-import { useToast } from '../../context/ToastContext.jsx';
-import { articlesAPI } from '../../services/communityApi.js';
 import { getApiUrl } from '../../config.js';
 
 const ArticleCard = ({ article, featured = false }) => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
-  const { error: showError } = useToast();
-  const [isLiking, setIsLiking] = useState(false);
-  const [likesCount, setLikesCount] = useState(Array.isArray(article.likes) ? article.likes.length : (article.likes || 0));
-  const [isLiked, setIsLiked] = useState(false);
-
-  // Check if user has liked this article on mount
-  useEffect(() => {
-    if (isAuthenticated && user && Array.isArray(article.likes)) {
-      const hasLiked = article.likes.some(likeId => 
-        likeId === user.id || likeId === user._id || likeId._id === user.id || likeId._id === user._id
-      );
-      setIsLiked(hasLiked);
-    }
-  }, [article.likes, isAuthenticated, user]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -34,28 +16,6 @@ const ArticleCard = ({ article, featured = false }) => {
 
   const handleClick = () => {
     navigate(`/articles/${article.slug || article._id}`);
-  };
-
-  const handleLike = async (e) => {
-    e.stopPropagation(); // Prevent card click
-    
-    if (!isAuthenticated) {
-      showError('يرجى تسجيل الدخول للإعجاب بالمقال');
-      return;
-    }
-
-    if (isLiking) return;
-
-    setIsLiking(true);
-    try {
-      const result = await articlesAPI.like(article._id);
-      setLikesCount(result.likes?.length || 0);
-      setIsLiked(!isLiked); // Toggle liked state
-    } catch (error) {
-      showError(error.message || 'فشل الإعجاب بالمقال');
-    } finally {
-      setIsLiking(false);
-    }
   };
 
   const getAvatarUrl = (avatarPath) => {
@@ -122,21 +82,6 @@ const ArticleCard = ({ article, featured = false }) => {
                 </p>
               </div>
             </div>
-
-            <div className="flex items-center gap-4 text-sm text-[var(--text-secondary)] flex-shrink-0">
-              <button
-                onClick={handleLike}
-                disabled={isLiking}
-                className={`flex items-center gap-1 transition-all ${
-                  isLiked || isLiking
-                    ? 'text-red-500 scale-110'
-                    : 'hover:text-red-500 hover:scale-110'
-                } disabled:opacity-50`}
-              >
-                <i className={`${isLiked ? 'fas' : 'far'} fa-heart ${isLiking ? 'fa-beat' : ''}`}></i>
-                <span>{likesCount}</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -199,18 +144,6 @@ const ArticleCard = ({ article, featured = false }) => {
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="whitespace-nowrap">{article.readTime || 5} دقائق</span>
-            <button
-              onClick={handleLike}
-              disabled={isLiking}
-              className={`flex items-center gap-1 transition-all whitespace-nowrap ${
-                isLiked || isLiking
-                  ? 'text-red-500 scale-110'
-                  : 'hover:text-red-500 hover:scale-110'
-              } disabled:opacity-50`}
-            >
-              <i className={`${isLiked ? 'fas' : 'far'} fa-heart ${isLiking ? 'fa-beat' : ''}`}></i>
-              <span>{likesCount}</span>
-            </button>
           </div>
         </div>
       </div>

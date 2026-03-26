@@ -11,11 +11,11 @@ export class Feedback {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   userId: Types.ObjectId;
 
-  @Prop({ required: true })
-  name: string;
+  @Prop()
+  name?: string;
 
-  @Prop({ required: true })
-  email: string;
+  @Prop()
+  email?: string;
 
   @Prop({ required: true, min: 1, max: 5 })
   rating: number;

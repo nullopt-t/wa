@@ -100,11 +100,18 @@ export class ArticleController {
     return article;
   }
 
-  // Create article (authenticated)
+  // Create article (admins and therapists only)
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Request() req, @Body() createArticleDto: CreateArticleDto) {
     const userId = req.user.userId;
+    const userRole = req.user.role;
+    
+    // Only admins and therapists can create articles
+    if (userRole !== 'admin' && userRole !== 'therapist') {
+      throw new ForbiddenException('نشر المقالات متاح للمسؤولين والمعالجين فقط');
+    }
+    
     return this.articleService.create(userId, createArticleDto);
   }
 

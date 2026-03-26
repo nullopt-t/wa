@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from '../users/user.module';
+import { NotificationModule } from '../notification/notification.module';
 import { Category, CategorySchema } from './schemas/category.schema';
 import { Post, PostSchema } from './schemas/post.schema';
 import { Comment, CommentSchema } from './schemas/comment.schema';
 import { Report, ReportSchema } from './schemas/report.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 import { CategoryController } from './controllers/category.controller';
 import { PostController } from './controllers/post.controller';
 import { CommentController } from './controllers/comment.controller';
@@ -21,8 +23,10 @@ import { ReportService } from './services/report.service';
       { name: Post.name, schema: PostSchema },
       { name: Comment.name, schema: CommentSchema },
       { name: Report.name, schema: ReportSchema },
+      { name: User.name, schema: UserSchema },
     ]),
     UserModule, // Import UserModule for admin checks
+    NotificationModule,
   ],
   controllers: [
     CategoryController,

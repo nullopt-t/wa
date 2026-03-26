@@ -17,30 +17,16 @@ const ArticleDetailPage = () => {
   const [relatedArticles, setRelatedArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLiking, setIsLiking] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
 
   useEffect(() => {
     loadArticle();
   }, [articleId]);
-
-  // Check if user has liked this article
-  useEffect(() => {
-    if (article && isAuthenticated && user && Array.isArray(article.likes)) {
-      const hasLiked = article.likes.some(likeId => 
-        likeId === user.id || likeId === user._id || likeId._id === user.id || likeId._id === user._id
-      );
-      setIsLiked(hasLiked);
-    }
-  }, [article, isAuthenticated, user]);
 
   const loadArticle = async () => {
     try {
       setLoading(true);
       const data = await articlesAPI.getBySlug(articleId);
       setArticle(data);
-      const initialLikesCount = Array.isArray(data.likes) ? data.likes.length : (data.likes || 0);
-      setLikesCount(initialLikesCount);
 
       // Load related articles
       if (data.tags && data.tags.length > 0) {
@@ -57,28 +43,6 @@ const ArticleDetailPage = () => {
       setTimeout(() => navigate('/articles'), 2000);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLike = async () => {
-    if (!isAuthenticated) {
-      showError('يرجى تسجيل الدخول للإعجاب بالمقال');
-      return;
-    }
-
-    if (isLiking) return;
-
-    setIsLiking(true);
-    try {
-      const result = await articlesAPI.like(article._id);
-      const newLikesCount = Array.isArray(result.likes) ? result.likes.length : (result.likes || 0);
-      setArticle({ ...article, likes: newLikesCount });
-      setLikesCount(newLikesCount);
-      setIsLiked(!isLiked); // Toggle liked state
-    } catch (error) {
-      showError(error.message || 'فشل الإعجاب بالمقال');
-    } finally {
-      setIsLiking(false);
     }
   };
 
@@ -188,18 +152,7 @@ const ArticleDetailPage = () => {
                 </div>
 
                 <div className="flex items-center gap-6 text-sm text-[var(--text-secondary)] flex-shrink-0">
-                  <button
-                    onClick={handleLike}
-                    disabled={isLiking}
-                    className={`flex items-center gap-2 transition-all ${
-                      isLiked || isLiking
-                        ? 'text-red-500 scale-110'
-                        : 'hover:text-red-500 hover:scale-110'
-                    } disabled:opacity-50`}
-                  >
-                    <i className={`${isLiked ? 'fas' : 'far'} fa-heart ${isLiking ? 'fa-beat' : ''}`}></i>
-                    <span>{likesCount} إعجاب</span>
-                  </button>
+                  {/* Like button removed */}
                 </div>
               </div>
 

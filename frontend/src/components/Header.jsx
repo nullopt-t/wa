@@ -5,6 +5,7 @@ import ThemeToggle from './ThemeToggle';
 import NotificationsBell from './dashboard/NotificationsBell.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { getApiUrl } from '../config.js';
+import NotificationBell from './NotificationBell.jsx';
 
 const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -96,8 +97,8 @@ const Header = () => {
             {isAuthenticated ? (
               <>
                 {/* Notifications */}
-                <NotificationsBell />
-                
+                <NotificationBell />
+
                 {/* Account Icon with Dropdown */}
                 <div className="account-dropdown relative">
                   <button

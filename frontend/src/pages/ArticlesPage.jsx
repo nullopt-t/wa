@@ -162,6 +162,17 @@ const ArticlesPage = () => {
             {/* Filter by Author */}
             <AnimatedItem type="slideRight" delay={0.2}>
               <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-6 border border-[var(--border-color)]/30">
+                {/* Create Article Button - For admins and therapists only */}
+                {isAuthenticated && user && (user.role === 'admin' || user.role === 'therapist') && (
+                  <button
+                    onClick={() => navigate('/articles/manage')}
+                    className="w-full mb-4 px-4 py-3 bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-[var(--primary-color)]/30 transition-all flex items-center justify-center gap-2"
+                  >
+                    <i className="fas fa-plus"></i>
+                    اكتب مقالاً
+                  </button>
+                )}
+
                 <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                   <i className="fas fa-user text-[var(--primary-color)]"></i>
                   المؤلف

@@ -136,9 +136,12 @@ const AdminUsers = () => {
       lastName.includes(searchTermLower);
 
     const matchesRole = filterRole === 'all' || user.role === filterRole;
-    const matchesStatus = filterStatus === 'all' || 
-      (filterStatus === 'active' && user.isActive !== false) ||
-      (filterStatus === 'inactive' && user.isActive === false);
+    
+    // Handle isActive filtering (handle undefined, null, or explicit false)
+    const isUserActive = user.isActive !== false && user.isActive !== null && user.isActive !== undefined;
+    const matchesStatus = filterStatus === 'all' ||
+      (filterStatus === 'active' && isUserActive) ||
+      (filterStatus === 'inactive' && !isUserActive);
 
     return matchesSearch && matchesRole && matchesStatus;
   }).sort((a, b) => {

@@ -3,11 +3,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Story, StoryDocument } from '../schemas/story.schema';
 import { CreateStoryDto, UpdateStoryDto, StoryFilterDto } from '../dto/story.dto';
+import { NotificationService } from '../../notification/services/notification.service';
+import { User, UserDocument } from '../../users/schemas/user.schema';
 
 @Injectable()
 export class StoryService {
   constructor(
     @InjectModel(Story.name) private storyModel: Model<StoryDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private notificationService: NotificationService,
   ) {}
 
   // Create story
@@ -25,10 +29,43 @@ export class StoryService {
         readTime,
       });
 
-      return story.save();
+      const savedStory = await story.save();
+
+      // Notify all admins about new story
+      await this.notifyAdminsAboutNewStory(savedStory._id.toString(), userId);
+
+      return savedStory;
     } catch (error) {
       console.error('Error creating story:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Notify all admins about new story
+   */
+  private async notifyAdminsAboutNewStory(storyId: string, userId: string) {
+    try {
+      const user = await this.userModel.findById(userId).exec();
+      const userName = user ? `${user.firstName} ${user.lastName}` : 'مستخدم';
+      
+      const admins = await this.userModel.find({ role: 'admin' }).exec();
+      
+      for (const admin of admins) {
+        await this.notificationService.create({
+          userId: admin._id.toString(),
+          type: 'system',
+          title: 'قصة جديدة',
+          message: `نشر ${userName} قصة جديدة وتحتاج مراجعة`,
+          actionUrl: '/admin/stories',
+          relatedModel: 'Story',
+          relatedId: storyId,
+          priority: 'medium',
+        });
+      }
+    } catch (error) {
+      console.error('Error notifying admins about story:', error);
+      // Don't throw - notification failure shouldn't break story creation
     }
   }
 
@@ -382,13 +419,23 @@ export class StoryService {
         throw new NotFoundException('القصة غير موجودة');
       }
 
-      return await this.storyModel
-        .findByIdAndUpdate(id, { 
+      const updatedStory = await this.storyModel
+        .findByIdAndUpdate(id, {
           status,
           reviewedAt: new Date(),
           reviewedBy: new Types.ObjectId(adminId),
         }, { new: true })
         .exec();
+
+      // Send notification if story is approved
+      if (status === 'approved' && story.authorId) {
+        await this.notificationService.createStoryApprovedNotification(
+          story.authorId.toString(),
+          id,
+        );
+      }
+
+      return updatedStory;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

@@ -21,6 +21,7 @@ import { CommentModule } from './comment/comment.module';
 import { StoryModule } from './story/story.module';
 import { AssessmentModule } from './assessment/assessment.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { FeedbackModule } from './feedback/feedback.module';
     StoryModule,
     AssessmentModule,
     FeedbackModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

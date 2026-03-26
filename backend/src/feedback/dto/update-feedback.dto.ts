@@ -6,6 +6,6 @@ export class UpdateFeedbackStatusDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(10)
+  @MinLength(1)
   adminResponse?: string;
 }

@@ -132,12 +132,12 @@ const AdminStories = () => {
         </div>
       ) : stories.length === 0 ? (
         <AnimatedItem type="slideUp" delay={0.2}>
-          <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-12 text-center border border-[var(--border-color)]/30">
-            <i className="fas fa-inbox text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
-            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+          <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-8 md:p-12 text-center border border-[var(--border-color)]/30">
+            <i className="fas fa-inbox text-5xl md:text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
+            <h3 className="text-lg md:text-xl font-bold text-[var(--text-primary)] mb-2">
               لا توجد قصص
             </h3>
-            <p className="text-[var(--text-secondary)]">
+            <p className="text-sm md:text-base text-[var(--text-secondary)]">
               {filterStatus === 'pending' ? 'جميع القصص تمت مراجعتها' : 'لا توجد قصص في هذا التصنيف'}
             </p>
           </div>
@@ -158,9 +158,9 @@ const AdminStories = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-base md:text-lg font-bold text-[var(--text-primary)] truncate max-w-full">{story.authorId?.firstName || 'مجهول'}</h3>
+                      <h3 className="text-base md:text-lg font-bold text-[var(--text-primary)] break-words max-w-full">{story.authorId?.firstName || 'مجهول'}</h3>
                       <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-[var(--text-secondary)] mt-1">
-                        <span className="truncate max-w-[150px] sm:max-w-[200px] break-all">{story.authorId?.email}</span>
+                        <span className="break-all max-w-full">{story.authorId?.email}</span>
                         <span className="flex-shrink-0">•</span>
                         <span className="whitespace-nowrap flex-shrink-0">{new Date(story.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                       </div>
@@ -176,14 +176,14 @@ const AdminStories = () => {
                 <div className="mb-6">
                   <h4 className="text-lg md:text-xl font-bold text-[var(--text-primary)] mb-3 break-words max-w-full">{story.title}</h4>
                   <div className="bg-[var(--bg-secondary)] rounded-xl p-4 md:p-5 border border-[var(--border-color)]/20 max-h-64 overflow-y-auto">
-                    <p className="text-sm md:text-base text-[var(--text-primary)] leading-relaxed break-words break-all">
+                    <p className="text-sm md:text-base text-[var(--text-primary)] leading-relaxed break-words max-w-full">
                       {story.content}
                     </p>
                   </div>
                 </div>
 
                 {/* Stats */}
-                <div className="flex flex-wrap items-center gap-3 md:gap-6 text-xs md:text-sm text-[var(--text-secondary)] mb-6 pb-4 md:pb-6 border-b border-[var(--border-color)]/20">
+                <div className="flex flex-wrap items-center gap-3 md:gap-6 text-xs md:text-sm text-[var(--text-secondary)] mb-4 md:mb-6 pb-4 md:pb-6 border-b border-[var(--border-color)]/20">
                   <span className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                     <i className="far fa-clock"></i>
                     {story.readTime} د
