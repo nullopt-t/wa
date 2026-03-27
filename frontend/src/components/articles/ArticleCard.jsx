@@ -64,23 +64,13 @@ const ArticleCard = ({ article, featured = false }) => {
           </p>
 
           {/* Meta */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
-                {authorAvatar ? (
-                  <img src={authorAvatar} alt={article.authorId?.firstName} className="w-full h-full object-cover" />
-                ) : (
-                  article.authorId?.firstName?.charAt(0) || 'ك'
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-[var(--text-primary)] truncate">
-                  {article.authorId?.firstName} {article.authorId?.lastName}
-                </p>
-                <p className="text-xs text-[var(--text-secondary)] whitespace-nowrap">
-                  {formatDate(article.publishedAt || article.createdAt)} • {article.readTime || 5} دقائق
-                </p>
-              </div>
+          <div className="flex items-center justify-between gap-4 flex-wrap pt-4 border-t border-[var(--border-color)]/20">
+            <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+              <i className="far fa-calendar"></i>
+              <span>{formatDate(article.publishedAt || article.createdAt)}</span>
+              <span>•</span>
+              <i className="far fa-clock"></i>
+              <span>{article.readTime || 5} دقائق</span>
             </div>
           </div>
         </div>
@@ -129,20 +119,13 @@ const ArticleCard = ({ article, featured = false }) => {
         </p>
 
         {/* Meta */}
-        <div className="flex items-center justify-between gap-2 text-xs text-[var(--text-secondary)] flex-wrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white text-xs overflow-hidden flex-shrink-0">
-              {authorAvatar ? (
-                <img src={authorAvatar} alt={article.authorId?.firstName} className="w-full h-full object-cover" />
-              ) : (
-                article.authorId?.firstName?.charAt(0) || 'ك'
-              )}
-            </div>
-            <span className="truncate max-w-[120px]">
-              {article.authorId?.firstName}
-            </span>
+        <div className="flex items-center justify-between gap-2 text-xs text-[var(--text-secondary)] flex-wrap pt-3 border-t border-[var(--border-color)]/20">
+          <div className="flex items-center gap-2">
+            <i className="far fa-calendar"></i>
+            <span className="whitespace-nowrap">{formatDate(article.publishedAt || article.createdAt)}</span>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <i className="far fa-clock"></i>
             <span className="whitespace-nowrap">{article.readTime || 5} دقائق</span>
           </div>
         </div>

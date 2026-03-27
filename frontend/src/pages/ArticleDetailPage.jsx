@@ -130,23 +130,12 @@ const ArticleDetailPage = () => {
               {/* Meta */}
               <div className="flex items-center justify-between flex-wrap gap-4 mb-8 pb-8 border-b border-[var(--border-color)]/30">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
-                    {article.authorId?.avatar ? (
-                      <img
-                        src={getApiUrl(article.authorId.avatar)}
-                        alt={article.authorId?.firstName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      article.authorId?.firstName?.charAt(0) || 'ك'
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-[var(--text-primary)] truncate">
-                      {article.authorId?.firstName} {article.authorId?.lastName}
+                  <div className="text-sm text-[var(--text-secondary)]">
+                    <p className="font-medium text-[var(--text-primary)]">
+                      {formatDate(article.publishedAt || article.createdAt)}
                     </p>
                     <p className="text-sm text-[var(--text-secondary)] whitespace-nowrap">
-                      {formatDate(article.publishedAt || article.createdAt)} • {article.readTime || 5} دقائق قراءة
+                      {article.readTime || 5} دقائق قراءة
                     </p>
                   </div>
                 </div>

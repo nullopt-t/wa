@@ -107,7 +107,6 @@ export class ArticleService {
 
     const articles = await this.articleModel
       .find(filter)
-      .populate('authorId', 'firstName lastName avatar')
       .sort({ [sort]: -1, order: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -128,7 +127,6 @@ export class ArticleService {
     try {
       return this.articleModel
         .find({ status: 'published', isFeatured: true })
-        .populate('authorId', 'firstName lastName avatar')
         .sort({ publishedAt: -1, order: 1 })
         .limit(limit)
         .exec();
@@ -143,7 +141,6 @@ export class ArticleService {
     try {
       const article = await this.articleModel
         .findOne({ slug })
-        .populate('authorId', 'firstName lastName avatar bio')
         .exec();
 
       if (!article) {
@@ -165,7 +162,6 @@ export class ArticleService {
     try {
       const article = await this.articleModel
         .findById(id)
-        .populate('authorId', 'firstName lastName avatar bio')
         .exec();
 
       if (!article) {
