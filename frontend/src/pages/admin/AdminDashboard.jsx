@@ -104,6 +104,13 @@ const AdminDashboard = () => {
       color: 'from-purple-500 to-purple-600',
       link: '/admin/feedback',
     },
+    {
+      title: 'المعالجين',
+      value: stats.therapists || 0,
+      icon: 'fa-user-md',
+      color: 'from-teal-500 to-cyan-500',
+      link: '/admin/therapists',
+    },
   ];
 
   const quickActions = [
@@ -141,6 +148,13 @@ const AdminDashboard = () => {
       link: '/admin/feedback',
       description: 'مراجعة والرد على ملاحظات المستخدمين',
       color: 'from-purple-500 to-purple-600',
+    },
+    {
+      title: 'مراجعة المعالجين',
+      icon: 'fa-user-md',
+      link: '/admin/therapists',
+      description: 'التحقق واعتماد المعالجين الجدد',
+      color: 'from-teal-500 to-cyan-500',
     },
     {
       title: 'إعدادات المنصة',

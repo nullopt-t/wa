@@ -53,7 +53,11 @@ export class ResourceNotFoundException extends CustomHttpException {
 // New account state exceptions
 export class EmailNotVerifiedException extends CustomHttpException {
   constructor(email: string) {
-    super('Email not verified', HttpStatus.UNAUTHORIZED, ErrorCode.EMAIL_NOT_VERIFIED);
+    super(
+      `البريد الإلكتروني غير مؤكد: ${email}. يرجى التحقق من بريدك الإلكتروني والنقر على رابط التأكيد. خطوات التسجيل: 1) التحقق من البريد الإلكتروني ⏳ 2) مراجعة الإدارة (للمعالجين)`,
+      HttpStatus.UNAUTHORIZED,
+      ErrorCode.EMAIL_NOT_VERIFIED
+    );
   }
 }
 
@@ -71,6 +75,10 @@ export class PasswordExpiredException extends CustomHttpException {
 
 export class TherapistPendingApprovalException extends CustomHttpException {
   constructor() {
-    super('Therapist account pending admin approval', HttpStatus.UNAUTHORIZED, ErrorCode.ACCOUNT_PENDING_APPROVAL);
+    super(
+      'حسابك كمعالج قيد المراجعة من قبل فريقنا. ستتلقى إشعاراً عبر البريد الإلكتروني عند الموافقة. خطوات التسجيل: 1) التحقق من البريد الإلكتروني ✅ 2) مراجعة الإدارة ⏳',
+      HttpStatus.UNAUTHORIZED,
+      ErrorCode.ACCOUNT_PENDING_APPROVAL
+    );
   }
 }

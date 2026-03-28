@@ -15,6 +15,7 @@ const SignupPage = () => {
   const [userType, setUserType] = useState('user');
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTherapistInfo, setShowTherapistInfo] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -287,31 +288,36 @@ const SignupPage = () => {
             {/* User Type Selection */}
             <div className="text-right mb-6">
               <label className="block text-lg font-medium text-[var(--text-primary)] mb-3">نوع الحساب</label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => setUserType('user')}
-                  className={`px-6 py-4 rounded-xl border-2 font-medium transition-colors flex items-center justify-center ${
+                  className={`px-6 py-4 rounded-xl border-2 font-medium transition-all flex flex-col items-center gap-2 ${
                     userType === 'user'
-                      ? 'bg-[var(--accent-amber)] text-white border-[var(--accent-amber)]'
+                      ? 'bg-[var(--accent-amber)] text-white border-[var(--accent-amber)] shadow-lg shadow-amber-500/30'
                       : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-[var(--border-color)] hover:bg-[var(--bg-primary)]'
                   }`}
                 >
-                  <i className="fas fa-user ml-2"></i>
+                  <i className="fas fa-user text-2xl"></i>
                   <span>مستخدم عادي</span>
+                  <span className="text-xs opacity-80">تصفح المحتوى واستخدم الأدوات</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setUserType('therapist')}
-                  className={`px-6 py-4 rounded-xl border-2 font-medium transition-colors flex items-center justify-center ${
+                  onClick={() => setShowTherapistInfo(true)}
+                  className={`px-6 py-4 rounded-xl border-2 font-medium transition-all flex flex-col items-center gap-2 relative ${
                     userType === 'therapist'
-                      ? 'bg-[var(--accent-amber)] text-white border-[var(--accent-amber)]'
-                      : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-[var(--border-color)] hover:bg-[var(--bg-primary)]'
+                      ? 'bg-[var(--accent-amber)] text-white border-[var(--accent-amber)] shadow-lg shadow-amber-500/30'
+                      : 'bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--primary-color)]/5 text-[var(--text-primary)] border-[var(--border-color)] hover:border-[var(--primary-color)] hover:shadow-lg'
                   }`}
                 >
-                  <i className="fas fa-user-md ml-2"></i>
+                  <i className="fas fa-user-md text-2xl"></i>
                   <span>معالج نفسي</span>
+                  <span className="text-xs opacity-80">قدّم جلسات ودر ملفك المهني</span>
+                  <span className="absolute top-2 left-2 px-2 py-1 bg-[var(--primary-color)] text-white text-xs rounded-full">
+                    <i className="fas fa-info-circle"></i>
+                  </span>
                 </button>
               </div>
             </div>
@@ -778,6 +784,142 @@ const SignupPage = () => {
                 </button>
               </AnimatedItem>
             </form>
+
+            {/* Therapist Info Modal */}
+            {showTherapistInfo && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowTherapistInfo(false)}>
+                <div className="bg-[var(--card-bg)] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] p-6 text-white rounded-t-2xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                          <i className="fas fa-user-md text-2xl"></i>
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold">حساب المعالج النفسي</h2>
+                          <p className="text-sm opacity-90">انضم إلى مجتمعنا من المختصين</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowTherapistInfo(false)}
+                        className="text-white/80 hover:text-white transition-colors"
+                      >
+                        <i className="fas fa-times text-2xl"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6 space-y-6">
+                    {/* Benefits */}
+                    <div>
+                      <h3 className="text-lg font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                        <i className="fas fa-gift text-[var(--primary-color)]"></i>
+                        مزايا حساب المعالج
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {[
+                          { icon: 'fa-calendar-check', text: 'تقديم جلسات استشارة' },
+                          { icon: 'fa-user-shield', text: 'ملف مهني معتمد' },
+                          { icon: 'fa-users', text: 'وصول لآلاف المستخدمين' },
+                          { icon: 'fa-chart-line', text: 'أدوات متابعة متقدمة' },
+                          { icon: 'fa-video', text: 'جلسات أونلاين' },
+                          { icon: 'fa-star', text: 'تقييمات ومراجعات' },
+                        ].map((item, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-[var(--text-secondary)]">
+                            <i className={`fas ${item.icon} text-[var(--primary-color)]`}></i>
+                            <span className="text-sm">{item.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Requirements */}
+                    <div className="bg-[var(--bg-secondary)] rounded-xl p-4 border border-[var(--border-color)]">
+                      <h3 className="text-lg font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                        <i className="fas fa-clipboard-check text-[var(--primary-color)]"></i>
+                        المتطلبات
+                      </h3>
+                      <div className="space-y-2">
+                        {[
+                          'رخصة مزاولة المهنة سارية',
+                          'مؤهل علمي معتمد في علم النفس أو الطب النفسي',
+                          'خبرة عملية لا تقل عن سنتين',
+                          'التحقق من الهوية الشخصية',
+                          'موافقة الإدارة بعد المراجعة',
+                        ].map((req, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                            <i className="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>{req}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Process Steps */}
+                    <div>
+                      <h3 className="text-lg font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                        <i className="fas fa-list-ol text-[var(--primary-color)]"></i>
+                        خطوات التسجيل
+                      </h3>
+                      <div className="space-y-3">
+                        {[
+                          { num: 1, title: 'إنشاء الحساب', desc: 'أدخل معلوماتك الأساسية' },
+                          { num: 2, title: 'التحقق من البريد', desc: 'أكد بريدك الإلكتروني' },
+                          { num: 3, title: 'إكمال الملف المهني', desc: 'أضف معلومات الترخيص والخبرة' },
+                          { num: 4, title: 'مراجعة الإدارة', desc: 'يتم التحقق من المستندات' },
+                          { num: 5, title: 'البدء!', desc: 'ابدأ في تقديم الجلسات' },
+                        ].map((step) => (
+                          <div key={step.num} className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-[var(--primary-color)] text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                              {step.num}
+                            </div>
+                            <div>
+                              <div className="font-medium text-[var(--text-primary)] text-sm">{step.title}</div>
+                              <div className="text-xs text-[var(--text-secondary)]">{step.desc}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Important Note */}
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <i className="fas fa-info-circle text-amber-500 text-xl mt-0.5"></i>
+                        <div>
+                          <p className="text-sm font-medium text-amber-700 mb-1">ملاحظة مهمة</p>
+                          <p className="text-xs text-amber-600">
+                            بعد إنشاء الحساب، ستحتاج إلى إكمال ملفك المهني ورفع وثائق الترخيص للتحقق منها. عملية المراجعة تستغرق ٢-٥ أيام عمل.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="p-6 border-t border-[var(--border-color)] flex gap-3">
+                    <button
+                      onClick={() => setShowTherapistInfo(false)}
+                      className="flex-1 px-6 py-3 border-2 border-[var(--secondary-color)] text-[var(--secondary-color)] rounded-xl font-medium hover:bg-[var(--secondary-color)] hover:text-white transition-colors"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      onClick={() => {
+                        setUserType('therapist');
+                        setShowTherapistInfo(false);
+                      }}
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] text-white rounded-xl font-bold hover:shadow-lg transition-all"
+                    >
+                      <i className="fas fa-check ml-2"></i>
+                      متابعة كمعالج
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="mt-8 text-center">
               <p className="text-[var(--text-secondary)]">

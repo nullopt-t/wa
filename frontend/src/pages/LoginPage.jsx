@@ -133,9 +133,18 @@ const LoginPage = () => {
     } catch (error) {
       console.error('Login error:', error);
 
-      // Check if it's an email not verified error
-      if (error.message && error.message.includes('لم يتم التحقق')) {
-        setShowResendVerification(true);
+      // Check if it's an email not verified error - redirect to verify page
+      if (error.message && (
+        error.message.includes('لم يتم التحقق') || 
+        error.message.includes('EMAIL_NOT_VERIFIED') ||
+        error.message.includes('يرجى التحقق')
+      )) {
+        // Navigate to verify email page with email
+        setTimeout(() => {
+          navigate('/verify-email', { state: { email: formData.email } });
+        }, 1500);
+        showError('البريد الإلكتروني غير مؤكد. جاري تحويلك لصفحة التحقق...');
+        return;
       }
 
       // Check if it's a therapist pending approval error

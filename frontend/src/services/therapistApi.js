@@ -4,7 +4,7 @@ import { API_URL } from '../config.js';
 
 export const therapistAPI = {
   // Get full dashboard data
-  getDashboard: () => apiRequest('/therapist/dashboard', {
+  getDashboard: () => apiRequest('/therapists/dashboard', {
     method: 'GET',
   }),
 

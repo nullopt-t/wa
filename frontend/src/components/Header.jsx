@@ -14,6 +14,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const accountDropdownRef = React.useRef(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -32,12 +33,12 @@ const Header = () => {
   // Close account dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showAccountDropdown && !event.target.closest('.account-dropdown')) {
+      if (showAccountDropdown && accountDropdownRef.current && !accountDropdownRef.current.contains(event.target)) {
         setShowAccountDropdown(false);
       }
     };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showAccountDropdown]);
 
   // Prevent scrolling on the main page when sidebar is open
@@ -56,7 +57,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-[var(--bg-secondary)]/80 backdrop-blur-md shadow-md sticky top-0 z-[60] border-b border-[var(--border-color)]/30">
+      <header className="bg-[var(--bg-secondary)]/80 backdrop-blur-md shadow-md sticky top-0 z-[70] border-b border-[var(--border-color)]/30">
         <nav className="py-3">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-4">
           {/* Right Side - Logo + Desktop Navigation */}
@@ -70,7 +71,6 @@ const Header = () => {
             <div className="hidden xl:flex items-center gap-6">
               <Link to="/" className={`font-medium ${location.pathname === '/' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الرئيسية</Link>
               <Link to="/categories" className={`font-medium ${location.pathname === '/categories' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الأقسام</Link>
-              <Link to="/assessments" className={`font-medium ${location.pathname === '/assessments' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الاختبارات</Link>
               <Link to="/about" className={`font-medium ${location.pathname === '/about' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>عن وعي</Link>
               <Link to="/contact" className={`font-medium ${location.pathname === '/contact' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>تواصل معنا</Link>
             </div>
@@ -100,7 +100,7 @@ const Header = () => {
                 <NotificationBell />
 
                 {/* Account Icon with Dropdown */}
-                <div className="account-dropdown relative">
+                <div className="account-dropdown relative" ref={accountDropdownRef}>
                   <button
                     onClick={() => setShowAccountDropdown(!showAccountDropdown)}
                     className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] flex items-center justify-center text-white font-bold hover:shadow-lg hover:scale-105 transition-all duration-300"
@@ -111,15 +111,20 @@ const Header = () => {
                         src={getApiUrl(user.avatar)}
                         alt={user.firstName}
                         className="w-full h-full rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'م'
-                    )}
+                    ) : null}
+                    <span className={`${user?.avatar ? 'hidden' : 'w-full h-full flex items-center justify-center'}`}>
+                      {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'م'}
+                    </span>
                   </button>
                   
                   {/* Desktop Dropdown Card */}
                   {showAccountDropdown && (
-                    <div className="hidden xl:block absolute left-0 mt-2 w-80 bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 overflow-hidden z-50">
+                    <div className="hidden xl:block absolute left-0 mt-2 w-80 bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 overflow-hidden z-[80]">
                       {/* User Info Header */}
                       <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] p-6 text-white">
                         <div className="flex items-center gap-4">
@@ -153,7 +158,7 @@ const Header = () => {
                       <div className="p-3">
                         <div className="space-y-1">
                           <Link
-                            to="/therapist/dashboard"
+                            to={user?.role === 'admin' ? '/admin' : user?.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard'}
                             className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
                             onClick={() => setShowAccountDropdown(false)}
                           >
@@ -230,7 +235,7 @@ const Header = () => {
 
         {/* Mobile Account Dropdown */}
         {showAccountDropdown && (
-          <div className="xl:hidden bg-[var(--card-bg)] backdrop-blur-md border-t border-[var(--border-color)]/30 py-4 px-4">
+          <div className="xl:hidden bg-[var(--card-bg)] backdrop-blur-md border-t border-[var(--border-color)]/30 py-4 px-4 z-[80] relative">
             {/* User Info */}
             <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] rounded-xl p-4 text-white mb-4">
               <div className="flex items-center gap-3">
@@ -263,7 +268,7 @@ const Header = () => {
             {/* Menu Items */}
             <div className="space-y-2">
               <Link
-                to="/therapist/dashboard"
+                to={user?.role === 'admin' ? '/admin' : user?.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard'}
                 className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
                 onClick={() => setShowAccountDropdown(false)}
               >
@@ -281,6 +286,16 @@ const Header = () => {
                   <i className="fas fa-user text-[var(--primary-color)]"></i>
                 </div>
                 <span className="font-medium">الملف الشخصي</span>
+              </Link>
+              <Link
+                to="/saved-posts"
+                className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                onClick={() => setShowAccountDropdown(false)}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                  <i className="fas fa-bookmark text-[var(--primary-color)]"></i>
+                </div>
+                <span className="font-medium">المنشورات المحفوظة</span>
               </Link>
               <Link
                 to="/account-settings"
@@ -345,13 +360,6 @@ const Header = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   الأقسام
-                </Link>
-                <Link
-                  to="/assessments"
-                  className={`font-medium py-3 px-4 rounded-lg ${location.pathname === '/assessments' ? 'text-[#c5a98e] bg-[var(--bg-primary)]/50' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] hover:bg-[var(--bg-primary)]/30 transition-colors`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  الاختبارات
                 </Link>
                 <Link
                   to="/about"
