@@ -35,7 +35,11 @@ const SignupPage = () => {
     yearsOfExperience: '',
     education: '',
     certifications: '',
-    clinicAddress: ''
+    clinicAddress: '',
+    city: '',
+    country: '',
+    bio: '',
+    languages: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -215,7 +219,11 @@ const SignupPage = () => {
           yearsOfExperience: parseInt(therapistData.yearsOfExperience) || 0,
           education: therapistData.education,
           certifications: therapistData.certifications ? therapistData.certifications.split(',').map(s => s.trim()) : [],
-          clinicAddress: therapistData.clinicAddress
+          clinicAddress: therapistData.clinicAddress,
+          city: therapistData.city,
+          country: therapistData.country,
+          bio: therapistData.bio,
+          languages: therapistData.languages ? therapistData.languages.split(',').map(s => s.trim()) : ['ar'],
         });
       }
 
@@ -234,7 +242,7 @@ const SignupPage = () => {
         showError(result.message || 'حدث خطأ أثناء إنشاء الحساب');
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      
       showError(error.message || 'حدث خطأ أثناء إنشاء الحساب');
     } finally {
       setLoading(false);
@@ -732,6 +740,81 @@ const SignupPage = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* City & Country */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="text-right">
+                        <label htmlFor="city" className="block text-lg font-medium text-[var(--text-primary)] mb-3">المدينة</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            id="city"
+                            name="city"
+                            value={therapistData.city}
+                            onChange={(e) => handleTherapistDataChange('city', e.target.value)}
+                            placeholder="القاهرة، الرياض..."
+                            className="w-full px-6 py-4 pr-12 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)]"
+                          />
+                          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                            <i className="fas fa-city"></i>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <label htmlFor="country" className="block text-lg font-medium text-[var(--text-primary)] mb-3">البلد</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            id="country"
+                            name="country"
+                            value={therapistData.country}
+                            onChange={(e) => handleTherapistDataChange('country', e.target.value)}
+                            placeholder="مصر، السعودية..."
+                            className="w-full px-6 py-4 pr-12 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)]"
+                          />
+                          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                            <i className="fas fa-globe"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bio */}
+                    <div className="text-right">
+                      <label htmlFor="bio" className="block text-lg font-medium text-[var(--text-primary)] mb-3">نبذة تعريفية (اختياري)</label>
+                      <div className="relative">
+                        <textarea
+                          id="bio"
+                          name="bio"
+                          value={therapistData.bio}
+                          onChange={(e) => handleTherapistDataChange('bio', e.target.value)}
+                          placeholder="اكتب نبذة مختصرة عن خبرتك وتخصصك..."
+                          rows={3}
+                          className="w-full px-6 py-4 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Languages */}
+                    <div className="text-right">
+                      <label htmlFor="languages" className="block text-lg font-medium text-[var(--text-primary)] mb-3">اللغات (اختياري)</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          id="languages"
+                          name="languages"
+                          value={therapistData.languages}
+                          onChange={(e) => handleTherapistDataChange('languages', e.target.value)}
+                          placeholder="العربية، الإنجليزية..."
+                          className="w-full px-6 py-4 pr-12 border-2 border-[var(--border-color)] rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)]"
+                        />
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                          <i className="fas fa-language"></i>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">افصل بين اللغات بفاصلة</p>
+                    </div>
                   </div>
                 </AnimatedItem>
               )}
@@ -820,12 +903,10 @@ const SignupPage = () => {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
-                          { icon: 'fa-calendar-check', text: 'تقديم جلسات استشارة' },
-                          { icon: 'fa-user-shield', text: 'ملف مهني معتمد' },
+                          { icon: 'fa-user-shield', text: 'ملف مهني معروض في المنصة' },
                           { icon: 'fa-users', text: 'وصول لآلاف المستخدمين' },
-                          { icon: 'fa-chart-line', text: 'أدوات متابعة متقدمة' },
-                          { icon: 'fa-video', text: 'جلسات أونلاين' },
-                          { icon: 'fa-star', text: 'تقييمات ومراجعات' },
+                          { icon: 'fa-map-marker-alt', text: 'عرض موقعك وتفاصيل العيادة' },
+                          { icon: 'fa-shield-alt', text: 'علامة موثوق بعد التحقق' },
                         ].map((item, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-[var(--text-secondary)]">
                             <i className={`fas ${item.icon} text-[var(--primary-color)]`}></i>
@@ -843,11 +924,11 @@ const SignupPage = () => {
                       </h3>
                       <div className="space-y-2">
                         {[
-                          'رخصة مزاولة المهنة سارية',
+                          'رقم ترخيص مزاولة المهنة',
                           'مؤهل علمي معتمد في علم النفس أو الطب النفسي',
-                          'خبرة عملية لا تقل عن سنتين',
-                          'التحقق من الهوية الشخصية',
-                          'موافقة الإدارة بعد المراجعة',
+                          'مدينتك وتفاصيل عيادتك',
+                          'التحقق من البريد الإلكتروني',
+                          'علامة موثوق بعد المراجعة',
                         ].map((req, idx) => (
                           <div key={idx} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
                             <i className="fas fa-check-circle text-green-500 mt-0.5"></i>
@@ -865,11 +946,10 @@ const SignupPage = () => {
                       </h3>
                       <div className="space-y-3">
                         {[
-                          { num: 1, title: 'إنشاء الحساب', desc: 'أدخل معلوماتك الأساسية' },
-                          { num: 2, title: 'التحقق من البريد', desc: 'أكد بريدك الإلكتروني' },
-                          { num: 3, title: 'إكمال الملف المهني', desc: 'أضف معلومات الترخيص والخبرة' },
-                          { num: 4, title: 'مراجعة الإدارة', desc: 'يتم التحقق من المستندات' },
-                          { num: 5, title: 'البدء!', desc: 'ابدأ في تقديم الجلسات' },
+                          { num: 1, title: 'إنشاء الحساب', desc: 'أدخل معلوماتك الأساسية والتخصص والمدينة' },
+                          { num: 2, title: 'التحقق من البريد', desc: 'أكد بريدك الإلكتروني عبر الرابط المرسل' },
+                          { num: 3, title: 'البدء!', desc: 'يمكنك استخدام المنصة فوراً' },
+                          { num: 4, title: 'مراجعة الإدارة', desc: 'تحصل على علامة موثوق بعد التحقق' },
                         ].map((step) => (
                           <div key={step.num} className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-[var(--primary-color)] text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
@@ -891,7 +971,7 @@ const SignupPage = () => {
                         <div>
                           <p className="text-sm font-medium text-amber-700 mb-1">ملاحظة مهمة</p>
                           <p className="text-xs text-amber-600">
-                            بعد إنشاء الحساب، ستحتاج إلى إكمال ملفك المهني ورفع وثائق الترخيص للتحقق منها. عملية المراجعة تستغرق ٢-٥ أيام عمل.
+                            بعد تسجيل الحساب والتحقق من بريدك الإلكتروني، يمكنك استخدام المنصة فوراً. رقم ترخيصك ومدينة العمل يتم مراجعتها من قِبل الإدارة للحصول على علامة "موثوق". عملية المراجعة تستغرق ٢-٥ أيام عمل.
                           </p>
                         </div>
                       </div>

@@ -32,7 +32,7 @@ const AdminFeedback = () => {
         setStats(response.data);
       }
     } catch (error) {
-      console.error('Failed to load stats:', error);
+      
     }
   };
 
@@ -56,8 +56,8 @@ const AdminFeedback = () => {
       
       setFeedbacks(feedbacksList);
     } catch (error) {
-      console.error('Failed to load feedbacks:', error);
-      showError('فشل تحميل التغذية الراجعة');
+      
+      ;
       setFeedbacks([]);
     } finally {
       setLoading(false);

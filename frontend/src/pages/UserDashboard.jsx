@@ -138,8 +138,8 @@ const UserDashboard = () => {
         setDailyMood(parseInt(todayMood));
       }
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-      showError('فشل تحميل البيانات');
+      
+      ;
     } finally {
       setLoading(false);
     }

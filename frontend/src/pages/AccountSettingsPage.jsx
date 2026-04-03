@@ -91,7 +91,7 @@ const AccountSettingsPage = () => {
       success('تم تغيير كلمة المرور بنجاح');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
     } catch (error) {
-      console.error('Password change error:', error);
+      
       showErrorToast(error.message || 'حدث خطأ أثناء تغيير كلمة المرور');
     } finally {
       setChangingPassword(false);
@@ -108,7 +108,7 @@ const AccountSettingsPage = () => {
       await profileAPI.updatePrivacySettings(privacySettings);
       success('تم حفظ إعدادات الخصوصية بنجاح');
     } catch (error) {
-      console.error('Privacy save error:', error);
+      
       showErrorToast(error.message || 'حدث خطأ أثناء حفظ إعدادات الخصوصية');
     } finally {
       setSavingPrivacy(false);

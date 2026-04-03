@@ -40,8 +40,8 @@ const StoriesPage = () => {
       setTotalPages(data.pagination?.totalPages || 1);
       setTotal(data.pagination?.total || 0);
     } catch (error) {
-      console.error('Failed to load stories:', error);
-      showError('فشل تحميل القصص');
+      
+      showError('حدث خطأ أثناء تحميل القصص');
       setStories([]);
     } finally {
       setLoading(false);
@@ -137,7 +137,7 @@ const StoriesPage = () => {
               </p>
             </div>
 
-            {filteredStories.length === 0 ? (
+            {!filteredStories || filteredStories.length === 0 ? (
               <div className="text-center py-20">
                 <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-full flex items-center justify-center">
                   <i className="fas fa-inbox text-5xl text-gray-500"></i>
@@ -280,8 +280,7 @@ const StoryCard = ({ story, delay, isAuthenticated, onLikeSuccess }) => {
       onLikeSuccess?.();
       success(result.liked ? 'تم الإعجاب بالقصة' : 'تم إزالة الإعجاب');
     } catch (error) {
-      console.error('Failed to like story:', error);
-      showError(error.message || 'فشل الإعجاب بالقصة');
+      ;
     }
   };
 
@@ -426,8 +425,7 @@ const StoryForm = ({ onClose, onSuccess }) => {
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Failed to submit story:', error);
-      showError(error.message || 'فشل إرسال القصة');
+      showError('حدث خطأ أثناء الإرسال');
     } finally {
       setSubmitting(false);
     }

@@ -47,8 +47,7 @@ const VerifyEmailPage = () => {
         }
       }, 3000);
     } catch (error) {
-      console.error('Verification error:', error);
-      showError(error.message || 'فشل التحقق من البريد الإلكتروني');
+      showError('حدث خطأ أثناء التحقق');
       setVerifying(false);
     }
   };
@@ -67,7 +66,7 @@ const VerifyEmailPage = () => {
       success('تم إرسال رابط التحقق إلى بريدك الإلكتروني');
       setResendEmail('');
     } catch (error) {
-      console.error('Resend error:', error);
+      
       showError(error.message || 'حدث خطأ أثناء إرسال رابط التحقق');
     } finally {
       setResending(false);

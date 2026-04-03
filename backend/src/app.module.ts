@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { Logger } from '@nestjs/common';
 import { join } from 'path';
 import { AppController } from './app.controller';
@@ -58,6 +59,7 @@ import { NotificationModule } from './notification/notification.module';
       }],
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
     HealthModule,

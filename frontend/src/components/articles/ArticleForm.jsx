@@ -144,7 +144,7 @@ const ArticleForm = ({ article, onSubmit, onCancel, disabled = false }) => {
         coverImageFile: file,
       }));
     } catch (error) {
-      console.error('Upload error:', error);
+      
       setErrors(prev => ({ ...prev, coverImage: error.message || 'فشل رفع الصورة' }));
     } finally {
       setUploadingImage(false);
@@ -223,11 +223,11 @@ const ArticleForm = ({ article, onSubmit, onCancel, disabled = false }) => {
         readTime: parseInt(formData.readTime) || 5,
       };
 
-      console.log('Submitting article:', submitData);
-      console.log('isFeatured value:', formData.isFeatured);
+      
+      
       await onSubmit(submitData);
     } catch (error) {
-      console.error('Submit error:', error);
+      
     } finally {
       setLoading(false);
     }

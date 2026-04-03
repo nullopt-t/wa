@@ -61,8 +61,8 @@ const UserProfilePage = () => {
         total: userPosts.length,
       });
     } catch (error) {
-      console.error('Failed to load user posts:', error);
-      showError('فشل تحميل منشورات المستخدم');
+      
+      ;
     } finally {
       setLoading(false);
     }

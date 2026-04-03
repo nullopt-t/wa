@@ -45,11 +45,11 @@ const Toast = ({ message, type = 'info', show, onClose, duration = 3000 }) => {
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, x: 100, scale: 0.9 }}
+          initial={{ opacity: 0, x: -100, scale: 0.9 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: 100, scale: 0.9 }}
+          exit={{ opacity: 0, x: -100, scale: 0.9 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="fixed top-4 left-4 z-[100] min-w-[320px] max-w-md"
+          className="min-w-[320px] max-w-md"
         >
           <div className={`bg-gradient-to-r ${bgColors[type]} text-white rounded-xl shadow-2xl border-2 ${borderColors[type]} overflow-hidden`}>
             <div className="flex items-center gap-3 p-4">

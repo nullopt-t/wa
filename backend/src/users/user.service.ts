@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User } from './schemas/user.schema';
+import { TherapistProfile } from '../therapist/schemas/therapist-profile.schema';
 import { RegisterUserDto, RegisterTherapistDto, UserRole, ChangePasswordDto } from '../auth/dto/auth.dto';
 import { HashService } from '../modules/hash/hash.service';
 
@@ -11,6 +12,7 @@ export class UserService {
 
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(TherapistProfile.name) private therapistProfileModel: Model<TherapistProfile>,
     private hashService: HashService,
   ) { }
 
@@ -68,6 +70,11 @@ export class UserService {
       if (userData.role === UserRole.THERAPIST) {
         const therapistData = userData as RegisterTherapistDto;
 
+        // Set therapist-specific fields on the User document too
+        userObject.specialty = therapistData.specialty;
+        userObject.licenseNumber = therapistData.licenseNumber;
+        userObject.yearsOfExperience = therapistData.yearsOfExperience;
+
         // Convert education string to array if provided
         if (therapistData.education) {
           userObject.education = [therapistData.education];
@@ -75,9 +82,9 @@ export class UserService {
 
         // Handle certifications array
         userObject.certifications = therapistData.certifications || [];
-        
-        // Therapists need admin approval before they can log in
-        userObject.isApproved = false;
+
+        // Therapists are auto-approved (email verification is enough to log in)
+        userObject.isApproved = true;
       } else {
         // Regular users are auto-approved
         userObject.isApproved = true;
@@ -88,6 +95,27 @@ export class UserService {
       this.logger.log('Saving user to database...');
       await createdUser.save();
       this.logger.log('User saved successfully');
+
+      // Create TherapistProfile if registering as therapist
+      if (userData.role === UserRole.THERAPIST) {
+        const therapistData = userData as RegisterTherapistDto;
+        await this.therapistProfileModel.create({
+          userId: createdUser._id,
+          licenseNumber: therapistData.licenseNumber,
+          specialty: therapistData.specialty,
+          bio: therapistData.bio,
+          city: therapistData.city,
+          country: therapistData.country,
+          clinicAddress: therapistData.clinicAddress,
+          experience: therapistData.yearsOfExperience || 0,
+          languages: therapistData.languages || ['ar'],
+          isVerified: false,
+          isTrusted: false,
+          isActive: true,
+          verificationSubmittedAt: new Date(),
+        });
+        this.logger.log(`TherapistProfile created for user: ${createdUser.email}`);
+      }
 
       const userObjectWithoutPassword = createdUser.toObject();
       const { password, ...result } = userObjectWithoutPassword;

@@ -3,12 +3,13 @@ import { Document, Types } from 'mongoose';
 
 export type NotificationDocument = Notification & Document;
 
-export type NotificationType = 
+export type NotificationType =
   | 'feedback_response'
   | 'comment_reply'
   | 'post_approved'
   | 'story_approved'
   | 'account_activated'
+  | 'future_message'
   | 'new_comment'
   | 'system';
 
@@ -19,14 +20,15 @@ export class Notification {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   userId: Types.ObjectId;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: [
       'feedback_response',
       'comment_reply',
       'post_approved',
       'story_approved',
       'account_activated',
+      'future_message',
       'new_comment',
       'system',
     ],
@@ -44,7 +46,7 @@ export class Notification {
   @Prop()
   actionUrl?: string;
 
-  @Prop({ type: String, enum: ['Feedback', 'Comment', 'Post', 'Story', 'User'] })
+  @Prop({ type: String, enum: ['Feedback', 'Comment', 'Post', 'Story', 'User', 'FutureMessage'] })
   relatedModel?: string;
 
   @Prop({ type: Types.ObjectId })

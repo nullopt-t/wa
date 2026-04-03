@@ -129,7 +129,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user: userData || {} };
     } catch (error) {
-      console.error('Login error:', error);
+      
       return { success: false, message: error.message };
     }
   };
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: true, user: response };
     } catch (error) {
-      console.error('Registration error:', error);
+      
       return { success: false, message: error.message };
     }
   };

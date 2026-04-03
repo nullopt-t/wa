@@ -71,7 +71,8 @@ const ChatbotPage = () => {
       });
 
       socket.on('error', (error) => {
-        showError(error.message || 'حدث خطأ في الاتصال');
+        // Log backend errors - should be fixed in backend
+        console.error('Socket error - backend issue:', error);
       });
 
       socket.on('disconnect', () => {
@@ -80,7 +81,7 @@ const ChatbotPage = () => {
 
       socketRef.current = socket;
     } catch (error) {
-      console.error('Failed to initialize socket:', error);
+      
     }
   };
 
@@ -146,7 +147,7 @@ const ChatbotPage = () => {
         }
       }
     } catch (error) {
-      console.error('Error creating session:', error);
+      
     }
   };
 
@@ -186,7 +187,7 @@ const ChatbotPage = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading messages:', error);
+      
     }
   };
 
@@ -300,8 +301,8 @@ const ChatbotPage = () => {
         success('تم تحميل التقرير بنجاح!');
       }
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      showError('فشل تحميل التقرير');
+      
+      ;
     } finally {
       setIsGeneratingReport(false);
     }
@@ -333,7 +334,7 @@ const ChatbotPage = () => {
       showError('جاري إنشاء الجلسة...');
       await getOrCreateSession();
       if (!currentSession) {
-        showError('فشل إنشاء الجلسة. يرجى تحديث الصفحة.');
+        showError('حدث خطأ، يرجى تحديث الصفحة');
         return;
       }
     }
@@ -402,8 +403,8 @@ const ChatbotPage = () => {
           }]);
         }
       } catch (error) {
-        console.error('REST API error:', error);
-        showError('فشل إرسال الرسالة. يرجى المحاولة مرة أخرى.');
+        
+        showError('حدث خطأ، يرجى المحاولة مرة أخرى');
       } finally {
         setIsLoading(false);
       }
@@ -439,13 +440,6 @@ const ChatbotPage = () => {
     };
     return colors[emotion?.toLowerCase()] || 'text-gray-500';
   };
-
-  const quickActions = [
-    { icon: 'fas fa-hand-wave', label: 'ترحيب', text: 'مرحباً، كيف حالك؟' },
-    { icon: 'fas fa-heart', label: 'قلق', text: 'أشعر بالقلق مؤخراً' },
-    { icon: 'fas fa-cloud-rain', label: 'حزن', text: 'أشعر بالحزن' },
-    { icon: 'fas fa-robot', label: 'من أنت', text: 'من أنت؟' },
-  ];
 
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
@@ -680,11 +674,11 @@ const ChatbotPage = () => {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      console.log('🎯 Button clicked - Starting quick test');
+                                      
                                       // Use testSessionId from quickTest if available
                                       const sessionTestId = message.quickTest?.testSessionId;
                                       if (sessionTestId) {
-                                        console.log('✅ Using existing test session:', sessionTestId);
+                                        
                                         setQuickTestSession({
                                           isActive: true,
                                           testSessionId: sessionTestId,
@@ -768,25 +762,6 @@ const ChatbotPage = () => {
             )}
 
             <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Actions */}
-          <div className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 bg-[var(--bg-secondary)]/50 border-t border-[var(--border-color)]/30 flex-shrink-0">
-            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {quickActions.map((action, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setInputValue(action.text);
-                    inputRef.current?.focus();
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-[var(--card-bg)] hover:bg-[var(--primary-color)]/10 border border-[var(--border-color)]/30 rounded-lg sm:rounded-xl transition-all hover:scale-105 hover:shadow-md flex-shrink-0 whitespace-nowrap"
-                >
-                  <i className={`${action.icon} text-[var(--primary-color)] text-sm sm:text-base`}></i>
-                  <span className="text-xs sm:text-sm text-[var(--text-primary)]">{action.label}</span>
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Input Area */}

@@ -80,17 +80,6 @@ const AdminLayout = ({ children, title }) => {
             ))}
           </nav>
         </div>
-
-        {/* Back Button */}
-        <div className="absolute bottom-6 right-6 left-6">
-          <Link
-            to="/"
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--bg-primary)] transition-colors"
-          >
-            <i className="fas fa-arrow-right"></i>
-            العودة للموقع
-          </Link>
-        </div>
       </aside>
 
       {/* Overlay */}

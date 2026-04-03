@@ -1,265 +1,328 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { therapistsAPI } from '../services/therapistsApi.js';
+import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const FindTherapistPage = () => {
+  const [therapists, setTherapists] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [location, setLocation] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [trustedFilter, setTrustedFilter] = useState('trusted'); // 'trusted' | 'all' | 'pending'
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const limit = 12;
 
-  // Sample therapist data
-  const therapists = [
-    {
-      id: 1,
-      name: 'د. سارة أحمد',
-      specialty: 'علاج اضطرابات القلق والاكتئاب',
-      rating: 4.9,
-      reviews: 128,
-      languages: ['العربية', 'الإنجليزية'],
-      availability: 'متاح غدًا',
-      profileImage: '/therapist1.jpg',
-      bio: 'أخصائية في علاج الاضطرابات النفسية مع أكثر من 10 سنوات من الخبرة',
-      price: '150 ريال/جلسة'
-    },
-    {
-      id: 2,
-      name: 'أ. محمد علي',
-      specialty: 'العلاج السلوكي المعرفي',
-      rating: 4.8,
-      reviews: 96,
-      languages: ['العربية'],
-      availability: 'متاح اليوم',
-      profileImage: '/therapist2.jpg',
-      bio: 'متخصص في العلاج السلوكي المعرفي وتقنيات التعامل مع الضغوط',
-      price: '120 ريال/جلسة'
-    },
-    {
-      id: 3,
-      name: 'د. نور اليمامة',
-      specialty: 'الإدمان والتعافي',
-      rating: 4.95,
-      reviews: 210,
-      languages: ['العربية', 'الفرنسية'],
-      availability: 'متاح بعد 2 أيام',
-      profileImage: '/therapist3.jpg',
-      bio: 'متخصصة في علاج الإدمان وتقديم الدعم النفسي للمرضى وعائلاتهم',
-      price: '200 ريال/جلسة'
-    },
-    {
-      id: 4,
-      name: 'أ. ريم عبدالله',
-      specialty: 'الصحة النفسية للأطفال والمراهقين',
-      rating: 4.7,
-      reviews: 87,
-      languages: ['العربية', 'الإنجليزية'],
-      availability: 'متاح هذا الأسبوع',
-      profileImage: '/therapist4.jpg',
-      bio: 'أخصائية في الصحة النفسية للأطفال والمراهقين مع خبرة في اضطرابات التعلم',
-      price: '180 ريال/جلسة'
+  const loadTherapists = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm.trim()) params.set('search', searchTerm.trim());
+      if (selectedCity) params.set('city', selectedCity);
+      if (selectedLanguage) params.set('language', selectedLanguage);
+      params.set('trusted', trustedFilter);
+      params.set('page', page);
+      params.set('limit', limit);
+
+      const data = await therapistsAPI.getAll(params.toString());
+      setTherapists(data.therapists || []);
+      setTotal(data.total || 0);
+    } catch (error) {
+      setTherapists([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [searchTerm, selectedCity, selectedLanguage, page]);
 
-  const specialties = [
-    'جميع التخصصات',
-    'القلق والاكتئاب',
-    'الإدمان',
-    'العلاقات الزوجية',
-    'الصحة النفسية للأطفال',
-    'العلاج السلوكي المعرفي',
-    'الصدمات النفسية'
-  ];
+  useEffect(() => {
+    loadTherapists();
+  }, [loadTherapists]);
 
-  const filteredTherapists = therapists.filter(therapist => {
-    const matchesSearch = therapist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         therapist.specialty.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecialty = selectedSpecialty === '' || selectedSpecialty === 'جميع التخصصات' || 
-                            therapist.specialty.includes(selectedSpecialty);
-    const matchesLocation = location === '' || therapist.availability.toLowerCase().includes(location.toLowerCase());
-    
-    return matchesSearch && matchesSpecialty && matchesLocation;
-  });
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPage(1);
+    loadTherapists();
+  };
+
+  const handleReset = () => {
+    setSearchTerm('');
+    setSelectedCity('');
+    setSelectedLanguage('');
+    setTrustedFilter('trusted');
+    setPage(1);
+  };
+
+  // Collect unique cities from therapists for the dropdown
+  const uniqueCities = [...new Set(
+    (total > 0 ? therapists : [])
+      .map(t => t.city)
+      .filter(Boolean)
+  )];
+
+  const languages = ['العربية', 'الإنجليزية', 'الفرنسية'];
 
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen">
+      {/* Hero */}
       <section className="py-16 bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)]">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold text-[var(--primary-color)] mb-4">ابحث عن المعالج المناسب</h1>
-          <p className="text-xl text-[var(--text-secondary)]">ابحث واتصل بأفضل المعالجين النفسيين في منطقتك</p>
+          <AnimatedItem type="slideUp" delay={0.1}>
+            <h1 className="text-4xl font-bold text-[var(--primary-color)] mb-4">ابحث عن المعالج المناسب</h1>
+          </AnimatedItem>
+          <AnimatedItem type="slideUp" delay={0.2}>
+            <p className="text-xl text-[var(--text-secondary)]">تصفح ملفات المعالجين المعتمدين واختر الأنسب لاحتياجاتك</p>
+          </AnimatedItem>
         </div>
       </section>
 
-      <section className="py-16 bg-[var(--bg-secondary)]">
+      {/* Filters */}
+      <section className="py-8 bg-[var(--bg-secondary)]">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="bg-[var(--bg-primary)] p-6 sm:p-8 rounded-2xl shadow-lg border border-[var(--border-color)] mb-12">
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <label htmlFor="search" className="block text-lg font-medium text-[var(--text-primary)] mb-2">البحث عن المعالج</label>
+          <AnimatedItem type="slideUp" delay={0.3}>
+            <form onSubmit={handleSearch} className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-6 border border-[var(--border-color)]/30 shadow-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Search */}
                 <div className="relative">
                   <input
                     type="text"
-                    id="search"
-                    placeholder="ابحث عن اسم المعالج أو تخصصه..."
+                    placeholder="ابحث بالاسم أو التخصص أو المدينة..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-6 py-4 pr-12 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none transition-colors text-[var(--text-primary)] bg-[var(--bg-primary)]"
+                    className="w-full px-4 py-3 pr-10 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-[var(--text-primary)] bg-[var(--bg-primary)]"
                   />
-                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">
                     <i className="fas fa-search"></i>
                   </div>
                 </div>
+
+                {/* City */}
+                <select
+                  value={selectedCity}
+                  onChange={(e) => { setSelectedCity(e.target.value); setPage(1); }}
+                  className="w-full px-4 py-3 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-[var(--text-primary)] bg-[var(--bg-primary)]"
+                >
+                  <option value="">كل المدن</option>
+                  {uniqueCities.map(city => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+
+                {/* Language */}
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => { setSelectedLanguage(e.target.value); setPage(1); }}
+                  className="w-full px-4 py-3 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-[var(--text-primary)] bg-[var(--bg-primary)]"
+                >
+                  <option value="">كل اللغات</option>
+                  {languages.map(lang => (
+                    <option key={lang} value={lang}>{lang}</option>
+                  ))}
+                </select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="specialty" className="block text-lg font-medium text-[var(--text-primary)] mb-2">التخصص</label>
-                  <select
-                    id="specialty"
-                    value={selectedSpecialty}
-                    onChange={(e) => setSelectedSpecialty(e.target.value)}
-                    className="w-full px-4 py-4 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none transition-colors text-[var(--text-primary)] bg-[var(--bg-primary)]"
+              {/* Trusted Filter */}
+              <div className="flex items-center justify-center gap-3 mt-4">
+                <select
+                  value={trustedFilter}
+                  onChange={(e) => { setTrustedFilter(e.target.value); setPage(1); }}
+                  className="px-4 py-2.5 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-[var(--text-primary)] bg-[var(--bg-primary)] text-sm"
+                >
+                  <option value="trusted">الموثوقين فقط</option>
+                  <option value="all">الكل</option>
+                  <option value="pending">قيد المراجعة</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 mt-4 justify-center">
+                <button
+                  type="submit"
+                  className="px-8 py-3 bg-[var(--primary-color)] text-white rounded-xl font-semibold hover:bg-[var(--primary-hover)] transition-colors flex items-center gap-2"
+                >
+                  <i className="fas fa-search"></i> بحث
+                </button>
+                {(searchTerm || selectedCity || selectedLanguage) && (
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="px-6 py-3 border-2 border-[var(--border-color)] text-[var(--text-secondary)] rounded-xl font-medium hover:bg-[var(--bg-secondary)] transition-colors"
                   >
-                    {specialties.map((specialty, index) => (
-                      <option key={index} value={specialty} className="bg-[var(--bg-primary)] text-[var(--text-primary)]">
-                        {specialty}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="location" className="block text-lg font-medium text-[var(--text-primary)] mb-2">الموقع</label>
-                  <input
-                    type="text"
-                    id="location"
-                    placeholder="المدينة أو المنطقة"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-4 py-4 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none transition-colors text-[var(--text-primary)] bg-[var(--bg-primary)]"
-                  />
-                </div>
+                    إعادة تعيين
+                  </button>
+                )}
               </div>
-            </div>
-
-            <div className="mt-6 sm:mt-8 flex justify-center">
-              <button className="px-6 sm:px-8 py-3 sm:py-4 bg-[var(--primary-color)] text-white rounded-xl font-bold text-base sm:text-lg hover:bg-[var(--primary-hover)] transition-colors flex items-center gap-2">
-                <i className="fas fa-search text-white"></i> ابدأ البحث
-              </button>
-            </div>
-          </div>
-
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[var(--primary-color)] mb-4">المعالجون المتاحون</h2>
-            <p className="text-xl text-[var(--text-secondary)]">اختر المعالج الأنسب لاحتياجاتك</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6">
-            {filteredTherapists.map(therapist => (
-              <div key={therapist.id} className="bg-[var(--bg-primary)] p-6 sm:p-8 rounded-2xl shadow-lg border border-[var(--border-color)] hover:shadow-xl transition-shadow duration-300">
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-col sm:flex-row gap-6 items-center text-center sm:text-right">
-                    <div className="flex-shrink-0">
-                      <div className="w-24 h-24 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
-                        {therapist.profileImage ? (
-                          <img src={therapist.profileImage} alt={therapist.name} className="w-full h-full object-cover rounded-full" />
-                        ) : (
-                          <span>{therapist.name.split(' ').map(n => n[0]).join('')}</span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex-grow">
-                      <div className="flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-start justify-between gap-4 mb-3">
-                        <div className="text-center sm:text-right">
-                          <h3 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{therapist.name}</h3>
-                          <p className="text-[var(--primary-color)] font-medium">{therapist.specialty}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 bg-[var(--bg-secondary)] px-4 py-2 rounded-lg justify-center">
-                          <div className="text-amber-500 flex">
-                            {[...Array(5)].map((_, i) => (
-                              <i key={i} className={`fas fa-star ${i < Math.floor(therapist.rating) ? 'text-amber-500' : 'text-gray-300'}`}></i>
-                            ))}
-                          </div>
-                          <span className="text-[var(--text-primary)] font-medium">{therapist.rating}</span>
-                          <span className="text-[var(--text-secondary)]">({therapist.reviews})</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-center sm:text-right">
-                    <p className="text-[var(--text-secondary)] mb-4">{therapist.bio}</p>
-                    
-                    <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-6 justify-center sm:justify-end">
-                      <div className="flex items-center justify-center sm:justify-start gap-2">
-                        <i className="fas fa-globe text-[var(--primary-color)]"></i>
-                        <span className="text-[var(--text-primary)]">{therapist.languages.join(', ')}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-center sm:justify-start gap-2">
-                        <i className="fas fa-calendar-check text-[var(--primary-color)]"></i>
-                        <span className="text-[var(--text-primary)]">{therapist.availability}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-center sm:justify-start gap-2">
-                        <i className="fas fa-money-bill-wave text-[var(--primary-color)]"></i>
-                        <span className="text-[var(--text-primary)]">{therapist.price}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <Link 
-                        to={`/book-appointment/${therapist.id}`} 
-                        className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center justify-center gap-2"
-                      >
-                        <i className="fas fa-calendar-check"></i> حجز موعد
-                      </Link>
-                      
-                      <Link 
-                        to={`/therapist-profile/${therapist.id}`} 
-                        className="px-6 py-3 border-2 border-[var(--secondary-color)] text-[var(--secondary-color)] rounded-lg font-medium hover:bg-[var(--secondary-color)] hover:text-white transition-colors flex items-center justify-center gap-2"
-                      >
-                        <i className="fas fa-user"></i> عرض الملف
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+            </form>
+          </AnimatedItem>
         </div>
       </section>
 
-      <section className="py-16 bg-[var(--bg-primary)]">
+      {/* Results */}
+      <section className="py-12 bg-[var(--bg-secondary)]">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[var(--primary-color)] mb-4">كيفية استخدام خدمة البحث عن المعالجين</h2>
-            <p className="text-xl text-[var(--text-secondary)]">خطوات بسيطة للوصول إلى الدعم النفسي المناسب</p>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">
+              {loading ? 'جاري التحميل...' : `${total} معالج${total === 1 ? '' : ''}`}
+            </h2>
           </div>
 
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
+            </div>
+          ) : therapists.length === 0 ? (
+            <AnimatedItem type="slideUp" delay={0.2}>
+              <div className="bg-[var(--card-bg)] rounded-2xl p-12 text-center border border-[var(--border-color)]/30">
+                <i className="fas fa-user-md text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">لا يوجد معالجين</h3>
+                <p className="text-[var(--text-secondary)]">حاول تغيير معايير البحث</p>
+              </div>
+            </AnimatedItem>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {therapists.map((therapist, index) => (
+                <AnimatedItem key={therapist._id || therapist.userId?._id} type="slideUp" delay={index * 0.05}>
+                  <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/50 transition-all overflow-hidden flex flex-col">
+                    {/* Card Header */}
+                    <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] p-5 text-white">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-xl font-bold flex-shrink-0">
+                          {therapist.userId?.avatar ? (
+                            <img
+                              src={`${import.meta.env.VITE_API_URL || 'http://localhost:4001'}${therapist.userId.avatar}`}
+                              alt=""
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            `${therapist.userId?.firstName?.charAt(0) || ''}${therapist.userId?.lastName?.charAt(0) || ''}`
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold truncate">
+                            {therapist.userId?.firstName} {therapist.userId?.lastName}
+                          </h3>
+                          {therapist.isTrusted && (
+                            <span className="inline-flex items-center gap-1 text-xs bg-white/20 px-2 py-0.5 rounded-full mt-1">
+                              <i className="fas fa-shield-alt"></i> موثوق
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="p-5 flex-1 flex flex-col">
+                      {therapist.specialty && (
+                        <p className="text-[var(--primary-color)] font-medium text-sm mb-2">{therapist.specialty}</p>
+                      )}
+
+                      {therapist.bio && (
+                        <p className="text-sm text-[var(--text-secondary)] line-clamp-3 mb-4 leading-relaxed">{therapist.bio}</p>
+                      )}
+
+                      {/* Info Grid */}
+                      <div className="space-y-2 text-sm text-[var(--text-secondary)] mt-auto">
+                        {therapist.city && (
+                          <div className="flex items-center gap-2">
+                            <i className="fas fa-map-marker-alt text-[var(--primary-color)] w-4"></i>
+                            <span>{therapist.city}{therapist.country ? `، ${therapist.country}` : ''}</span>
+                          </div>
+                        )}
+                        {therapist.experience > 0 && (
+                          <div className="flex items-center gap-2">
+                            <i className="fas fa-briefcase text-[var(--primary-color)] w-4"></i>
+                            <span>{therapist.experience} سنوات خبرة</span>
+                          </div>
+                        )}
+                        {therapist.languages && therapist.languages.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <i className="fas fa-language text-[var(--primary-color)] w-4"></i>
+                            <span>{therapist.languages.join('، ')}</span>
+                          </div>
+                        )}
+                        {therapist.clinicAddress && (
+                          <div className="flex items-start gap-2">
+                            <i className="fas fa-hospital text-[var(--primary-color)] w-4 mt-1"></i>
+                            <span className="line-clamp-2">{therapist.clinicAddress}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CTA */}
+                      <Link
+                        to={`/therapists/${therapist.userId?._id}`}
+                        className="mt-4 w-full px-4 py-2.5 bg-[var(--primary-color)]/10 text-[var(--primary-color)] rounded-xl font-medium text-center hover:bg-[var(--primary-color)] hover:text-white transition-colors"
+                      >
+                        <i className="fas fa-user ml-2"></i>عرض الملف الشخصي
+                      </Link>
+                    </div>
+                  </div>
+                </AnimatedItem>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && total > limit && (
+            <div className="flex justify-center gap-2 mt-8">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-xl border-2 border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+              {Array.from({ length: Math.ceil(total / limit) }, (_, i) => i + 1).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-10 h-10 rounded-xl font-medium transition-colors ${
+                    p === page
+                      ? 'bg-[var(--primary-color)] text-white'
+                      : 'border-2 border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage(p => Math.min(Math.ceil(total / limit), p + 1))}
+                disabled={page >= Math.ceil(total / limit)}
+                className="px-4 py-2 rounded-xl border-2 border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-16 bg-[var(--bg-primary)]">
+        <div className="max-w-6xl mx-auto px-4">
+          <AnimatedItem type="slideUp" delay={0.1}>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-[var(--primary-color)] mb-4">كيفية استخدام خدمة البحث عن المعالجين</h2>
+              <p className="text-xl text-[var(--text-secondary)]">خطوات بسيطة للوصول إلى الدعم النفسي المناسب</p>
+            </div>
+          </AnimatedItem>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
-                <i className="fas fa-search"></i>
-              </div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">ابحث عن المعالج</h3>
-              <p className="text-[var(--text-secondary)]">استخدم أدوات البحث المتقدمة لتحديد التخصص والمكان واللغة</p>
-            </div>
-
-            <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
-                <i className="fas fa-user-md"></i>
-              </div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">قارن الخيارات</h3>
-              <p className="text-[var(--text-secondary)]">اطلع على ملفات المعالجين وقراءة التقييمات والأسعار</p>
-            </div>
-
-            <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
-                <i className="fas fa-calendar-check"></i>
-              </div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">احجز جلستك</h3>
-              <p className="text-[var(--text-secondary)]">حدد الموعد الأنسب لك وابدأ رحلتك نحو الصحة النفسية</p>
-            </div>
+            {[
+              { icon: 'fa-search', title: 'ابحث عن المعالج', desc: 'استخدم أدوات البحث لتحديد التخصص والمدينة واللغة' },
+              { icon: 'fa-user-md', title: 'قارن الخيارات', desc: 'اطلع على ملفات المعالجين وقراءة النبذات التعريفية' },
+              { icon: 'fa-phone', title: 'تواصل مباشرة', desc: 'استخدم معلومات التواصل المتاحة لبدء رحلتك نحو الصحة النفسية' },
+            ].map((step, i) => (
+              <AnimatedItem key={i} type="slideUp" delay={0.2 + i * 0.1}>
+                <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
+                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
+                    <i className={`fas ${step.icon}`}></i>
+                  </div>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{step.title}</h3>
+                  <p className="text-[var(--text-secondary)]">{step.desc}</p>
+                </div>
+              </AnimatedItem>
+            ))}
           </div>
         </div>
       </section>

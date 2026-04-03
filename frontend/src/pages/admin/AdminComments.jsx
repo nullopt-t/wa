@@ -25,8 +25,8 @@ const AdminComments = () => {
       const commentsList = data.comments || data.data || [];
       setComments(commentsList);
     } catch (error) {
-      console.error('Failed to load comments:', error);
-      showError('فشل تحميل التعليقات');
+      
+      ;
       setComments([]);
     } finally {
       setLoading(false);

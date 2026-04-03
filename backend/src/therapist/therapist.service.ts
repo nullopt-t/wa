@@ -47,46 +47,61 @@ export class TherapistService {
       city,
       country,
       language,
-      isOnline,
-      minPrice,
-      maxPrice,
+      search,
       isVerified,
       page = 1,
       limit = 12,
-      sort = 'averageRating',
+      sort = 'experience',
     } = filters;
 
-    const skip = (page - 1) * limit;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 12;
+    const skip = (pageNum - 1) * limitNum;
     const query: any = {};
 
     // For admin queries, don't filter by verification status unless explicitly requested
     if (isAdminQuery) {
-      // Admin can optionally filter by verification status
       if (isVerified !== undefined && isVerified !== '') {
         query.isVerified = isVerified === true || isVerified === 'true';
       }
-      // Admin always sees active therapists
       query.isActive = true;
     } else {
-      // For public queries, only show verified and approved therapists
       query.isVerified = true;
-      query.isApproved = true;
       query.isActive = true;
+      // Public: trusted filter
+      if (filters.trusted === 'all') {
+        // Show all verified therapists regardless of trusted status
+      } else if (filters.trusted === 'pending') {
+        // Show only non-trusted (pending) therapists
+        query.isTrusted = false;
+      } else {
+        // Default: trusted only
+        query.isTrusted = true;
+      }
     }
 
-    if (city) query.city = city;
-    if (country) query.country = country;
-    if (isOnline === 'true') query.isOnline = true;
-    if (minPrice) query.pricePerSession = { $gte: Number(minPrice) };
-    if (maxPrice) query.pricePerSession = { ...query.pricePerSession, $lte: Number(maxPrice) };
+    if (city) query.city = new RegExp(city, 'i');
+    if (country) query.country = new RegExp(country, 'i');
+    if (language) query.languages = language;
+
+    // Text search across specialty, bio, city, and user name
+    const matchStage: any = { $match: query };
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      matchStage.$expr = {
+        $or: [
+          { $regexMatch: { input: { $ifNull: ['$specialty', ''] }, regex: search, options: 'i' } },
+          { $regexMatch: { input: { $ifNull: ['$bio', ''] }, regex: search, options: 'i' } },
+          { $regexMatch: { input: { $ifNull: ['$city', ''] }, regex: search, options: 'i' } },
+          { $regexMatch: { input: { $ifNull: ['$userId.firstName', ''] }, regex: search, options: 'i' } },
+          { $regexMatch: { input: { $ifNull: ['$userId.lastName', ''] }, regex: search, options: 'i' } },
+        ],
+      };
+    }
 
     const sortStage: any = {};
-    if (sort === 'averageRating') {
-      sortStage.averageRating = -1;
-    } else if (sort === 'experience') {
+    if (sort === 'experience') {
       sortStage.experience = -1;
-    } else if (sort === 'price') {
-      sortStage.pricePerSession = 1;
     } else if (sort === 'name') {
       sortStage['userId.firstName'] = 1;
     } else {
@@ -105,9 +120,10 @@ export class TherapistService {
           },
         },
         { $unwind: '$userId' },
+        ...(search ? [matchStage] : []),
         { $sort: sortStage },
         { $skip: skip },
-        { $limit: limit },
+        { $limit: limitNum },
         {
           $project: {
             __v: 0,
@@ -116,7 +132,9 @@ export class TherapistService {
           },
         },
       ]).exec(),
-      this.therapistProfileModel.countDocuments(query).exec(),
+      search
+        ? this.therapistProfileModel.countDocuments(query).exec()
+        : this.therapistProfileModel.countDocuments(query).exec(),
     ]);
 
     return { therapists, total };
@@ -127,7 +145,7 @@ export class TherapistService {
    */
   async findById(id: string): Promise<any> {
     const therapist = await this.therapistProfileModel.findOne({ userId: new Types.ObjectId(id) })
-      .populate('userId', 'firstName lastName avatar email phone')
+      .populate('userId', 'firstName lastName avatar email phone countryCode')
       .exec();
 
     if (!therapist) {
@@ -135,7 +153,7 @@ export class TherapistService {
     }
 
     // For public view, check if therapist is available
-    if (!therapist.isVerified || !therapist.isApproved || !therapist.isActive) {
+    if (!therapist.isVerified || !therapist.isTrusted || !therapist.isActive) {
       throw new ForbiddenException('Therapist profile is not available');
     }
 
@@ -149,15 +167,6 @@ export class TherapistService {
     const profile = await this.therapistProfileModel.findOne({ userId: new Types.ObjectId(userId) }).exec();
     if (!profile) {
       throw new NotFoundException('Therapist profile not found');
-    }
-
-    // If updating availability, validate it
-    if (updateData.availability) {
-      for (const slot of updateData.availability) {
-        if (!slot.day || !slot.startTime || !slot.endTime) {
-          throw new BadRequestException('Invalid availability format');
-        }
-      }
     }
 
     Object.assign(profile, updateData);
@@ -175,14 +184,14 @@ export class TherapistService {
 
     profile.licenseImage = licenseImage;
     profile.verificationSubmittedAt = new Date();
-    profile.isVerified = false; // Reset verification status for re-verification
-    profile.isApproved = false;
+    profile.isVerified = false;
+    profile.isTrusted = false;
 
     return profile.save();
   }
 
   /**
-   * Admin: Verify therapist
+   * Admin: Verify therapist license (adds trusted badge)
    */
   async verifyTherapist(adminId: string, therapistId: string): Promise<TherapistProfile> {
     const profile = await this.therapistProfileModel.findOne({ userId: new Types.ObjectId(therapistId) }).exec();
@@ -191,6 +200,7 @@ export class TherapistService {
     }
 
     profile.isVerified = true;
+    profile.isTrusted = true;
     profile.verifiedAt = new Date();
     profile.verifiedBy = new Types.ObjectId(adminId);
 
@@ -198,7 +208,7 @@ export class TherapistService {
   }
 
   /**
-   * Admin: Approve therapist
+   * Admin: Approve therapist (legacy - now same as verify)
    */
   async approveTherapist(adminId: string, therapistId: string): Promise<TherapistProfile> {
     const profile = await this.therapistProfileModel.findOne({ userId: new Types.ObjectId(therapistId) }).exec();
@@ -206,16 +216,69 @@ export class TherapistService {
       throw new NotFoundException('Therapist profile not found');
     }
 
-    profile.isApproved = true;
+    profile.isVerified = true;
+    profile.isTrusted = true;
     await profile.save();
 
-    // Also update the User document to set isApproved: true
-    await this.userModel.findByIdAndUpdate(
-      new Types.ObjectId(therapistId),
-      { $set: { isApproved: true } }
-    ).exec();
-
     return profile;
+  }
+
+  /**
+   * Admin: Get pending therapists (not yet verified/trusted)
+   */
+  async findPendingTherapists(): Promise<any[]> {
+    const therapists = await this.therapistProfileModel.aggregate([
+      {
+        $match: {
+          isVerified: false,
+          isActive: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          // User fields
+          email: '$user.email',
+          firstName: '$user.firstName',
+          lastName: '$user.lastName',
+          phone: '$user.phone',
+          countryCode: '$user.countryCode',
+          birthDate: '$user.birthDate',
+          gender: '$user.gender',
+          avatar: '$user.avatar',
+          // Profile fields
+          licenseNumber: 1,
+          specialty: 1,
+          bio: 1,
+          licenseImage: 1,
+          experience: 1,
+          languages: 1,
+          country: 1,
+          city: 1,
+          clinicAddress: 1,
+          // Status fields
+          isVerified: 1,
+          isTrusted: 1,
+          isActive: 1,
+          verificationSubmittedAt: 1,
+          verifiedAt: 1,
+          // Meta
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ]).exec();
+
+    return therapists;
   }
 
   /**
@@ -227,11 +290,11 @@ export class TherapistService {
       throw new NotFoundException('Therapist profile not found');
     }
 
-    // Stats (will be updated when booking system is implemented)
+    // Stats
     const stats = {
-      totalSessions: profile.totalSessions,
-      averageRating: profile.averageRating,
-      totalReviews: profile.totalReviews,
+      totalSessions: 0,
+      averageRating: 0,
+      totalReviews: 0,
       pendingRequests: 0,
       activeClients: 0,
     };
@@ -242,25 +305,6 @@ export class TherapistService {
       todaySessions: [],
       recentClients: [],
     };
-  }
-
-  /**
-   * Get therapist availability
-   */
-  async getAvailability(therapistId: string) {
-    const profile = await this.therapistProfileModel.findOne({ userId: new Types.ObjectId(therapistId) }).exec();
-    if (!profile) {
-      throw new NotFoundException('Therapist profile not found');
-    }
-
-    return profile.availability;
-  }
-
-  /**
-   * Update availability
-   */
-  async updateAvailability(userId: string, availability: any[]): Promise<TherapistProfile> {
-    return this.update(userId, { availability });
   }
 
   /**

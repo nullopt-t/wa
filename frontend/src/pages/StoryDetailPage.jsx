@@ -14,6 +14,8 @@ const StoryDetailPage = () => {
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
     loadStory();
@@ -24,23 +26,18 @@ const StoryDetailPage = () => {
       setLoading(true);
       const data = await storiesAPI.getById(id);
       setStory(data);
-      
-      // Reset like state first
-      setIsLiked(false);
-      
-      // Check if current user liked this story
-      if (user && data.likes && Array.isArray(data.likes)) {
-        const hasLiked = data.likes.some(like => {
-          const likeUserId = like.userId || like._id || like.user;
-          return likeUserId === user._id;
-        });
-        console.log('Story likes:', data.likes);
-        console.log('User has liked:', hasLiked);
+
+      // Count likes from array
+      const count = Array.isArray(data.likes) ? data.likes.length : 0;
+      setLikeCount(count);
+
+      // Check if current user liked this story (likes is array of ObjectIds)
+      if (user && Array.isArray(data.likes)) {
+        const userIdStr = user._id?.toString();
+        const hasLiked = data.likes.some(likeId => likeId.toString() === userIdStr);
         setIsLiked(hasLiked);
       }
     } catch (error) {
-      console.error('Failed to load story:', error);
-      showError('فشل تحميل القصة');
       navigate('/stories');
     } finally {
       setLoading(false);
@@ -48,21 +45,26 @@ const StoryDetailPage = () => {
   };
 
   const handleLike = async () => {
-    if (!isAuthenticated) {
-      showError('يجب تسجيل الدخول للإعجاب بالقصة');
-      navigate('/login', { state: { from: `/stories/${id}` } });
+    if (!isAuthenticated || isLiking) {
+      if (!isAuthenticated) navigate('/login', { state: { from: `/stories/${id}` } });
       return;
     }
 
+    setIsLiking(true);
+
+    // Optimistic update
+    const prevLiked = isLiked;
+    setIsLiked(!prevLiked);
+    setLikeCount(prevLiked ? likeCount - 1 : likeCount + 1);
+
     try {
-      const result = await storiesAPI.like(id);
-      // Update liked state based on API response
-      setIsLiked(result.liked);
-      // Reload story to get updated like count
-      await loadStory();
-      success(result.liked ? 'تم الإعجاب بالقصة' : 'تم إزالة الإعجاب');
+      await storiesAPI.like(id);
     } catch (error) {
-      showError('فشل الإعجاب بالقصة');
+      // Revert on error
+      setIsLiked(prevLiked);
+      setLikeCount(prevLiked ? likeCount + 1 : likeCount - 1);
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -169,7 +171,7 @@ const StoryDetailPage = () => {
                 }`}
               >
                 <i className={isLiked ? 'fas fa-heart' : 'far fa-heart'}></i>
-                {story.likes?.length || 0} إعجاب
+                {likeCount} إعجاب
               </button>
             </div>
 

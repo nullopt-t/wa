@@ -26,12 +26,8 @@ export const ErrorProvider = ({ children }) => {
       userMessage = userMessage.trim();
     }
     
-    // If the message is still technical, provide a user-friendly translation
-    if (userMessage.includes('Internal server error')) {
-      userMessage = 'حدث خطأ في الخادم، يرجى المحاولة لاحقاً';
-    } else if (userMessage.includes('Network Error')) {
-      userMessage = 'خطأ في الاتصال بالشبكة، يرجى التحقق من اتصالك';
-    } else if (userMessage.includes('E11000')) {
+    // Only show user-related errors, backend errors should be fixed
+    if (userMessage.includes('E11000')) {
       userMessage = 'البريد الإلكتروني مستخدم مسبقاً';
     } else if (userMessage.includes('invalid') || userMessage.includes('Invalid')) {
       userMessage = 'بيانات غير صالحة، يرجى التحقق من المدخلات';

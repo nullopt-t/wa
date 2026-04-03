@@ -13,9 +13,9 @@ const CreateFutureMessagePage = () => {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
-    deliverAt: '',
+    deliverAfter: '1',
+    deliverUnit: 'hours', // minutes, hours, days, weeks, months, years
     isEmailNotification: false,
-    recipientEmail: '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -29,6 +29,11 @@ const CreateFutureMessagePage = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const getUnitLabel = (unit) => {
+    const labels = { minutes: 'دقائق', hours: 'ساعات', days: 'أيام', weeks: 'أسابيع', months: 'أشهر', years: 'سنوات' };
+    return labels[unit] || '';
   };
 
   const validateForm = () => {
@@ -48,26 +53,31 @@ const CreateFutureMessagePage = () => {
       newErrors.message = 'الرسالة يجب أن تكون 5000 حرف كحد أقصى';
     }
 
-    if (!formData.deliverAt) {
-      newErrors.deliverAt = 'تاريخ التسليم مطلوب';
+    if (!formData.deliverAfter || Number(formData.deliverAfter) < 1) {
+      newErrors.deliverAfter = 'يجب إدخال مدة صحيحة';
     } else {
-      const deliverDate = new Date(formData.deliverAt);
+      const amount = Number(formData.deliverAfter);
       const now = new Date();
-      const minDate = new Date(now.getTime() + 60000); // 1 minute from now
-      const maxDate = new Date();
+      const deliverDate = new Date(now);
+
+      switch (formData.deliverUnit) {
+        case 'minutes': deliverDate.setMinutes(deliverDate.getMinutes() + amount); break;
+        case 'hours': deliverDate.setHours(deliverDate.getHours() + amount); break;
+        case 'days': deliverDate.setDate(deliverDate.getDate() + amount); break;
+        case 'weeks': deliverDate.setDate(deliverDate.getDate() + amount * 7); break;
+        case 'months': deliverDate.setMonth(deliverDate.getMonth() + amount); break;
+        case 'years': deliverDate.setFullYear(deliverDate.getFullYear() + amount); break;
+      }
+
+      const minDate = new Date(now.getTime() + 60000); // 1 min from now
+      const maxDate = new Date(now);
       maxDate.setFullYear(maxDate.getFullYear() + 10);
 
-      if (deliverDate <= minDate) {
-        newErrors.deliverAt = 'يجب أن يكون تاريخ التسليم بعد دقيقة واحدة على الأقل';
+      if (deliverDate < minDate) {
+        newErrors.deliverAfter = 'يجب أن يكون موعد التسليم بعد دقيقة واحدة على الأقل';
       } else if (deliverDate > maxDate) {
-        newErrors.deliverAt = 'لا يمكن جدولة رسائل لأكثر من 10 سنوات في المستقبل';
+        newErrors.deliverAfter = 'لا يمكن جدولة رسائل لأكثر من 10 سنوات في المستقبل';
       }
-    }
-
-    if (formData.isEmailNotification && !formData.recipientEmail) {
-      newErrors.recipientEmail = 'البريد الإلكتروني مطلوب عند تفعيل الإشعار';
-    } else if (formData.recipientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.recipientEmail)) {
-      newErrors.recipientEmail = 'البريد الإلكتروني غير صالح';
     }
 
     setErrors(newErrors);
@@ -84,18 +94,26 @@ const CreateFutureMessagePage = () => {
     setLoading(true);
     try {
       // Prepare data - don't send recipientEmail if not enabled
+      const now = new Date();
+      const amount = Number(formData.deliverAfter);
+      const deliverAt = new Date(now);
+
+      switch (formData.deliverUnit) {
+        case 'minutes': deliverAt.setMinutes(deliverAt.getMinutes() + amount); break;
+        case 'hours': deliverAt.setHours(deliverAt.getHours() + amount); break;
+        case 'days': deliverAt.setDate(deliverAt.getDate() + amount); break;
+        case 'weeks': deliverAt.setDate(deliverAt.getDate() + amount * 7); break;
+        case 'months': deliverAt.setMonth(deliverAt.getMonth() + amount); break;
+        case 'years': deliverAt.setFullYear(deliverAt.getFullYear() + amount); break;
+      }
+
       const submitData = {
         title: formData.title,
         message: formData.message,
-        deliverAt: formData.deliverAt,
+        deliverAt: deliverAt.toISOString(),
         isEmailNotification: formData.isEmailNotification,
       };
-      
-      // Only include recipientEmail if email notification is enabled
-      if (formData.isEmailNotification && formData.recipientEmail) {
-        submitData.recipientEmail = formData.recipientEmail;
-      }
-      
+
       await futureMessagesAPI.create(submitData);
       success('تم جدولة رسالتك بنجاح! سيتم تسليمها في الوقت المحدد');
       navigate('/future-messages');
@@ -106,10 +124,14 @@ const CreateFutureMessagePage = () => {
     }
   };
 
-  // Calculate minimum date (1 minute from now)
+  // Calculate minimum date/time (1 minute from now) - using local time
   const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset() + 1);
-  const minDate = now.toISOString().slice(0, 16);
+  now.setMinutes(now.getMinutes() + 1);
+  const minDate = now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0');
+  const minTime = String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0');
 
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen py-8">
@@ -172,24 +194,47 @@ const CreateFutureMessagePage = () => {
                 </div>
               </div>
 
-              {/* Deliver At */}
+              {/* Deliver After */}
               <div>
                 <label className="block text-lg font-medium text-[var(--text-primary)] mb-2">
                   موعد التسليم <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="datetime-local"
-                  name="deliverAt"
-                  value={formData.deliverAt}
-                  onChange={handleInputChange}
-                  min={minDate}
-                  className={`w-full px-4 py-3 bg-[var(--card-bg)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors ${
-                    errors.deliverAt ? 'border-red-500' : 'border-[var(--border-color)]'
-                  }`}
-                />
-                {errors.deliverAt && <p className="text-red-500 text-sm mt-1">{errors.deliverAt}</p>}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="col-span-1">
+                    <input
+                      type="number"
+                      name="deliverAfter"
+                      value={formData.deliverAfter}
+                      onChange={handleInputChange}
+                      min="1"
+                      max="120"
+                      className={`w-full px-4 py-3 bg-[var(--card-bg)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors ${
+                        errors.deliverAfter ? 'border-red-500' : 'border-[var(--border-color)]'
+                      }`}
+                      placeholder="1"
+                    />
+                  </div>
+                  <div className="col-span-1 sm:col-span-2">
+                    <select
+                      name="deliverUnit"
+                      value={formData.deliverUnit}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 bg-[var(--card-bg)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors appearance-none ${
+                        errors.deliverAfter ? 'border-red-500' : 'border-[var(--border-color)]'
+                      }`}
+                    >
+                      <option value="minutes">دقائق</option>
+                      <option value="hours">ساعات</option>
+                      <option value="days">أيام</option>
+                      <option value="weeks">أسابيع</option>
+                      <option value="months">أشهر</option>
+                      <option value="years">سنوات</option>
+                    </select>
+                  </div>
+                </div>
+                {errors.deliverAfter && <p className="text-red-500 text-sm mt-1">{errors.deliverAfter}</p>}
                 <p className="text-xs text-[var(--text-secondary)] mt-1">
-                  اختر موعدًا في المستقبل لتسليم رسالتك (على الأقل بعد دقيقة واحدة)
+                  ستُسلَّم رسالتك بعد {formData.deliverAfter} {getUnitLabel(formData.deliverUnit)} من الآن
                 </p>
               </div>
 
@@ -207,27 +252,9 @@ const CreateFutureMessagePage = () => {
                     إرسال إشعار عبر البريد الإلكتروني عند التسليم
                   </span>
                 </label>
-
-                {formData.isEmailNotification && (
-                  <div className="mt-4 mr-8">
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-                      البريد الإلكتروني
-                    </label>
-                    <input
-                      type="email"
-                      name="recipientEmail"
-                      value={formData.recipientEmail}
-                      onChange={handleInputChange}
-                      placeholder="your@email.com"
-                      className={`w-full px-4 py-2 bg-[var(--card-bg)] border rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors ${
-                        errors.recipientEmail ? 'border-red-500' : 'border-[var(--border-color)]'
-                      }`}
-                    />
-                    {errors.recipientEmail && (
-                      <p className="text-red-500 text-sm mt-1">{errors.recipientEmail}</p>
-                    )}
-                  </div>
-                )}
+                <p className="text-xs text-[var(--text-secondary)] mt-2 ml-8">
+                  سيتم الإرسال إلى بريدك الإلكتروني المسجل
+                </p>
               </div>
 
               {/* Actions */}

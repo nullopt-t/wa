@@ -51,7 +51,7 @@ const ForgotPasswordPage = () => {
         navigate('/login');
       }, 3000);
     } catch (error) {
-      console.error('Forgot password error:', error);
+      
       showError(error.message || 'حدث خطأ أثناء إرسال الرابط');
     } finally {
       setLoading(false);

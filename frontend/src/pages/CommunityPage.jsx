@@ -72,7 +72,7 @@ const CommunityPage = () => {
 
   // Load posts when filters change (resets to page 1) - with debouncing
   useEffect(() => {
-    console.log('Filters changed:', filters);
+    
 
     // Clear any pending debounce
     if (filterDebounceRef.current) {
@@ -81,7 +81,7 @@ const CommunityPage = () => {
 
     // Debounce filter changes by 300ms to prevent rapid API calls
     filterDebounceRef.current = setTimeout(() => {
-      console.log('Loading posts with filters:', filters);
+      
       loadPosts(1, true);
     }, 300);
 
@@ -96,8 +96,8 @@ const CommunityPage = () => {
   const loadPosts = async (page = 1, resetPosts = false) => {
     try {
       setLoading(true);
-      console.log('=== LOAD POSTS ===');
-      console.log('Page:', page, 'Reset:', resetPosts, 'Current posts:', posts.length);
+      
+      
       
       // Cancel any pending request
       if (abortControllerRef.current) {
@@ -113,28 +113,38 @@ const CommunityPage = () => {
         ...(filters.tag && { tag: filters.tag }),
         sort: filters.sort,
       };
-      console.log('Request params:', params);
+      
 
       const data = await postsAPI.getAll(params);
-      console.log('Response:', data);
+      
+      // Handle empty response from API
+      if (!data || !data.posts) {
+        console.warn('API returned no posts');
+        setPosts([]);
+        setPagination({ currentPage: 1, totalPages: 1, total: 0 });
+        setLoading(false);
+        return;
+      }
       
       // Update pagination info
       setPagination({
-        currentPage: data.currentPage,
-        totalPages: data.totalPages,
-        total: data.total,
+        currentPage: data.currentPage || 1,
+        totalPages: data.totalPages || 1,
+        total: data.total || 0,
       });
       
       // Either replace posts (new filter) or append (load more)
-      const newPosts = resetPosts ? data.posts : [...posts, ...data.posts];
-      console.log('Setting posts:', newPosts.length, 'posts');
+      const newPosts = resetPosts ? (data.posts || []) : [...posts, ...(data.posts || [])];
+      
       setPosts(newPosts);
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.log('Request was cancelled');
+        
         return;
       }
-      showError(error.message || 'فشل تحميل المنشورات');
+      console.error('Failed to load posts:', error);
+      // Don't show error to user - just show empty state
+      setPosts([]);
     } finally {
       setLoading(false);
     }
@@ -162,18 +172,18 @@ const CommunityPage = () => {
   };
 
   const handleLikePost = async (postId) => {
-    console.log('handleLikePost called:', { postId, isAuthenticated });
+    
     
     if (!isAuthenticated) {
-      console.log('Not authenticated, showing error');
+      
       showError('يرجى تسجيل الدخول للإعجاب بالمنشورات');
       return;
     }
 
-    console.log('Calling postsAPI.like...');
+    
     try {
       const result = await postsAPI.like(postId);
-      console.log('Like result:', result);
+      
       
       // Update the post with the returned likes array from server
       setPosts(posts.map(post => {
@@ -185,9 +195,9 @@ const CommunityPage = () => {
         }
         return post;
       }));
-      console.log('Posts updated');
+      
     } catch (error) {
-      console.error('Like error:', error);
+      
       showError(error.message || 'فشل الإعجاب بالمنشور');
     }
   };
@@ -306,7 +316,7 @@ const CommunityPage = () => {
               <div className="flex justify-center items-center py-12 md:py-20">
                 <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
               </div>
-            ) : posts.length === 0 ? (
+            ) : !posts || posts.length === 0 ? (
               <AnimatedItem type="slideUp" delay={0.3}>
                 <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-8 md:p-12 text-center border border-[var(--border-color)]/30">
                   <i className="fas fa-newspaper text-5xl md:text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
@@ -342,7 +352,7 @@ const CommunityPage = () => {
             )}
 
             {/* Load More - Only show if there are more pages */}
-            {!loading && posts.length > 0 && pagination.currentPage < pagination.totalPages && (
+            {!loading && posts && posts.length > 0 && pagination.currentPage < pagination.totalPages && (
               <AnimatedItem type="slideUp" delay={0.4}>
                 <div className="flex justify-center mt-6 md:mt-8">
                   <button

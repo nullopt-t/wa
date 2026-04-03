@@ -31,7 +31,7 @@ const ArticleManagementPage = () => {
 
   // Check for edit query parameter AFTER articles are loaded
   useEffect(() => {
-    if (!loading && articles.length > 0) {
+    if (!loading && articles && articles.length > 0) {
       const editId = searchParams.get('edit');
       if (editId) {
         const articleToEdit = articles.find(a => a._id === editId);
@@ -56,8 +56,8 @@ const ArticleManagementPage = () => {
       const articlesList = data.articles || data.data || [];
       setArticles(articlesList);
     } catch (error) {
-      console.error('Failed to load articles:', error);
-      showError('فشل تحميل المقالات');
+      
+      showError('حدث خطأ أثناء تحميل المقالات');
       setArticles([]);
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ const ArticleManagementPage = () => {
       setArticleToDelete(null);
       loadArticles();
     } catch (error) {
-      showError('فشل حذف المقال');
+      ;
     }
   };
 
@@ -105,7 +105,7 @@ const ArticleManagementPage = () => {
       setShowCreateModal(false);
       loadArticles();
     } catch (error) {
-      showError(error.message || 'فشل إنشاء المقال');
+      showError('حدث خطأ أثناء الإنشاء');
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +121,7 @@ const ArticleManagementPage = () => {
       setEditingArticle(null);
       loadArticles();
     } catch (error) {
-      showError(error.message || 'فشل تحديث المقال');
+      showError('حدث خطأ أثناء التحديث');
     } finally {
       setSubmitting(false);
     }
@@ -173,7 +173,7 @@ const ArticleManagementPage = () => {
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
           </div>
-        ) : articles.length === 0 ? (
+        ) : !articles || articles.length === 0 ? (
           <AnimatedItem type="slideUp" delay={0.2}>
             <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-12 text-center border border-[var(--border-color)]/30">
               <i className="fas fa-newspaper text-6xl text-[var(--text-secondary)]/30 mb-4"></i>

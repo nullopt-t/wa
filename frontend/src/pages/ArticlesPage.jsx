@@ -39,7 +39,7 @@ const ArticlesPage = () => {
       });
       setAllTags(Array.from(tagsSet));
     } catch (error) {
-      console.error('Failed to load tags:', error);
+      
     }
   }, []);
 
@@ -49,7 +49,7 @@ const ArticlesPage = () => {
       const articlesArray = Array.isArray(data) ? data : (data?.articles || []);
       setFeaturedArticles(articlesArray);
     } catch (error) {
-      console.error('Failed to load featured articles:', error);
+      
       setFeaturedArticles([]);
     }
   }, []);
@@ -94,8 +94,8 @@ const ArticlesPage = () => {
         total: data?.total || 0,
       });
     } catch (error) {
-      console.error('Failed to load articles:', error);
-      showError('فشل تحميل المقالات');
+      
+      showError('حدث خطأ أثناء تحميل المقالات');
     } finally {
       setLoading(false);
     }

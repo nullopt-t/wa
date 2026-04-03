@@ -31,6 +31,7 @@ import TermsPage from './pages/TermsPage.jsx';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx';
 import VideosPage from './pages/VideosPage.jsx';
 import FindTherapistPage from './pages/FindTherapistPage.jsx';
+import TherapistDetailPage from './pages/TherapistDetailPage.jsx';
 import UserDashboard from './pages/UserDashboard.jsx';
 import TherapistDashboard from './pages/TherapistDashboard.jsx';
 import ProfileSettingsPage from './pages/ProfileSettingsPage.jsx';
@@ -58,6 +59,7 @@ import FutureMessagesPage from './pages/FutureMessagesPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
+import AdminLayout from './components/admin/AdminLayout.jsx';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -71,11 +73,14 @@ const queryClient = new QueryClient({
 
 function AppWrapper() {
   const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/videos/manage') ||
+    location.pathname.startsWith('/articles/manage');
 
   return (
     <div className="flex flex-col min-h-screen" dir="rtl">
       <ScrollToTop />
-      <Header />
+      {!isAdminRoute && <Header />}
       <main className="flex-grow">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
@@ -121,8 +126,10 @@ function AppWrapper() {
             } />
             <Route path="/articles/manage" element={
               <AnimatedRoute>
-                <ProtectedRoute>
-                  <ArticleManagementPage />
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout title="إدارة المقالات">
+                    <ArticleManagementPage />
+                  </AdminLayout>
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
@@ -190,7 +197,9 @@ function AppWrapper() {
             <Route path="/videos/manage" element={
               <AnimatedRoute>
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <VideoManagementPage />
+                  <AdminLayout title="إدارة الفيديوهات">
+                    <VideoManagementPage />
+                  </AdminLayout>
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
@@ -286,8 +295,13 @@ function AppWrapper() {
             } />
             <Route path="/find-therapist" element={
               <AnimatedRoute>
+                <FindTherapistPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/therapists/:id" element={
+              <AnimatedRoute>
                 <ProtectedRoute>
-                  <FindTherapistPage />
+                  <TherapistDetailPage />
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
@@ -364,7 +378,7 @@ function AppWrapper() {
           </Routes>
         </AnimatePresence>
       </main>
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </div>
   );
 }

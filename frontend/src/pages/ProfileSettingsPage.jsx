@@ -107,10 +107,12 @@ const ProfileSettingsPage = () => {
       }
 
       // Check if user ID exists
-      if (!user?._id) {
+      if (!user?._id && !user?.id) {
         showErrorToast('يرجى تسجيل الدخول أولاً');
         return;
       }
+
+      const userId = user._id || user.id;
 
       // Show preview immediately
       const reader = new FileReader();
@@ -125,7 +127,7 @@ const ProfileSettingsPage = () => {
         const formData = new FormData();
         formData.append('avatar', file);
 
-        const result = await profileAPI.uploadAvatar(user._id, formData);
+        const result = await profileAPI.uploadAvatar(userId, formData);
 
         if (result.success) {
           const fullAvatarUrl = `${API_URL}${result.avatarUrl}`;
@@ -138,7 +140,7 @@ const ProfileSettingsPage = () => {
           success('تم رفع الصورة الشخصية بنجاح');
         }
       } catch (error) {
-        console.error('Avatar upload error:', error);
+        
         showErrorToast(error.message || 'حدث خطأ أثناء رفع الصورة');
         // Revert preview on error
         setAvatarPreview(user.avatar);
@@ -166,7 +168,7 @@ const ProfileSettingsPage = () => {
       success('تم إزالة الصورة الشخصية بنجاح');
       setShowRemoveDialog(false);
     } catch (error) {
-      console.error('Remove avatar error:', error);
+      
       showErrorToast(error.message || 'حدث خطأ أثناء إزالة الصورة');
     } finally {
       setIsRemoving(false);
@@ -200,7 +202,7 @@ const ProfileSettingsPage = () => {
       await profileAPI.updateProfile(user.id, updateData);
       success('تم تحديث الملف الشخصي بنجاح');
     } catch (error) {
-      console.error('Profile update error:', error);
+      
       showErrorToast(error.message || 'حدث خطأ أثناء تحديث الملف الشخصي');
     } finally {
       setSaving(false);

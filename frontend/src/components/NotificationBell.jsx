@@ -62,7 +62,7 @@ const NotificationBell = () => {
         setUnreadCount(response.data.count);
       }
     } catch (error) {
-      console.error('Failed to load unread count:', error);
+      
     }
   };
 
@@ -74,7 +74,7 @@ const NotificationBell = () => {
         setNotifications(response.data);
       }
     } catch (error) {
-      console.error('Failed to load notifications:', error);
+      
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ const NotificationBell = () => {
       );
       loadUnreadCount();
     } catch (error) {
-      console.error('Failed to mark as read:', error);
+      
     }
   };
 
@@ -98,7 +98,7 @@ const NotificationBell = () => {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (error) {
-      console.error('Failed to mark all as read:', error);
+      
     }
   };
 
@@ -109,6 +109,7 @@ const NotificationBell = () => {
       post_approved: 'fa-check-circle text-green-500',
       story_approved: 'fa-book-open text-amber-500',
       account_activated: 'fa-user-check text-green-500',
+      future_message: 'fa-envelope-open-text text-amber-500',
       new_comment: 'fa-comment text-blue-500',
       system: 'fa-bell text-gray-500',
     };

@@ -16,10 +16,10 @@ import {
   InvalidCredentialsException,
   EmailNotVerifiedException,
   AccountDeactivatedException,
-  TherapistPendingApprovalException,
 } from '../exceptions/business.exceptions';
 import { HashService } from '../modules/hash/hash.service';
 import { EmailService } from '../modules/email/email.service';
+import { NotificationService } from '../notification/services/notification.service';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +30,7 @@ export class AuthService {
     private jwtService: JwtService,
     private hashService: HashService,
     private emailService: EmailService,
+    private notificationService: NotificationService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -56,15 +57,6 @@ export class AuthService {
       if (!isPasswordValid) {
         this.logger.warn(`Invalid password attempt for ${email}`);
         throw new InvalidCredentialsException();
-      }
-
-      if (user.role === 'therapist') {
-        const freshUser = await this.userService.findById((user as any)._id.toString());
-
-        if (freshUser && (freshUser.isApproved === false || freshUser.isApproved === undefined)) {
-          this.logger.warn(`Therapist not approved: ${email}`);
-          throw new TherapistPendingApprovalException();
-        }
       }
 
       this.logger.log(`User validated successfully: ${email}`);
@@ -289,6 +281,14 @@ export class AuthService {
 
       const userId = (user as any)._id || (user as any).id;
       await this.userService.update(userId, { isVerified: true });
+
+      // Send account activated notification
+      try {
+        await this.notificationService.createAccountActivatedNotification(userId.toString());
+      } catch (err) {
+        // Don't fail verification if notification fails
+        this.logger.error('Failed to send account activated notification', err);
+      }
 
       this.logger.log(`Email verified successfully: ${decoded.email}`);
 

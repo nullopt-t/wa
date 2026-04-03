@@ -263,7 +263,8 @@ export class StoryService {
       }
 
       const userObjectId = new Types.ObjectId(userId);
-      const isLiked = story.likes?.some(id => id.toString() === userId);
+      const likes = story.likes || [];
+      const isLiked = likes.some(id => id.toString() === userId);
 
       if (isLiked) {
         // Unlike
@@ -277,9 +278,9 @@ export class StoryService {
         });
       }
 
-      return { 
+      return {
         liked: !isLiked,
-        likes: isLiked ? story.likes.length - 1 : story.likes.length + 1,
+        likes: isLiked ? likes.length - 1 : likes.length + 1,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -451,6 +452,7 @@ export class StoryService {
       const totalStories = await this.storyModel.countDocuments();
       const approvedStories = await this.storyModel.countDocuments({ status: 'approved' });
       const pendingStories = await this.storyModel.countDocuments({ status: 'pending' });
+      const rejectedStories = await this.storyModel.countDocuments({ status: 'rejected' });
       
       const totalViews = await this.storyModel.aggregate([
         { $group: { _id: null, total: { $sum: '$views' } } },
@@ -464,6 +466,7 @@ export class StoryService {
         totalStories,
         approvedStories,
         pendingStories,
+        rejectedStories,
         totalViews: totalViews[0]?.total || 0,
         totalLikes: totalLikes[0]?.total || 0,
       };

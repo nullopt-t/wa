@@ -223,6 +223,11 @@ export const storiesAPI = {
     });
   },
 
+  // Admin: Get story stats
+  getStats: () => apiRequest('/stories/admin/stats', {
+    method: 'GET',
+  }),
+
   // Admin: Moderate story
   moderate: (id, status) => apiRequest(`/stories/admin/${id}/moderate?status=${status}`, {
     method: 'PATCH',

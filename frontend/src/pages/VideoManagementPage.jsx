@@ -40,8 +40,8 @@ const VideoManagementPage = () => {
       const videosList = data.videos || data.data || data;
       setVideos(Array.isArray(videosList) ? videosList : []);
     } catch (error) {
-      console.error('Failed to load videos:', error);
-      showError('فشل تحميل الفيديوهات');
+      
+      showError('حدث خطأ أثناء تحميل الفيديوهات');
       setVideos([]);
     } finally {
       setLoading(false);
@@ -63,7 +63,7 @@ const VideoManagementPage = () => {
       setVideoToDelete(null);
       loadVideos();
     } catch (error) {
-      showError('فشل حذف الفيديو');
+      ;
     }
   };
 
@@ -177,7 +177,7 @@ const VideoManagementPage = () => {
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
           </div>
-        ) : videos.length === 0 ? (
+        ) : !videos || videos.length === 0 ? (
           <AnimatedItem type="slideUp" delay={0.2}>
             <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-12 text-center border border-[var(--border-color)]/30">
               <i className="fas fa-video text-6xl text-[var(--text-secondary)]/30 mb-4"></i>

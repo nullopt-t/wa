@@ -56,6 +56,7 @@ export class RegisterUserDto {
 }
 
 export class RegisterTherapistDto extends RegisterUserDto {
+  // --- Therapist credentials ---
   @IsString()
   @IsNotEmpty()
   licenseNumber: string;
@@ -78,9 +79,28 @@ export class RegisterTherapistDto extends RegisterUserDto {
   @IsOptional()
   certifications?: string[];
 
+  // --- Location ---
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @IsString()
+  @IsNotEmpty()
+  country: string;
+
   @IsString()
   @IsOptional()
   clinicAddress?: string;
+
+  // --- Profile ---
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  languages?: string[];
 
   constructor() {
     super();
@@ -214,4 +234,4 @@ export class RefreshTokenDto {
   @IsString()
   @IsNotEmpty()
   refreshToken: string;
-}
+}// trigger rebuild

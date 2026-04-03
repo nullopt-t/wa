@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { futureMessagesAPI } from '../services/communityApi.js';
@@ -8,33 +8,46 @@ import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const FutureMessagesPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const { error: showError, success } = useToast();
 
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('pending'); // 'all', 'pending', 'delivered'
+  const [filter, setFilter] = useState('all'); // 'all', 'pending', 'delivered'
   const [editingMessage, setEditingMessage] = useState(null);
+  const [viewingMessage, setViewingMessage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [countdowns, setCountdowns] = useState({});
   const countdownRef = useRef(null);
 
+  // Auto-open message from URL (?view=MESSAGE_ID) - triggered by notification link
+  useEffect(() => {
+    const viewId = searchParams.get('view');
+    if (viewId && messages.length > 0) {
+      // Clear from URL
+      setSearchParams({}, { replace: true });
+      // Open modal
+      const msg = messages.find(m => m._id === viewId);
+      if (msg) {
+        setViewingMessage(msg);
+      }
+    }
+  }, [searchParams, messages, setSearchParams]);
+
   const loadMessages = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await futureMessagesAPI.getAll(filter === 'delivered');
-      // Ensure data is an array
+      const data = await futureMessagesAPI.getAll(true); // Always load ALL messages including delivered
       setMessages(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Failed to load future messages:', error);
-      showError('فشل تحميل الرسائل');
       setMessages([]);
     } finally {
       setLoading(false);
     }
-  }, [filter, showError]);
+  }, []);
 
   useEffect(() => {
     loadMessages();
@@ -45,12 +58,12 @@ const FutureMessagesPage = () => {
     const updateCountdowns = () => {
       const now = new Date();
       const newCountdowns = {};
-      
+
       messages.forEach(msg => {
         if (!msg.isDelivered) {
           const deliver = new Date(msg.deliverAt);
           const diff = deliver - now;
-          
+
           if (diff <= 0) {
             newCountdowns[msg._id] = { text: 'جاهزة للتسليم', color: 'text-yellow-400', icon: 'fa-bell' };
           } else {
@@ -58,22 +71,22 @@ const FutureMessagesPage = () => {
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            
+
             if (days > 0) {
-              newCountdowns[msg._id] = { 
-                text: `${days}يوم ${hours}ساعة`, 
+              newCountdowns[msg._id] = {
+                text: `${days}يوم ${hours}ساعة`,
                 color: 'text-blue-400',
                 icon: 'fa-clock'
               };
             } else if (hours > 0) {
-              newCountdowns[msg._id] = { 
-                text: `${hours}ساعة ${minutes}دقيقة`, 
+              newCountdowns[msg._id] = {
+                text: `${hours}ساعة ${minutes}دقيقة`,
                 color: 'text-cyan-400',
                 icon: 'fa-hourglass-half'
               };
             } else {
-              newCountdowns[msg._id] = { 
-                text: `${minutes}دقيقة ${seconds}ثانية`, 
+              newCountdowns[msg._id] = {
+                text: `${minutes}دقيقة ${seconds}ثانية`,
                 color: 'text-green-400',
                 icon: 'fa-stopwatch'
               };
@@ -81,19 +94,25 @@ const FutureMessagesPage = () => {
           }
         }
       });
-      
+
       setCountdowns(newCountdowns);
     };
 
     updateCountdowns();
     countdownRef.current = setInterval(updateCountdowns, 1000);
-    
+
     return () => {
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
       }
     };
   }, [messages]);
+
+  // Auto-refresh every 30s to catch cron-delivered messages
+  useEffect(() => {
+    const refreshInterval = setInterval(loadMessages, 30000);
+    return () => clearInterval(refreshInterval);
+  }, [loadMessages]);
 
   const handleDeleteClick = (message) => {
     setMessageToDelete(message);
@@ -123,14 +142,14 @@ const FutureMessagesPage = () => {
     // Filter by status
     if (filter === 'pending' && msg.isDelivered) return false;
     if (filter === 'delivered' && !msg.isDelivered) return false;
-    
-    // Filter by search
+
+    // Filter by search (combined with status)
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      return msg.title?.toLowerCase().includes(search) || 
+      return msg.title?.toLowerCase().includes(search) ||
              msg.message?.toLowerCase().includes(search);
     }
-    
+
     return true;
   });
 
@@ -142,7 +161,6 @@ const FutureMessagesPage = () => {
 
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen py-8 relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-[var(--primary-color)]/5 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[var(--secondary-color)]/5 rounded-full blur-3xl"></div>
@@ -216,7 +234,6 @@ const FutureMessagesPage = () => {
         <AnimatedItem type="slideUp" delay={0.2}>
           <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-4 mb-6 border border-[var(--border-color)]/30">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              {/* Filter Tabs */}
               <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-xl">
                 {[
                   { id: 'all', label: 'الكل', icon: 'fa-layer-group' },
@@ -238,7 +255,6 @@ const FutureMessagesPage = () => {
                 ))}
               </div>
 
-              {/* Search */}
               <div className="relative flex-1 max-w-md">
                 <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"></i>
                 <input
@@ -256,10 +272,7 @@ const FutureMessagesPage = () => {
         {/* Messages Grid */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-[var(--primary-color)]/20"></div>
-              <div className="absolute top-0 left-0 h-16 w-16 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
           </div>
         ) : filteredMessages.length === 0 ? (
           <AnimatedItem type="slideUp" delay={0.3}>
@@ -271,7 +284,7 @@ const FutureMessagesPage = () => {
                 {searchTerm ? 'لا توجد رسائل مطابقة' : 'لا توجد رسائل بعد'}
               </h3>
               <p className="text-[var(--text-secondary)] mb-8 max-w-md mx-auto">
-                {searchTerm 
+                {searchTerm
                   ? 'جرب البحث بكلمات مختلفة'
                   : 'ابدأ رحلتك بكتابة رسالة إلى مستقبلك. ماذا تريد أن تقول لنفسك بعد شهر؟ بعد سنة؟'}
               </p>
@@ -297,6 +310,7 @@ const FutureMessagesPage = () => {
                   onEdit={() => setEditingMessage(message)}
                   onDelete={() => handleDeleteClick(message)}
                   onCopy={() => handleCopyMessage(message)}
+                  onView={() => setViewingMessage(message)}
                   delay={index * 0.05}
                 />
               ))}
@@ -318,6 +332,14 @@ const FutureMessagesPage = () => {
         />
       )}
 
+      {/* View Message Modal */}
+      {viewingMessage && (
+        <ViewMessageModal
+          message={viewingMessage}
+          onClose={() => setViewingMessage(null)}
+        />
+      )}
+
       {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={showDeleteConfirm}
@@ -336,47 +358,24 @@ const FutureMessagesPage = () => {
   );
 };
 
-// Modern Message Card Component
-const MessageCard = ({ message, countdown, onEdit, onDelete, onCopy, delay }) => {
+// Message Card
+const MessageCard = ({ message, countdown, onEdit, onDelete, onCopy, delay, onView }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDelivered = message.isDelivered;
   const isReady = !isDelivered && new Date(message.deliverAt) <= new Date();
 
   const statusConfig = {
-    delivered: { 
-      bg: 'from-green-500/10 to-emerald-500/10', 
-      border: 'border-green-500/30',
-      badge: 'bg-green-500 text-white',
-      icon: 'fa-check-circle'
-    },
-    ready: { 
-      bg: 'from-yellow-500/10 to-orange-500/10',
-      border: 'border-yellow-500/30',
-      badge: 'bg-yellow-500 text-white',
-      icon: 'fa-bell'
-    },
-    pending: { 
-      bg: 'from-blue-500/10 to-cyan-500/10',
-      border: 'border-blue-500/30',
-      badge: 'bg-blue-500 text-white',
-      icon: 'fa-clock'
-    },
+    delivered: { bg: 'from-green-500/10 to-emerald-500/10', border: 'border-green-500/30', badge: 'bg-green-500 text-white', icon: 'fa-check-circle' },
+    ready: { bg: 'from-yellow-500/10 to-orange-500/10', border: 'border-yellow-500/30', badge: 'bg-yellow-500 text-white', icon: 'fa-bell' },
+    pending: { bg: 'from-blue-500/10 to-cyan-500/10', border: 'border-blue-500/30', badge: 'bg-blue-500 text-white', icon: 'fa-clock' },
   };
 
-  const config = isDelivered 
-    ? statusConfig.delivered 
-    : isReady 
-      ? statusConfig.ready 
-      : statusConfig.pending;
+  const config = isDelivered ? statusConfig.delivered : isReady ? statusConfig.ready : statusConfig.pending;
 
   return (
     <AnimatedItem type="scaleIn" delay={delay}>
-      <div className={`group relative bg-gradient-to-br ${config.bg} backdrop-blur-md rounded-3xl border ${config.border} overflow-hidden hover:shadow-2xl hover:shadow-[var(--primary-color)]/10 transition-all duration-300 hover:-translate-y-1`}>
-        {/* Glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)]/0 to-[var(--primary-color)]/0 group-hover:from-[var(--primary-color)]/5 group-hover:to-[var(--secondary-color)]/5 transition-all duration-500"></div>
-        
+      <div className={`group relative bg-gradient-to-br ${config.bg} backdrop-blur-md rounded-3xl border ${config.border} overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1`}>
         <div className="relative p-6">
-          {/* Header */}
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -388,8 +387,6 @@ const MessageCard = ({ message, countdown, onEdit, onDelete, onCopy, delay }) =>
                   {isDelivered ? 'مُسلمة' : isReady ? 'جاهزة' : 'مجدولة'}
                 </span>
               </div>
-              
-              {/* Countdown */}
               {!isDelivered && countdown && (
                 <div className={`flex items-center gap-2 text-sm ${countdown.color}`}>
                   <i className={`fas ${countdown.icon} animate-pulse`}></i>
@@ -398,39 +395,30 @@ const MessageCard = ({ message, countdown, onEdit, onDelete, onCopy, delay }) =>
               )}
             </div>
 
-            {/* Actions */}
             <div className="flex gap-2">
               {!isDelivered && (
                 <>
-                  <button
-                    onClick={onEdit}
-                    className="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl hover:bg-blue-500/20 transition-all hover:scale-110"
-                    title="تعديل"
-                  >
+                  <button onClick={onEdit} className="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl hover:bg-blue-500/20 transition-all hover:scale-110" title="تعديل">
                     <i className="fas fa-pen"></i>
                   </button>
-                  <button
-                    onClick={onDelete}
-                    className="p-2.5 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-all hover:scale-110"
-                    title="حذف"
-                  >
+                  <button onClick={onDelete} className="p-2.5 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-all hover:scale-110" title="حذف">
                     <i className="fas fa-trash"></i>
                   </button>
                 </>
               )}
               {isDelivered && (
-                <button
-                  onClick={onCopy}
-                  className="p-2.5 bg-[var(--primary-color)]/10 text-[var(--primary-color)] rounded-xl hover:bg-[var(--primary-color)]/20 transition-all hover:scale-110"
-                  title="نسخ"
-                >
-                  <i className="fas fa-copy"></i>
-                </button>
+                <>
+                  <button onClick={onView} className="p-2.5 bg-[var(--primary-color)]/10 text-[var(--primary-color)] rounded-xl hover:bg-[var(--primary-color)]/20 transition-all hover:scale-110" title="عرض">
+                    <i className="fas fa-eye"></i>
+                  </button>
+                  <button onClick={onCopy} className="p-2.5 bg-[var(--primary-color)]/10 text-[var(--primary-color)] rounded-xl hover:bg-[var(--primary-color)]/20 transition-all hover:scale-110" title="نسخ">
+                    <i className="fas fa-copy"></i>
+                  </button>
+                </>
               )}
             </div>
           </div>
 
-          {/* Message Preview */}
           <div className="relative mb-4">
             <div className={`bg-[var(--card-bg)]/50 backdrop-blur-sm rounded-2xl p-4 border border-[var(--border-color)]/20 ${isExpanded ? '' : 'max-h-32 overflow-hidden'}`}>
               <p className="text-[var(--text-primary)] leading-relaxed text-sm whitespace-pre-wrap">
@@ -438,50 +426,25 @@ const MessageCard = ({ message, countdown, onEdit, onDelete, onCopy, delay }) =>
               </p>
             </div>
             {message.message.length > 150 && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-2 text-sm text-[var(--primary-color)] hover:text-[var(--primary-hover)] font-medium flex items-center gap-1 transition-colors"
-              >
-                {isExpanded ? (
-                  <>
-                    <i className="fas fa-chevron-up"></i>
-                    طي الرسالة
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-chevron-down"></i>
-                    عرض المزيد
-                  </>
-                )}
+              <button onClick={() => setIsExpanded(!isExpanded)} className="mt-2 text-sm text-[var(--primary-color)] hover:text-[var(--primary-hover)] font-medium flex items-center gap-1 transition-colors">
+                {isExpanded ? <><i className="fas fa-chevron-up"></i> طي الرسالة</> : <><i className="fas fa-chevron-down"></i> عرض المزيد</>}
               </button>
             )}
           </div>
 
-          {/* Footer */}
           <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-[var(--border-color)]/20 text-xs text-[var(--text-secondary)]">
             <div className="flex items-center gap-2">
               <i className="far fa-calendar"></i>
-              <span>
-                {new Date(message.deliverAt).toLocaleDateString('ar-EG', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </span>
+              <span>{new Date(message.deliverAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
             <div className="flex items-center gap-2">
               <i className="far fa-clock"></i>
-              <span>
-                {new Date(message.deliverAt).toLocaleTimeString('ar-EG', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
+              <span>{new Date(message.deliverAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             {message.isEmailNotification && (
               <div className="flex items-center gap-2 text-[var(--primary-color)]">
                 <i className="far fa-envelope"></i>
-                <span>{message.recipientEmail || 'البريد المسجل'}</span>
+                <span>إشعار بالبريد الإلكتروني</span>
               </div>
             )}
           </div>
@@ -498,38 +461,31 @@ const EditMessageModal = ({ message, onClose, onSave, onError }) => {
     message: message.message,
     deliverAt: new Date(message.deliverAt).toISOString().slice(0, 16),
     isEmailNotification: message.isEmailNotification || false,
-    recipientEmail: message.recipientEmail || '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'العنوان مطلوب';
     if (!formData.message.trim()) newErrors.message = 'الرسالة مطلوبة';
     if (!formData.deliverAt) newErrors.deliverAt = 'تاريخ التسليم مطلوب';
-    
-    if (newErrors.title || newErrors.message || newErrors.deliverAt) {
+
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     setLoading(true);
     try {
-      const submitData = {
+      await futureMessagesAPI.update(message._id, {
         title: formData.title,
         message: formData.message,
         deliverAt: formData.deliverAt,
         isEmailNotification: formData.isEmailNotification,
-      };
-      
-      if (formData.isEmailNotification && formData.recipientEmail) {
-        submitData.recipientEmail = formData.recipientEmail;
-      }
-
-      await futureMessagesAPI.update(message._id, submitData);
+      });
       onSave();
     } catch (error) {
       onError(error.message || 'فشل تحديث الرسالة');
@@ -538,9 +494,14 @@ const EditMessageModal = ({ message, onClose, onSave, onError }) => {
     }
   };
 
+  // Calculate min date (1 min from now in local time for datetime-local)
   const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  const minDate = now.toISOString().slice(0, 16);
+  now.setMinutes(now.getMinutes() + 1);
+  const minDate = now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0') + 'T' +
+    String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0');
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -557,19 +518,15 @@ const EditMessageModal = ({ message, onClose, onSave, onError }) => {
             <i className="fas fa-times text-xl"></i>
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">العنوان</label>
             <input
               type="text"
-              name="title"
               value={formData.title}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, title: e.target.value }));
-                setErrors(prev => ({ ...prev, title: '' }));
-              }}
-              className={`w-full px-4 py-3 bg-[var(--bg-secondary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all ${errors.title ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+              onChange={(e) => { setFormData(p => ({ ...p, title: e.target.value })); setErrors(p => ({ ...p, title: '' })); }}
+              className={`w-full px-4 py-3 bg-[var(--bg-secondary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-all ${errors.title ? 'border-red-500' : 'border-[var(--border-color)]'}`}
               placeholder="عنوان الرسالة..."
             />
             {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
@@ -578,14 +535,10 @@ const EditMessageModal = ({ message, onClose, onSave, onError }) => {
           <div>
             <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">المحتوى</label>
             <textarea
-              name="message"
               value={formData.message}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, message: e.target.value }));
-                setErrors(prev => ({ ...prev, message: '' }));
-              }}
+              onChange={(e) => { setFormData(p => ({ ...p, message: e.target.value })); setErrors(p => ({ ...p, message: '' })); }}
               rows="6"
-              className={`w-full px-4 py-3 bg-[var(--bg-secondary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all resize-none ${errors.message ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+              className={`w-full px-4 py-3 bg-[var(--bg-secondary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-all resize-none ${errors.message ? 'border-red-500' : 'border-[var(--border-color)]'}`}
               placeholder="اكتب رسالتك إلى مستقبلك..."
             />
             {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message}</p>}
@@ -595,35 +548,130 @@ const EditMessageModal = ({ message, onClose, onSave, onError }) => {
             <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">موعد التسليم</label>
             <input
               type="datetime-local"
-              name="deliverAt"
               value={formData.deliverAt}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, deliverAt: e.target.value }));
-                setErrors(prev => ({ ...prev, deliverAt: '' }));
-              }}
+              onChange={(e) => { setFormData(p => ({ ...p, deliverAt: e.target.value })); setErrors(p => ({ ...p, deliverAt: '' })); }}
               min={minDate}
-              className={`w-full px-4 py-3 bg-[var(--bg-secondary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all ${errors.deliverAt ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+              className={`w-full px-4 py-3 bg-[var(--bg-secondary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-all ${errors.deliverAt ? 'border-red-500' : 'border-[var(--border-color)]'}`}
             />
             {errors.deliverAt && <p className="text-red-500 text-sm mt-1">{errors.deliverAt}</p>}
+          </div>
+
+          <div className="bg-[var(--bg-secondary)] rounded-xl p-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isEmailNotification}
+                onChange={(e) => setFormData(p => ({ ...p, isEmailNotification: e.target.checked }))}
+                className="w-5 h-5 rounded"
+              />
+              <span className="text-[var(--text-primary)] font-medium">إرسال إشعار عبر البريد الإلكتروني عند التسليم</span>
+            </label>
+            <p className="text-xs text-[var(--text-secondary)] mt-2 ml-8">سيتم الإرسال إلى بريدك الإلكتروني المسجل</p>
           </div>
 
           <div className="flex gap-4 pt-4">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-[var(--primary-color)]/25 transition-all disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+              {loading ? <><i className="fas fa-spinner fa-spin"></i> جاري الحفظ...</> : <><i className="fas fa-check"></i> حفظ التعديلات</>}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-xl font-medium hover:bg-[var(--bg-secondary)] transition-all"
+              className="px-6 py-3 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl font-medium hover:bg-[var(--bg-primary)] transition-colors"
             >
               إلغاء
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+};
+
+// View Message Modal (Read-only)
+const ViewMessageModal = ({ message, onClose }) => {
+  const isDelivered = message.isDelivered;
+  const deliverDate = new Date(message.deliverAt);
+  const createdAt = message.createdAt ? new Date(message.createdAt) : null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="relative bg-[var(--card-bg)] backdrop-blur-md rounded-3xl shadow-2xl border border-[var(--border-color)]/30 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-[var(--card-bg)] backdrop-blur-md p-6 border-b border-[var(--border-color)]/30 flex justify-between items-center z-10">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+              <i className="fas fa-envelope-open-text text-white"></i>
+            </span>
+            <div>
+              <h2 className="text-xl font-bold text-[var(--text-primary)]">{message.title || 'بدون عنوان'}</h2>
+              <span className="text-xs text-green-500 flex items-center gap-1">
+                <i className="fas fa-check-circle"></i> مُسلَّمة
+              </span>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-2 hover:bg-[var(--bg-secondary)] rounded-xl transition-all">
+            <i className="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Message Content */}
+          <div>
+            <label className="text-sm text-[var(--text-secondary)] mb-2 flex items-center gap-2">
+              <i className="fas fa-comment text-[var(--primary-color)]"></i>
+              محتوى الرسالة
+            </label>
+            <div className="bg-[var(--bg-secondary)] rounded-xl p-4 border border-[var(--border-color)]/20">
+              <p className="text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">{message.message}</p>
+            </div>
+          </div>
+
+          {/* Timeline Info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-[var(--bg-secondary)] rounded-xl p-4">
+              <label className="text-xs text-[var(--text-secondary)] mb-1 flex items-center gap-2">
+                <i className="fas fa-calendar-plus text-[var(--primary-color)]"></i>
+                تاريخ الإنشاء
+              </label>
+              <p className="text-[var(--text-primary)] font-medium">
+                {createdAt ? createdAt.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+              </p>
+            </div>
+            <div className="bg-[var(--bg-secondary)] rounded-xl p-4">
+              <label className="text-xs text-[var(--text-secondary)] mb-1 flex items-center gap-2">
+                <i className="fas fa-calendar-check text-[var(--primary-color)]"></i>
+                موعد التسليم
+              </label>
+              <p className="text-[var(--text-primary)] font-medium">
+                {deliverDate.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4 border-t border-[var(--border-color)]/20">
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(message.message);
+              }}
+              className="flex-1 px-4 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center justify-center gap-2"
+            >
+              <i className="fas fa-copy"></i> نسخ الرسالة
+            </button>
+            <button
+              onClick={onClose}
+              className="px-6 py-3 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl font-medium hover:bg-[var(--bg-primary)] transition-colors"
+            >
+              إغلاق
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

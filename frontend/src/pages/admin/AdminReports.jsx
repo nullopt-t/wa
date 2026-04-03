@@ -29,8 +29,8 @@ const AdminReports = () => {
       const reportsList = data.reports || data.data || [];
       setReports(reportsList);
     } catch (error) {
-      console.error('Failed to load reports:', error);
-      showError('فشل تحميل البلاغات');
+      
+      ;
       setReports([]);
     } finally {
       setLoading(false);

@@ -34,10 +34,10 @@ const PostDetailPage = () => {
       // Use environment variable for API URL
       let apiUrl = `${API_URL}/community/posts/detail/${postId}`;
 
-      console.log('Fetching from:', apiUrl);
+      
       const response = await fetch(apiUrl);
       
-      console.log('Response status:', response.status);
+      
       console.log('Response headers:', response.headers.get('content-type'));
       
       const responseText = await response.text();
@@ -57,7 +57,7 @@ const PostDetailPage = () => {
       }
       
       const data = JSON.parse(responseText);
-      console.log('Parsed data:', data);
+      
       
       if (!data.post) {
         throw new Error('No post data in response');
@@ -71,8 +71,8 @@ const PostDetailPage = () => {
         total: 0,
       });
     } catch (error) {
-      console.error('Failed to load post:', error);
-      showError(error.message || 'فشل تحميل المنشور');
+      
+      ;
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ const PostDetailPage = () => {
         likes: result.likes || [],
       });
     } catch (error) {
-      showError(error.message || 'فشل الإعجاب بالمنشور');
+      ;
     }
   };
 
@@ -108,7 +108,7 @@ const PostDetailPage = () => {
         savedBy: result.savedBy || [],
       });
     } catch (error) {
-      showError(error.message || 'فشل حفظ المنشور');
+      ;
     }
   };
 

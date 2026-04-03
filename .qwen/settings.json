@@ -12,7 +12,21 @@
       "Bash(chmod *)",
       "Bash(bash *)",
       "Bash(tail *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(find *)",
+      "Bash(sort *)",
+      "Bash(xargs *)",
+      "Bash(sort)",
+      "Bash(comm *)",
+      "Bash(echo *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(git checkout *)",
+      "Bash(docker ps)",
+      "Bash(npx *)",
+      "Bash(docker inspect *)",
+      "Bash(python3 *)"
     ]
   },
   "$version": 3

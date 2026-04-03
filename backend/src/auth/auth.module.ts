@@ -10,6 +10,7 @@ import { AuthController } from './auth.controller';
 import { UserModule } from '../users/user.module';
 import { HashModule } from '../modules/hash/hash.module';
 import { EmailModule } from '../modules/email/email.module';
+import { NotificationModule } from '../notification/notification.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
@@ -17,6 +18,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     UserModule,
     HashModule,
     EmailModule,
+    NotificationModule,
     PassportModule,
     ConfigModule,
     JwtModule.registerAsync({

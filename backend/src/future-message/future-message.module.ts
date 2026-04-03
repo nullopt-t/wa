@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { EmailModule } from '../modules/email/email.module';
+import { NotificationModule } from '../notification/notification.module';
 import { FutureMessageController } from './controllers/future-message.controller';
 import { FutureMessageService } from './services/future-message.service';
 import { FutureMessage, FutureMessageSchema } from './schemas/future-message.schema';
@@ -11,6 +12,7 @@ import { FutureMessage, FutureMessageSchema } from './schemas/future-message.sch
       { name: FutureMessage.name, schema: FutureMessageSchema },
     ]),
     EmailModule,
+    NotificationModule,
   ],
   controllers: [FutureMessageController],
   providers: [FutureMessageService],

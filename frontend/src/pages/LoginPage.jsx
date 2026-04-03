@@ -131,7 +131,7 @@ const LoginPage = () => {
         showError(result.message || 'حدث خطأ أثناء تسجيل الدخول');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      
 
       // Check if it's an email not verified error - redirect to verify page
       if (error.message && (

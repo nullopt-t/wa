@@ -24,8 +24,8 @@ const TherapistDashboard = () => {
       const data = await therapistAPI.getDashboard();
       setProfile(data.profile || data);
     } catch (error) {
-      console.error('Failed to load profile:', error);
-      showError('فشل تحميل البيانات');
+      
+      ;
     } finally {
       setLoading(false);
     }
@@ -65,14 +65,14 @@ const TherapistDashboard = () => {
             <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-6 border border-[var(--border-color)]/30">
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  profile?.isApproved ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
+                  profile?.isTrusted ? 'bg-green-500/20 text-green-500' : profile?.isVerified ? 'bg-blue-500/20 text-blue-500' : 'bg-yellow-500/20 text-yellow-500'
                 }`}>
-                  <i className={`fas ${profile?.isApproved ? 'fa-check-circle' : 'fa-clock'} text-2xl`}></i>
+                  <i className={`fas ${profile?.isTrusted ? 'fa-shield-alt' : profile?.isVerified ? 'fa-check-circle' : 'fa-clock'} text-2xl`}></i>
                 </div>
                 <div>
                   <h3 className="font-bold text-[var(--text-primary)]">حالة الحساب</h3>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    {profile?.isApproved ? 'معتمد ✅' : 'قيد المراجعة ⏳'}
+                    {profile?.isTrusted ? 'موثوق ✓' : profile?.isVerified ? 'تم التحقق ⏳' : 'قيد المراجعة ⏳'}
                   </p>
                 </div>
               </div>
@@ -182,7 +182,7 @@ const TherapistDashboard = () => {
         </AnimatedItem>
 
         {/* Info Banner */}
-        {!profile?.isApproved && (
+        {!profile?.isTrusted && (
           <AnimatedItem type="slideUp" delay={0.7}>
             <div className="bg-yellow-500/10 border-2 border-yellow-500/30 rounded-2xl p-6 mt-6">
               <div className="flex items-start gap-4">
@@ -192,7 +192,7 @@ const TherapistDashboard = () => {
                 <div>
                   <h3 className="font-bold text-yellow-700 mb-2">حسابك قيد المراجعة</h3>
                   <p className="text-yellow-600">
-                    ملفك الشخصي قيد المراجعة من قبل فريق الإدارة. ستتمكن من الظهور في قائمة المعالجين وبدء استقبال الحجوزات بعد الاعتماد.
+                    يمكنك استخدام المنصة الآن. ملفك الشخصي قيد المراجعة من قبل فريق الإدارة. بعد التحقق من ترخيصك، ستحصل على علامة "موثوق" التي ستظهر في ملفك الشخصي.
                     <br />
                     <span className="text-sm">عادةً تستغرق المراجعة من ٢-٥ أيام عمل.</span>
                   </p>

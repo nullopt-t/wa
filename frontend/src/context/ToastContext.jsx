@@ -28,7 +28,7 @@ export const ToastProvider = ({ children }) => {
   }, [addToast]);
 
   const error = useCallback((message, duration) => {
-    addToast(message, 'error', duration);
+    addToast(message, 'error', duration || 8000);
   }, [addToast]);
 
   const warning = useCallback((message, duration) => {

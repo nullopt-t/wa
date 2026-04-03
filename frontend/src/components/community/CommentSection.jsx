@@ -39,10 +39,10 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange, onPostUpdate }
     try {
       setLoading(true);
       const data = await commentsAPI.getByPost(postId);
-      console.log('Comments loaded:', data);
+      
       setComments(data.comments || []);
     } catch (error) {
-      console.error('Failed to load comments:', error);
+      
       showError(error.message || 'فشل تحميل التعليقات');
     } finally {
       setLoading(false);
@@ -155,7 +155,7 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange, onPostUpdate }
     e.preventDefault();
     
     if (!editContent.trim() || !editingComment) {
-      console.error('Invalid edit data:', { editContent, editingComment });
+      
       showError('يرجى كتابة تعليق صحيح');
       return;
     }
@@ -188,12 +188,12 @@ const CommentSection = ({ postId, postAuthorId, onCommentsChange, onPostUpdate }
         timeoutPromise
       ]);
       
-      console.log('Edit response:', response);
+      
       success('تم تعديل التعليق بنجاح');
       loadComments();
       cancelEdit();
     } catch (error) {
-      console.error('Edit failed:', error);
+      
       showError(error.message || 'فشل تعديل التعليق');
       setIsEditing(false); // Ensure we reset loading state
     }

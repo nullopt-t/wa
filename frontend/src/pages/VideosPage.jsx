@@ -23,7 +23,7 @@ const VideosPage = () => {
       const data = await videosAPI.getFeatured(6);
       setFeaturedVideos(data);
     } catch (error) {
-      console.error('Failed to load featured videos:', error);
+      
     }
   };
 
@@ -34,7 +34,7 @@ const VideosPage = () => {
       const data = await videosAPI.getAll({ limit: 50, excludeFeatured: 'true' });
       setVideos(data.videos);
     } catch (error) {
-      console.error('Failed to load videos:', error);
+      
     } finally {
       setLoading(false);
     }

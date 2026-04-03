@@ -86,26 +86,6 @@ export class TherapistController {
   }
 
   /**
-   * Therapist: Get availability
-   */
-  @Get('availability')
-  @UseGuards(AuthGuard('jwt'))
-  async getAvailability(@Request() req) {
-    const therapistId = req.user.userId;
-    return this.therapistService.getAvailability(therapistId);
-  }
-
-  /**
-   * Therapist: Update availability
-   */
-  @Patch('availability')
-  @UseGuards(AuthGuard('jwt'))
-  async updateAvailability(@Request() req, @Body() availability: any[]) {
-    const userId = req.user.userId;
-    return this.therapistService.updateAvailability(userId, availability);
-  }
-
-  /**
    * Therapist: Delete profile
    */
   @Delete('profile')
@@ -132,12 +112,24 @@ export class TherapistController {
     if (req.user.role !== 'admin') {
       throw new ForbiddenException('Only admins can view all therapists');
     }
-    
+
     const filters: any = { page, limit };
     if (status) {
       filters.isVerified = status === 'verified';
     }
     return this.therapistService.findAll(filters, true);
+  }
+
+  /**
+   * Admin: Get pending therapists (email verified, awaiting approval)
+   */
+  @Get('admin/pending')
+  @UseGuards(AuthGuard('jwt'))
+  async findPendingForAdmin(@Request() req) {
+    if (req.user.role !== 'admin') {
+      throw new ForbiddenException('Only admins can view pending therapists');
+    }
+    return this.therapistService.findPendingTherapists();
   }
 
   /**

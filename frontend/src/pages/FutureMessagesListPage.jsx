@@ -25,8 +25,8 @@ const FutureMessagesListPage = () => {
       const data = await futureMessagesAPI.getAll(includeDelivered);
       setMessages(data);
     } catch (error) {
-      console.error('Failed to load future messages:', error);
-      showError('فشل تحميل الرسائل');
+      
+      ;
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ const FutureMessagesListPage = () => {
       setMessageToDelete(null);
       loadMessages();
     } catch (error) {
-      showError('فشل حذف الرسالة');
+      ;
     }
   };
 
@@ -75,7 +75,7 @@ const FutureMessagesListPage = () => {
       success('تم حذف الرسالة بنجاح');
       loadMessages();
     } catch (error) {
-      showError('فشل حذف الرسالة');
+      ;
     }
   };
 
@@ -178,7 +178,7 @@ const FutureMessagesListPage = () => {
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
           </div>
-        ) : messages.length === 0 ? (
+        ) : !messages || messages.length === 0 ? (
           <AnimatedItem type="slideUp" delay={0.2}>
             <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-12 text-center border border-[var(--border-color)]/30">
               <i className="fas fa-inbox text-6xl text-[var(--text-secondary)]/30 mb-4"></i>

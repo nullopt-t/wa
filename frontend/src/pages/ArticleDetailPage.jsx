@@ -38,7 +38,7 @@ const ArticleDetailPage = () => {
         setRelatedArticles(related.articles.filter(a => a._id !== data._id).slice(0, 3));
       }
     } catch (error) {
-      console.error('Failed to load article:', error);
+      
       showError('المقالة غير موجودة');
       setTimeout(() => navigate('/articles'), 2000);
     } finally {

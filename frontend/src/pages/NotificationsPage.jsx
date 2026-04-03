@@ -25,8 +25,8 @@ const NotificationsPage = () => {
         setNotifications(response.data);
       }
     } catch (error) {
-      console.error('Failed to load notifications:', error);
-      showError('فشل تحميل الإشعارات');
+      
+      ;
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ const NotificationsPage = () => {
       );
       success('تم تحديد الإشعار كمقروء');
     } catch (error) {
-      showError('فشل تحديد الإشعار');
+      ;
     }
   };
 
@@ -50,7 +50,7 @@ const NotificationsPage = () => {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       success('تم تحديد جميع الإشعارات كمقروءة');
     } catch (error) {
-      showError('فشل تحديد الكل');
+      ;
     }
   };
 
@@ -146,7 +146,7 @@ const NotificationsPage = () => {
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[var(--primary-color)]"></div>
             </div>
-          ) : notifications.length === 0 ? (
+          ) : !notifications || notifications.length === 0 ? (
             <div className="text-center py-12">
               <i className="fas fa-bell text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
               <p className="text-[var(--text-secondary)]">لا توجد إشعارات</p>

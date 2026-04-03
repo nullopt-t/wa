@@ -31,7 +31,7 @@ const AdminArticles = () => {
       const articlesList = Array.isArray(data) ? data : (data.articles || data.data || []);
       setArticles(articlesList);
     } catch (error) {
-      console.error('Failed to load articles:', error);
+      
       showError('فشل تحميل المقالات');
       setArticles([]);
     } finally {
@@ -168,7 +168,6 @@ const AdminArticles = () => {
                   <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">المقال</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">الكاتب</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">الحالة</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">المشاهدات</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">تاريخ النشر</th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">إجراءات</th>
                 </tr>
@@ -193,11 +192,10 @@ const AdminArticles = () => {
                     const title = article.title || 'بدون عنوان';
                     const excerpt = article.excerpt || article.description || '';
                     const author = article.author || article.authorData || {};
-                    const authorName = author.firstName && author.lastName 
-                      ? `${author.firstName} ${author.lastName}` 
+                    const authorName = author.firstName && author.lastName
+                      ? `${author.firstName} ${author.lastName}`
                       : (article.authorName || 'مجهول');
                     const status = article.status || 'draft';
-                    const views = article.views || 0;
                     const createdAt = article.createdAt;
                     
                     return (
@@ -219,10 +217,6 @@ const AdminArticles = () => {
                           {authorName}
                         </td>
                         <td className="px-6 py-4">{getStatusBadge(status)}</td>
-                        <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">
-                          <i className="fas fa-eye ml-1"></i>
-                          {views}
-                        </td>
                         <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">
                           {createdAt ? new Date(createdAt).toLocaleDateString('ar-EG') : '-'}
                         </td>

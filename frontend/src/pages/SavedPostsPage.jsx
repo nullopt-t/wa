@@ -46,8 +46,8 @@ const SavedPostsPage = () => {
         total: data.total,
       });
     } catch (error) {
-      console.error('Failed to load saved posts:', error);
-      showError(error.message || 'فشل تحميل المنشورات المحفوظة');
+      
+      ;
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ const SavedPostsPage = () => {
         return post;
       }));
     } catch (error) {
-      showError(error.message || 'فشل الإعجاب بالمنشور');
+      ;
     }
   };
 
@@ -100,7 +100,7 @@ const SavedPostsPage = () => {
         success('تم حفظ المنشور');
       }
     } catch (error) {
-      showError(error.message || 'فشل حفظ المنشور');
+      ;
     }
   };
 
@@ -138,7 +138,7 @@ const SavedPostsPage = () => {
 
         {/* Posts Section */}
         <div className="space-y-6">
-          {posts.length === 0 ? (
+          {!posts || posts.length === 0 ? (
             <AnimatedItem type="slideUp" delay={0.2}>
               <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-12 text-center border border-[var(--border-color)]/30">
                 <i className="fas fa-bookmark text-6xl text-[var(--text-secondary)]/30 mb-4"></i>

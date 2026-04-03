@@ -113,7 +113,7 @@ const CreatePostModal = ({ onClose, onSubmit }) => {
         }
         setUploadProgress(prev => ({ ...prev, ...completedProgress }));
       } catch (error) {
-        console.error('Upload error:', error);
+        
         setErrors(prev => ({ ...prev, images: error.message }));
         // Mark as failed (not uploading)
         const failedProgress = {};
@@ -185,7 +185,7 @@ const CreatePostModal = ({ onClose, onSubmit }) => {
         isAnonymous: formData.isAnonymous,
       });
     } catch (error) {
-      console.error('Failed to create post:', error);
+      
     } finally {
       setLoading(false);
     }

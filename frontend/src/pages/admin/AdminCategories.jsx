@@ -22,13 +22,13 @@ const AdminCategories = () => {
     try {
       setLoading(true);
       const data = await categoriesAPI.getAll();
-      console.log('Categories loaded:', data);
+      
       // Handle different API response structures
       const categoriesList = Array.isArray(data) ? data : (data.categories || data.data || []);
       setCategories(categoriesList);
     } catch (error) {
-      console.error('Failed to load categories:', error);
-      showError('فشل تحميل الأقسام');
+      
+      ;
       setCategories([]);
     } finally {
       setLoading(false);

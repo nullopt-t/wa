@@ -88,7 +88,7 @@ const ResetPasswordPage = () => {
         navigate('/login');
       }, 2000);
     } catch (error) {
-      console.error('Reset password error:', error);
+      
       showError(error.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور');
     } finally {
       setLoading(false);

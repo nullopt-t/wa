@@ -48,7 +48,7 @@ const FeedbackPage = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading reviews:', error);
+      
     } finally {
       setLoading(false);
     }
@@ -99,8 +99,8 @@ const FeedbackPage = () => {
         loadReviews();
       }
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      showError(error.message || 'فشل إرسال الملاحظة');
+      
+      showError('حدث خطأ أثناء الإرسال');
     } finally {
       setLoading(false);
     }
@@ -123,7 +123,7 @@ const FeedbackPage = () => {
           </div>
 
           <div className="space-y-8">
-            {reviews.length > 0 ? (
+            {reviews && reviews.length > 0 ? (
               reviews.map((review, index) => (
                 <AnimatedItem key={review._id} type="slideUp" delay={index * 0.1}>
                   <div

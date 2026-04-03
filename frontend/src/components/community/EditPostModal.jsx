@@ -69,7 +69,7 @@ const EditPostModal = ({ post, onClose, onSubmit }) => {
         isAnonymous: formData.isAnonymous,
       });
     } catch (error) {
-      console.error('Failed to update post:', error);
+      
     } finally {
       setLoading(false);
     }

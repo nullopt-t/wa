@@ -64,7 +64,7 @@ const AdminUsers = () => {
       // Show specific error message
       const errorMessage = error.message || 'فشل تحديث المستخدم';
       showError(errorMessage);
-      console.error('Update user error:', error);
+      
     }
   };
 

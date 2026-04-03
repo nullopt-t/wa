@@ -125,10 +125,10 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
   };
 
   const handleLike = async () => {
-    console.log('Like clicked:', { postId, isAuthenticated, onLike });
+    
     
     if (!isAuthenticated || isLiking) {
-      console.log('Like blocked:', { isAuthenticated, isLiking });
+      
       return;
     }
     
@@ -137,10 +137,10 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
       if (onLike) {
         await onLike(postId);
       } else {
-        console.error('onLike callback not provided!');
+        
       }
     } catch (error) {
-      console.error('Like error:', error);
+      
     } finally {
       setIsLiking(false);
     }
@@ -156,7 +156,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
       setShowCopiedTooltip(true);
       setTimeout(() => setShowCopiedTooltip(false), 2000);
     } catch (error) {
-      console.error('Copy failed:', error);
+      
     }
   };
 
@@ -185,7 +185,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
         await onSave(postId);
       }
     } catch (error) {
-      console.error('Save failed:', error);
+      
     } finally {
       setIsSaving(false);
     }

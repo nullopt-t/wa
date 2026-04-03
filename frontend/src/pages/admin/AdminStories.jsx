@@ -10,6 +10,7 @@ const AdminStories = () => {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('pending');
+  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 });
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [storyToModerate, setStoryToModerate] = useState(null);
@@ -17,13 +18,13 @@ const AdminStories = () => {
   const loadStories = async () => {
     try {
       setLoading(true);
-      const data = await storiesAPI.getAllForAdmin({ 
+      const data = await storiesAPI.getAllForAdmin({
         status: filterStatus,
         sort: 'newest'
       });
       setStories(data.stories || []);
     } catch (error) {
-      console.error('Failed to load stories:', error);
+
       showError('فشل تحميل القصص');
       setStories([]);
     } finally {
@@ -31,8 +32,22 @@ const AdminStories = () => {
     }
   };
 
+  const loadStats = async () => {
+    try {
+      const data = await storiesAPI.getStats();
+      setStats({
+        pending: data.pendingStories || 0,
+        approved: data.approvedStories || 0,
+        rejected: data.rejectedStories || 0,
+      });
+    } catch (error) {
+      // Stats failed, ignore
+    }
+  };
+
   useEffect(() => {
     loadStories();
+    loadStats();
   }, [filterStatus]);
 
   const handleApprove = async () => {
@@ -102,9 +117,9 @@ const AdminStories = () => {
         <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-4 md:p-6 border border-[var(--border-color)]/30 mb-6">
           <div className="flex gap-2 md:gap-3 flex-wrap justify-center md:flex-nowrap">
             {[
-              { id: 'pending', label: 'قيد المراجعة', icon: 'fa-clock', count: stories.filter(s => s.status === 'pending').length },
-              { id: 'approved', label: 'المعتمدة', icon: 'fa-check-circle', count: stories.filter(s => s.status === 'approved').length },
-              { id: 'rejected', label: 'المرفوضة', icon: 'fa-times-circle', count: stories.filter(s => s.status === 'rejected').length },
+              { id: 'pending', label: 'قيد المراجعة', icon: 'fa-clock', count: stats.pending },
+              { id: 'approved', label: 'المعتمدة', icon: 'fa-check-circle', count: stats.approved },
+              { id: 'rejected', label: 'المرفوضة', icon: 'fa-times-circle', count: stats.rejected },
             ].map(filter => (
               <button
                 key={filter.id}

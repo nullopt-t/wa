@@ -16,7 +16,7 @@ const AdminTherapistsPage = () => {
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [therapistToAction, setTherapistToAction] = useState(null);
-  const [stats, setStats] = useState({ total: 0, pending: 0, verified: 0, approved: 0 });
+  const [stats, setStats] = useState({ total: 0, pending: 0, verified: 0, trusted: 0 });
 
   useEffect(() => {
     loadTherapists();
@@ -27,15 +27,15 @@ const AdminTherapistsPage = () => {
     try {
       const data = await therapistsAPI.getAllForAdmin();
       const therapistsList = data.therapists || [];
-      
+
       setStats({
         total: therapistsList.length,
         pending: therapistsList.filter(t => !t.isVerified).length,
-        verified: therapistsList.filter(t => t.isVerified && !t.isApproved).length,
-        approved: therapistsList.filter(t => t.isApproved).length,
+        verified: therapistsList.filter(t => t.isVerified && !t.isTrusted).length,
+        trusted: therapistsList.filter(t => t.isTrusted).length,
       });
     } catch (error) {
-      console.error('Failed to load stats:', error);
+
     }
   };
 
@@ -43,25 +43,23 @@ const AdminTherapistsPage = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      // Don't pass status filter when loading therapists list
-      // The filtering is done client-side based on the filterStatus state
-      
+
       const data = await therapistsAPI.getAllForAdmin(params.toString());
       let therapistsList = data.therapists || [];
-      
+
       // Client-side filtering based on filterStatus
       if (filterStatus === 'pending') {
         therapistsList = therapistsList.filter(t => !t.isVerified);
       } else if (filterStatus === 'verified') {
-        therapistsList = therapistsList.filter(t => t.isVerified && !t.isApproved);
+        therapistsList = therapistsList.filter(t => t.isVerified && !t.isTrusted);
       } else if (filterStatus === 'approved') {
-        therapistsList = therapistsList.filter(t => t.isApproved);
+        therapistsList = therapistsList.filter(t => t.isTrusted);
       }
-      
+
       setTherapists(therapistsList);
     } catch (error) {
-      console.error('Failed to load therapists:', error);
-      showError('فشل تحميل المعالجين');
+
+      ;
       setTherapists([]);
     } finally {
       setLoading(false);
@@ -118,10 +116,10 @@ const AdminTherapistsPage = () => {
     if (!therapist.isVerified) {
       return <span className="px-3 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-sm font-medium">قيد المراجعة</span>;
     }
-    if (!therapist.isApproved) {
-      return <span className="px-3 py-1 bg-blue-500/20 text-blue-500 rounded-full text-sm font-medium">تم التحقق - بانتظار الاعتماد</span>;
+    if (!therapist.isTrusted) {
+      return <span className="px-3 py-1 bg-blue-500/20 text-blue-500 rounded-full text-sm font-medium">تم التحقق - بانتظار الثقة</span>;
     }
-    return <span className="px-3 py-1 bg-green-500/20 text-green-500 rounded-full text-sm font-medium">معتمد</span>;
+    return <span className="px-3 py-1 bg-green-500/20 text-green-500 rounded-full text-sm font-medium">موثوق ✓</span>;
   };
 
   return (
@@ -160,7 +158,7 @@ const AdminTherapistsPage = () => {
               </div>
             </div>
             <h3 className="text-3xl font-bold text-blue-500 mb-1">{stats.verified}</h3>
-            <p className="text-sm text-blue-500/80">تم التحقق - بانتظار الاعتماد</p>
+            <p className="text-sm text-blue-500/80">تم التحقق</p>
           </div>
         </AnimatedItem>
 
@@ -168,11 +166,11 @@ const AdminTherapistsPage = () => {
           <div className="bg-green-500/10 backdrop-blur-md rounded-2xl p-6 border border-green-500/30">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center text-green-500">
-                <i className="fas fa-star text-xl"></i>
+                <i className="fas fa-shield-alt text-xl"></i>
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-green-500 mb-1">{stats.approved}</h3>
-            <p className="text-sm text-green-500/80">معتمدين</p>
+            <h3 className="text-3xl font-bold text-green-500 mb-1">{stats.trusted}</h3>
+            <p className="text-sm text-green-500/80">موثوقين</p>
           </div>
         </AnimatedItem>
       </div>
@@ -185,7 +183,7 @@ const AdminTherapistsPage = () => {
               { id: 'all', label: 'الكل', count: stats.total },
               { id: 'pending', label: 'قيد المراجعة', count: stats.pending },
               { id: 'verified', label: 'تم التحقق', count: stats.verified },
-              { id: 'approved', label: 'معتمد', count: stats.approved },
+              { id: 'approved', label: 'موثوق', count: stats.trusted },
             ].map(filter => (
               <button
                 key={filter.id}
@@ -267,34 +265,39 @@ const AdminTherapistsPage = () => {
                         <p className="font-medium text-[var(--text-primary)]">{therapist.experience ? `${therapist.experience} سنوات` : 'غير متاح'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-[var(--text-secondary)] mb-1">سعر الجلسة</p>
-                        <p className="font-medium text-[var(--primary-color)]">{therapist.pricePerSession ? `${therapist.pricePerSession} ${therapist.currency}` : 'غير متاح'}</p>
+                        <p className="text-xs text-[var(--text-secondary)] mb-1">المدينة</p>
+                        <p className="font-medium text-[var(--text-primary)]">{therapist.city || 'غير متاح'}</p>
                       </div>
+                      <div>
+                        <p className="text-xs text-[var(--text-secondary)] mb-1">البلد</p>
+                        <p className="font-medium text-[var(--text-primary)]">{therapist.country || 'غير متاح'}</p>
+                      </div>
+                      {therapist.clinicAddress && (
+                        <div>
+                          <p className="text-xs text-[var(--text-secondary)] mb-1">العنوان</p>
+                          <p className="font-medium text-[var(--text-primary)]">{therapist.clinicAddress}</p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Bio */}
                     {therapist.bio && (
                       <div className="mt-4 pt-4 border-t border-[var(--border-color)]/20">
                         <p className="text-xs text-[var(--text-secondary)] mb-2">النبذة التعريفية</p>
-                        <p className="text-sm text-[var(--text-primary)] line-clamp-2">{therapist.bio}</p>
+                        <p className="text-sm text-[var(--text-primary)] line-clamp-3">{therapist.bio}</p>
                       </div>
                     )}
 
-                    {/* Session Types */}
-                    <div className="flex gap-3 mt-4">
-                      {therapist.isOnline && (
-                        <span className="px-3 py-1 bg-green-500/20 text-green-500 rounded-full text-sm">
-                          <i className="fas fa-video ml-1"></i>
-                          جلسات أونلاين
-                        </span>
-                      )}
-                      {therapist.isInPerson && (
-                        <span className="px-3 py-1 bg-blue-500/20 text-blue-500 rounded-full text-sm">
-                          <i className="fas fa-building ml-1"></i>
-                          جلسات شخصية
-                        </span>
-                      )}
-                    </div>
+                    {/* Languages */}
+                    {therapist.languages && therapist.languages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[var(--border-color)]/20">
+                        {therapist.languages.map((lang, i) => (
+                          <span key={i} className="px-3 py-1 bg-[var(--primary-color)]/10 text-[var(--primary-color)] rounded-full text-sm">
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -322,7 +325,7 @@ const AdminTherapistsPage = () => {
                           ارفض
                         </button>
                       </>
-                    ) : !therapist.isApproved ? (
+                    ) : !therapist.isTrusted ? (
                       <>
                         <button
                           onClick={() => {
@@ -331,8 +334,8 @@ const AdminTherapistsPage = () => {
                           }}
                           className="px-4 py-2 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
                         >
-                          <i className="fas fa-star"></i>
-                          اعتمد
+                          <i className="fas fa-shield-alt"></i>
+                          أضف الثقة
                         </button>
                         <button
                           onClick={() => {
@@ -347,8 +350,8 @@ const AdminTherapistsPage = () => {
                       </>
                     ) : (
                       <div className="text-center py-2 text-green-500">
-                        <i className="fas fa-check-circle ml-2"></i>
-                        معتمد
+                        <i className="fas fa-shield-alt ml-2"></i>
+                        موثوق
                       </div>
                     )}
                   </div>
@@ -363,7 +366,7 @@ const AdminTherapistsPage = () => {
       <ConfirmDialog
         isOpen={showVerifyDialog}
         title="التحقق من المعالج"
-        message="هل أنت متأكد من التحقق من هذا المعالج؟ سيتم التحقق من وثائقه وسيتم اعتماده بعد المراجعة النهائية."
+        message="هل أنت متأكد من التحقق من هذا المعالج؟ سيتم التحقق من وثائقه."
         confirmText="تحقق"
         cancelText="إلغاء"
         confirmColor="blue"
@@ -377,8 +380,8 @@ const AdminTherapistsPage = () => {
       {/* Approve Dialog */}
       <ConfirmDialog
         isOpen={showApproveDialog}
-        title="اعتماد المعالج"
-        message="هل أنت متأكد من اعتماد هذا المعالج؟ سيظهر في قائمة المعالجين المتاحين وسيتمكن من تقديم الجلسات."
+        title="إضافة علامة الثقة"
+        message="هل أنت متأكد من إضافة علامة الثقة لهذا المعالج؟ سيظهر كموثوق للمستخدمين."
         confirmText="اعتمد"
         cancelText="إلغاء"
         confirmColor="green"
