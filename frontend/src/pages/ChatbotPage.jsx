@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { io } from 'socket.io-client';
@@ -8,9 +8,11 @@ import { API_URL, SOCKET_URL } from '../config.js';
 
 const ChatbotPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user, token } = useAuth();
   const { error: showError, success } = useToast();
   const socketRef = useRef(null);
+  const initialMessage = location.state?.initialMessage;
 
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -75,8 +77,11 @@ const ChatbotPage = () => {
         autoConnect: true,
       });
 
-      socket.on('connect', () => {});
+      socket.on('connect', () => {
+        console.log('Socket connected');
+      });
       socket.on('bot_response', (data) => {
+        setIsLoading(false);
         setMessages(prev => [...prev, {
           ...data.message,
           id: data.message.id,
@@ -93,8 +98,12 @@ const ChatbotPage = () => {
       });
       socket.on('error', (error) => {
         console.error('Socket error:', error);
+        setIsLoading(false);
       });
-      socket.on('disconnect', () => {});
+      socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+        setIsLoading(false);
+      });
       socketRef.current = socket;
     } catch (error) {}
   };
@@ -113,6 +122,14 @@ const ChatbotPage = () => {
       }]);
     }
   }, [isAuthenticated, user]);
+
+  // Handle initial message from contextual triggers
+  useEffect(() => {
+    if (initialMessage) {
+      setInputValue(initialMessage);
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, [initialMessage]);
 
   const getOrCreateSession = async () => {
     try {
@@ -253,11 +270,18 @@ const ChatbotPage = () => {
       setIsLoading(true);
       try {
         const token = localStorage.getItem('token');
+        // Use AbortController for timeout (AI processing can take time)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 95000); // 95s timeout
+
         const response = await fetch(`${API_URL}/chat/sessions/${currentSession._id}/messages`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ role: 'user', content: userMessage, analyzeEmotions: true }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
+
         const data = await response.json();
         if (data.error) {
           setMessages(prev => [...prev, { id: Date.now() + 1, text: data.error, sender: 'bot', timestamp: new Date(), isError: true }]);
@@ -274,7 +298,13 @@ const ChatbotPage = () => {
             messageType: data.botMessage.messageType || 'text',
           }]);
         }
-      } catch (error) { showError('حدث خطأ، يرجى المحاولة مرة أخرى'); } finally { setIsLoading(false); }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          showError('انتهت مهلة الطلب، يرجى المحاولة مرة أخرى');
+        } else {
+          showError('حدث خطأ، يرجى المحاولة مرة أخرى');
+        }
+      } finally { setIsLoading(false); }
     }
   };
 
@@ -455,33 +485,6 @@ const ChatbotPage = () => {
                           </div>
                         )}
 
-                        {/* Resource Cards */}
-                        {message.relatedResources && message.relatedResources.length > 0 && (
-                          <div className="mt-3 pt-2 border-t border-[var(--border-color)]/30">
-                            <p className="text-[10px] text-[var(--text-secondary)] mb-2 flex items-center gap-1">
-                              <i className="fas fa-book-open"></i> موارد ذات صلة
-                            </p>
-                            <div className="space-y-2">
-                              {message.relatedResources.map((res, idx) => (
-                                <a
-                                  key={idx}
-                                  href={res.url}
-                                  className="block p-3 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/50 hover:shadow-md transition-all group"
-                                >
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-lg flex-shrink-0">{res.type === 'article' ? '📄' : '🎥'}</span>
-                                    <div className="min-w-0 flex-1">
-                                      <p className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--primary-color)] transition-colors line-clamp-1">{res.title}</p>
-                                      {res.excerpt && <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 line-clamp-2">{res.excerpt}</p>}
-                                      <p className="text-[10px] text-[var(--primary-color)] mt-1 group-hover:underline">اقرأ المزيد <i className="fas fa-arrow-left text-[8px]"></i></p>
-                                    </div>
-                                  </div>
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
                         {/* Clinical Report Card */}
                         {message.reportData && (
                           <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
@@ -491,7 +494,7 @@ const ChatbotPage = () => {
                             </div>
 
                             {/* Symptoms */}
-                            {message.reportData.symptoms?.length > 0 && (
+                            {message.reportData.symptoms && Array.isArray(message.reportData.symptoms) && message.reportData.symptoms.length > 0 && (
                               <div className="mb-3">
                                 <p className="text-xs font-medium text-[var(--text-primary)] mb-1 flex items-center gap-1">
                                   <i className="fas fa-stethoscope text-blue-400"></i> الأعراض الرئيسية
@@ -526,7 +529,7 @@ const ChatbotPage = () => {
                             )}
 
                             {/* Recommendations */}
-                            {message.reportData.recommendations?.length > 0 && (
+                            {message.reportData.recommendations && Array.isArray(message.reportData.recommendations) && message.reportData.recommendations.length > 0 && (
                               <div>
                                 <p className="text-xs font-medium text-[var(--text-primary)] mb-1 flex items-center gap-1">
                                   <i className="fas fa-lightbulb text-amber-400"></i> التوصيات

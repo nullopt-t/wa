@@ -68,12 +68,14 @@ const Header = () => {
             </Link>
 
             {/* Desktop Navigation */}
+            {user?.role !== 'admin' && (
             <div className="hidden xl:flex items-center gap-6">
               <Link to="/" className={`font-medium ${location.pathname === '/' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الرئيسية</Link>
               <Link to="/categories" className={`font-medium ${location.pathname === '/categories' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الأقسام</Link>
               <Link to="/about" className={`font-medium ${location.pathname === '/about' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>عن وعي</Link>
               <Link to="/contact" className={`font-medium ${location.pathname === '/contact' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>تواصل معنا</Link>
             </div>
+            )}
           </div>
 
           {/* Left Side - Actions */}
@@ -157,46 +159,62 @@ const Header = () => {
                       {/* Menu Items */}
                       <div className="p-3">
                         <div className="space-y-1">
-                          <Link
-                            to={user?.role === 'admin' ? '/admin' : user?.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard'}
-                            className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
-                            onClick={() => setShowAccountDropdown(false)}
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
-                              <i className="fas fa-th-large text-[var(--primary-color)]"></i>
-                            </div>
-                            <span className="font-medium">لوحة التحكم</span>
-                          </Link>
-                          <Link
-                            to="/profile-settings"
-                            className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
-                            onClick={() => setShowAccountDropdown(false)}
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
-                              <i className="fas fa-user text-[var(--primary-color)]"></i>
-                            </div>
-                            <span className="font-medium">الملف الشخصي</span>
-                          </Link>
-                          <Link
-                            to="/saved-posts"
-                            className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
-                            onClick={() => setShowAccountDropdown(false)}
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
-                              <i className="fas fa-bookmark text-[var(--primary-color)]"></i>
-                            </div>
-                            <span className="font-medium">المنشورات المحفوظة</span>
-                          </Link>
-                          <Link
-                            to="/account-settings"
-                            className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
-                            onClick={() => setShowAccountDropdown(false)}
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
-                              <i className="fas fa-cog text-[var(--primary-color)]"></i>
-                            </div>
-                            <span className="font-medium">إعدادات الحساب</span>
-                          </Link>
+                          {/* Admin: Only show admin dashboard link */}
+                          {user?.role === 'admin' ? (
+                            <Link
+                              to="/admin"
+                              className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
+                              onClick={() => setShowAccountDropdown(false)}
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
+                                <i className="fas fa-shield-alt text-[var(--primary-color)]"></i>
+                              </div>
+                              <span className="font-medium">لوحة الإدارة</span>
+                            </Link>
+                          ) : (
+                            <>
+                              <Link
+                                to={user?.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard'}
+                                className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
+                                onClick={() => setShowAccountDropdown(false)}
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
+                                  <i className="fas fa-th-large text-[var(--primary-color)]"></i>
+                                </div>
+                                <span className="font-medium">لوحة التحكم</span>
+                              </Link>
+                              <Link
+                                to="/profile-settings"
+                                className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
+                                onClick={() => setShowAccountDropdown(false)}
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
+                                  <i className="fas fa-user text-[var(--primary-color)]"></i>
+                                </div>
+                                <span className="font-medium">الملف الشخصي</span>
+                              </Link>
+                              <Link
+                                to="/saved-posts"
+                                className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
+                                onClick={() => setShowAccountDropdown(false)}
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
+                                  <i className="fas fa-bookmark text-[var(--primary-color)]"></i>
+                                </div>
+                                <span className="font-medium">المنشورات المحفوظة</span>
+                              </Link>
+                              <Link
+                                to="/account-settings"
+                                className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
+                                onClick={() => setShowAccountDropdown(false)}
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center group-hover:bg-[var(--primary-color)]/20 transition-colors">
+                                  <i className="fas fa-cog text-[var(--primary-color)]"></i>
+                                </div>
+                                <span className="font-medium">إعدادات الحساب</span>
+                              </Link>
+                            </>
+                          )}
                         </div>
                         
                         {/* Divider */}
@@ -267,46 +285,61 @@ const Header = () => {
             
             {/* Menu Items */}
             <div className="space-y-2">
-              <Link
-                to={user?.role === 'admin' ? '/admin' : user?.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard'}
-                className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
-                onClick={() => setShowAccountDropdown(false)}
-              >
-                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
-                  <i className="fas fa-th-large text-[var(--primary-color)]"></i>
-                </div>
-                <span className="font-medium">لوحة التحكم</span>
-              </Link>
-              <Link
-                to="/profile-settings"
-                className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
-                onClick={() => setShowAccountDropdown(false)}
-              >
-                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
-                  <i className="fas fa-user text-[var(--primary-color)]"></i>
-                </div>
-                <span className="font-medium">الملف الشخصي</span>
-              </Link>
-              <Link
-                to="/saved-posts"
-                className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
-                onClick={() => setShowAccountDropdown(false)}
-              >
-                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
-                  <i className="fas fa-bookmark text-[var(--primary-color)]"></i>
-                </div>
-                <span className="font-medium">المنشورات المحفوظة</span>
-              </Link>
-              <Link
-                to="/account-settings"
-                className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
-                onClick={() => setShowAccountDropdown(false)}
-              >
-                <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
-                  <i className="fas fa-cog text-[var(--primary-color)]"></i>
-                </div>
-                <span className="font-medium">إعدادات الحساب</span>
-              </Link>
+              {user?.role === 'admin' ? (
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                  onClick={() => setShowAccountDropdown(false)}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                    <i className="fas fa-shield-alt text-[var(--primary-color)]"></i>
+                  </div>
+                  <span className="font-medium">لوحة الإدارة</span>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to={user?.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard'}
+                    className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                    onClick={() => setShowAccountDropdown(false)}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                      <i className="fas fa-th-large text-[var(--primary-color)]"></i>
+                    </div>
+                    <span className="font-medium">لوحة التحكم</span>
+                  </Link>
+                  <Link
+                    to="/profile-settings"
+                    className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                    onClick={() => setShowAccountDropdown(false)}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                      <i className="fas fa-user text-[var(--primary-color)]"></i>
+                    </div>
+                    <span className="font-medium">الملف الشخصي</span>
+                  </Link>
+                  <Link
+                    to="/saved-posts"
+                    className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                    onClick={() => setShowAccountDropdown(false)}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                      <i className="fas fa-bookmark text-[var(--primary-color)]"></i>
+                    </div>
+                    <span className="font-medium">المنشورات المحفوظة</span>
+                  </Link>
+                  <Link
+                    to="/account-settings"
+                    className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
+                    onClick={() => setShowAccountDropdown(false)}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
+                      <i className="fas fa-cog text-[var(--primary-color)]"></i>
+                    </div>
+                    <span className="font-medium">إعدادات الحساب</span>
+                  </Link>
+                </>
+              )}
               
               {/* Divider */}
               <div className="border-t border-[var(--border-color)]/30 my-2"></div>
@@ -346,6 +379,7 @@ const Header = () => {
                   <i className="fas fa-times text-xl"></i>
                 </button>
               </div>
+              {user?.role !== 'admin' && (
               <div className="px-6 pb-6 flex flex-col space-y-4">
                 <Link
                   to="/"
@@ -376,6 +410,7 @@ const Header = () => {
                   تواصل معنا
                 </Link>
               </div>
+              )}
             </div>
           </div>
         )}

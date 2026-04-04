@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, allowedRoles = [], redirectPath = '/login' }
     }
 
     if (allowedRolesKey && user?.role && !allowedRolesKey.split(',').includes(user.role)) {
-      navigate(user.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard', { replace: true });
+      navigate('/admin', { replace: true });
     }
   }, [isAuthenticated, loading, user?.role, allowedRolesKey, navigate, location.pathname, redirectPath]);
 

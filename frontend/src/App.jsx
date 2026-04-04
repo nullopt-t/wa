@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -60,6 +60,7 @@ import AnimatedRoute from './components/AnimatedRoute.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
+import FloatingChatButton from './components/FloatingChatButton.jsx';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -380,6 +381,7 @@ function AppWrapper() {
         </AnimatePresence>
       </main>
       {!isAdminRoute && !isChatbotRoute && <Footer />}
+      <FloatingChatButton />
     </div>
   );
 }
@@ -403,10 +405,13 @@ function DashboardRedirect() {
   }
 
   // Redirect to appropriate dashboard based on role
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
   if (user?.role === 'therapist') {
     return <Navigate to="/therapist/dashboard" replace />;
   }
-  
+
   return <Navigate to="/user-dashboard" replace />;
 }
 

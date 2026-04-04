@@ -64,6 +64,13 @@ async function bootstrap() {
   // Set global prefix
   app.setGlobalPrefix('api');
 
+  // Set server timeouts for long AI processing
+  const httpAdapter = app.getHttpAdapter();
+  const httpServer = httpAdapter.getHttpServer();
+  httpServer.timeout = 120000; // 2 minutes
+  httpServer.keepAliveTimeout = 130000;
+  httpServer.headersTimeout = 130000;
+
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('منصة وعي - API')
