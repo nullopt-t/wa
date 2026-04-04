@@ -137,7 +137,7 @@ const AdminCategories = () => {
                       </button>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">{category.nameAr}</h3>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">{category.name}</h3>
                   <p className="text-sm text-[var(--text-secondary)] mb-3">{category.name}</p>
                   <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
                     <span>الترتيب: {category.order}</span>
@@ -156,7 +156,7 @@ const AdminCategories = () => {
       <ConfirmDialog
         isOpen={showDeleteConfirm}
         title="حذف القسم"
-        message={`هل أنت متأكد من حذف قسم "${categoryToDelete?.nameAr}"؟\n\nهذا الإجراء لا يمكن التراجع عنه.`}
+        message={`هل أنت متأكد من حذف قسم "${categoryToDelete?.name}"؟\n\nهذا الإجراء لا يمكن التراجع عنه.`}
         confirmText="حذف"
         cancelText="إلغاء"
         isDanger={true}
@@ -184,7 +184,7 @@ const CategoryFormModal = ({ category, onSuccess, onCancel }) => {
   const { error: showError } = useToast();
   const [formData, setFormData] = useState({
     name: category?.name || '',
-    nameAr: category?.nameAr || '',
+    name: category?.name || '',
     icon: category?.icon || 'fa-folder',
     color: category?.color || '#c5a98e',
     order: category?.order || 0,
@@ -221,8 +221,8 @@ const CategoryFormModal = ({ category, onSuccess, onCancel }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.nameAr.trim()) {
-      newErrors.nameAr = 'الاسم العربي مطلوب';
+    if (!formData.name.trim()) {
+      newErrors.name = 'الاسم العربي مطلوب';
     }
 
     if (!formData.name.trim()) {
@@ -282,15 +282,15 @@ const CategoryFormModal = ({ category, onSuccess, onCancel }) => {
             </label>
             <input
               type="text"
-              name="nameAr"
-              value={formData.nameAr}
+              name="name"
+              value={formData.name}
               onChange={handleInputChange}
               className={`w-full px-4 py-3 bg-[var(--card-bg)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors ${
-                errors.nameAr ? 'border-red-500' : 'border-[var(--border-color)]'
+                errors.name ? 'border-red-500' : 'border-[var(--border-color)]'
               }`}
               placeholder="المقالات"
             />
-            {errors.nameAr && <p className="text-red-500 text-sm mt-1">{errors.nameAr}</p>}
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
 
           {/* Name EN */}

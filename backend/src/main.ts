@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as cors from 'cors';
 import * as compression from 'compression';
@@ -60,9 +61,24 @@ async function bootstrap() {
   // Apply logging interceptor globally
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // Set global prefix (exclude uploads and upload routes)
-  app.setGlobalPrefix('api', {
-    exclude: ['uploads', 'uploads/*', 'upload', 'upload/*'],
+  // Set global prefix
+  app.setGlobalPrefix('api');
+
+  // Swagger documentation
+  const config = new DocumentBuilder()
+    .setTitle('منصة وعي - API')
+    .setDescription('توثيق واجهة برمجة التطبيقات لمنصة وعي للصحة النفسية')
+    .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'JWT', description: 'أدخل رمز JWT' },
+      'access-token',
+    )
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+    customSiteTitle: 'منصة وعي - توثيق API',
+    customCss: '.swagger-ui .topbar { display: none }',
   });
 
   const port = process.env.PORT;

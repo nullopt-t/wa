@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Post, PostDocument } from '../schemas/post.schema';
-import { Comment, CommentDocument } from '../schemas/comment.schema';
+import { Comment, CommentDocument } from '../../comment/schemas/comment.schema';
 import { CreatePostDto, UpdatePostDto } from '../dto/post.dto';
 import { NotificationService } from '../../notification/services/notification.service';
 

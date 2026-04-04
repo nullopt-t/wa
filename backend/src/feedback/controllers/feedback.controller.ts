@@ -11,11 +11,33 @@ import {
   Request,
   ParseIntPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiOkResponse, ApiProperty } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from '../services/feedback.service';
 import { CreateFeedbackDto } from '../dto/create-feedback.dto';
 import { UpdateFeedbackStatusDto } from '../dto/update-feedback.dto';
 
+export class FeedbackStatsDto {
+  @ApiProperty({ description: 'إجمالي الملاحظات' })
+  total: number;
+
+  @ApiProperty({ description: 'قيد المراجعة' })
+  pending: number;
+
+  @ApiProperty({ description: 'الموافق عليها' })
+  approved: number;
+
+  @ApiProperty({ description: 'المرفوضة' })
+  rejected: number;
+
+  @ApiProperty({ description: 'متوسط التقييم' })
+  averageRating: number;
+
+  @ApiProperty({ description: 'حسب الفئة', additionalProperties: { type: 'number' } })
+  byCategory: Record<string, number>;
+}
+
+@ApiTags('التغذية الراجعة')
 @Controller('feedback')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
@@ -23,6 +45,12 @@ export class FeedbackController {
   /**
    * Submit feedback (authenticated users only, not admins)
    */
+  @ApiOperation({ summary: 'إرسال ملاحظة' })
+  @ApiOkResponse({ description: 'تم الإرسال' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - ليس للمسؤولين' })
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(
@@ -52,6 +80,8 @@ export class FeedbackController {
   /**
    * Get approved public feedback (for website display)
    */
+  @ApiOperation({ summary: 'عرض الملاحظات العامة' })
+  @ApiOkResponse({ description: 'البيانات العامة', schema: { type: 'array', items: { type: 'object' } } })
   @Get('public')
   async getPublicFeedback(
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
@@ -72,6 +102,11 @@ export class FeedbackController {
   /**
    * Get all feedback (admin only)
    */
+  @ApiOperation({ summary: 'عرض جميع الملاحظات (إدارة)' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Get('admin')
   @UseGuards(AuthGuard('jwt'))
   async getAllFeedback(
@@ -101,6 +136,11 @@ export class FeedbackController {
   /**
    * Get feedback statistics (admin dashboard)
    */
+  @ApiOperation({ summary: 'إحصائيات الملاحظات' })
+  @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: FeedbackStatsDto, description: 'إحصائيات الملاحظات' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Get('admin/stats')
   @UseGuards(AuthGuard('jwt'))
   async getStatistics(@Request() req) {
@@ -119,6 +159,12 @@ export class FeedbackController {
   /**
    * Get feedback by ID (admin)
    */
+  @ApiOperation({ summary: 'عرض ملاحظة بالرقم (إدارة)' })
+  @ApiOkResponse({ description: 'تفاصيل العنصر' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
+  @ApiResponse({ status: 404, description: 'الملاحظة غير موجودة' })
   @Get('admin/:id')
   @UseGuards(AuthGuard('jwt'))
   async getFeedbackById(@Request() req, @Param('id') id: string) {
@@ -137,6 +183,12 @@ export class FeedbackController {
   /**
    * Update feedback status (admin)
    */
+  @ApiOperation({ summary: 'تحديث حالة الملاحظة (إدارة)' })
+  @ApiOkResponse({ description: 'تم التحديث بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Patch('admin/:id/status')
   @UseGuards(AuthGuard('jwt'))
   async updateStatus(
@@ -161,6 +213,12 @@ export class FeedbackController {
   /**
    * Delete feedback (admin)
    */
+  @ApiOperation({ summary: 'حذف ملاحظة (إدارة)' })
+  @ApiOkResponse({ description: 'تم الحذف بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
+  @ApiResponse({ status: 404, description: 'الملاحظة غير موجودة' })
   @Delete('admin/:id')
   @UseGuards(AuthGuard('jwt'))
   async deleteFeedback(@Request() req, @Param('id') id: string) {
@@ -179,6 +237,10 @@ export class FeedbackController {
   /**
    * Get user's own feedback
    */
+  @ApiOperation({ summary: 'عرض ملاحظاتي' })
+  @ApiOkResponse({ description: 'ملاحظاتي', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Get('my-feedback')
   @UseGuards(AuthGuard('jwt'))
   async getUserFeedback(

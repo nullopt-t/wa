@@ -10,9 +10,11 @@ import {
   ParseIntPipe,
   Body,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiOkResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationService } from '../services/notification.service';
 
+@ApiTags('الإشعارات')
 @Controller('notifications')
 @UseGuards(AuthGuard('jwt'))
 export class NotificationController {
@@ -21,6 +23,10 @@ export class NotificationController {
   /**
    * Get user notifications
    */
+  @ApiOperation({ summary: 'عرض الإشعارات' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Get()
   async getNotifications(
     @Request() req,
@@ -50,6 +56,10 @@ export class NotificationController {
   /**
    * Get unread count
    */
+  @ApiOperation({ summary: 'عدد الإشعارات غير المقروءة' })
+  @ApiOkResponse({ description: 'عدد غير المقروءة' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Get('unread/count')
   async getUnreadCount(@Request() req) {
     const userId = req.user.userId;
@@ -64,6 +74,11 @@ export class NotificationController {
   /**
    * Mark as read
    */
+  @ApiOperation({ summary: 'تحديد إشعار كمقروء' })
+  @ApiOkResponse({ description: 'تم تحديد كمقروء' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'الإشعار غير موجود' })
   @Post(':id/read')
   async markAsRead(@Request() req, @Param('id') id: string) {
     const userId = req.user.userId;
@@ -79,6 +94,10 @@ export class NotificationController {
   /**
    * Mark all as read
    */
+  @ApiOperation({ summary: 'تحديد جميع الإشعارات كمقروءة' })
+  @ApiOkResponse({ description: 'تم تحديد الكل كمقروء' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Post('read-all')
   async markAllAsRead(@Request() req) {
     const userId = req.user.userId;
@@ -94,6 +113,11 @@ export class NotificationController {
   /**
    * Delete notification
    */
+  @ApiOperation({ summary: 'حذف إشعار' })
+  @ApiOkResponse({ description: 'تم حذف الإشعار' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'الإشعار غير موجود' })
   @Delete(':id')
   async deleteNotification(@Request() req, @Param('id') id: string) {
     const userId = req.user.userId;

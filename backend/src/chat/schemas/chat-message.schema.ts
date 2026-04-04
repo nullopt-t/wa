@@ -17,7 +17,7 @@ export class ChatMessage {
   @Prop({ required: true, type: String })
   content: string;
 
-  @Prop({ type: String, enum: ['text', 'test', 'test-result', 'emotion', 'crisis'], default: 'text' })
+  @Prop({ type: String, enum: ['text', 'emotion', 'crisis', 'clinical-report'], default: 'text' })
   messageType: string;
 
   @Prop()
@@ -45,11 +45,30 @@ export class ChatMessage {
     reason?: string;
   }>;
 
-  @Prop()
-  testId?: string;
+  @Prop({ type: Object })
+  reportData?: {
+    symptoms: string[];
+    duration: string;
+    impact: { work: string; sleep: string; relationships: string };
+    riskFactors: string[];
+    severity: string;
+    recommendations: string[];
+  };
 
-  @Prop({ type: Object, default: null })
-  testResult?: any;
+  @Prop({ type: [{
+    _id: String,
+    type: String,
+    title: String,
+    excerpt: String,
+    url: String,
+  }] })
+  relatedResources?: Array<{
+    _id: string;
+    type: string;
+    title: string;
+    excerpt: string;
+    url: string;
+  }>;
 
   @Prop({ default: false })
   isCrisisMessage: boolean;

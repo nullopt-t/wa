@@ -17,23 +17,39 @@ export class Comment {
   @Prop({ type: Types.ObjectId, ref: 'Post' })
   postId?: Types.ObjectId;
 
-  @Prop({ default: 'active' })
-  status: string; // 'active', 'deleted', 'reported'
+  @Prop({ type: Types.ObjectId, ref: 'Comment' })
+  parentId?: Types.ObjectId; // For nested replies (alias for parentCommentId)
 
+  @Prop({ type: Types.ObjectId, ref: 'Comment' })
+  parentCommentId?: Types.ObjectId; // Alias for parentId (legacy support)
+
+  // Engagement
   @Prop({ default: 0 })
   likes: number;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
+  likedBy: Types.ObjectId[];
+
+  // Moderation
+  @Prop({
+    type: String,
+    enum: ['active', 'deleted', 'reported', 'pending', 'approved', 'hidden'],
+    default: 'active',
+  })
+  status: string;
 
   @Prop({ default: 0 })
   reports: number;
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
-  likedBy: Types.ObjectId[];
-
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
   reportedBy: Types.ObjectId[];
 
-  @Prop()
-  parentCommentId?: Types.ObjectId; // For nested comments
+  // Community-specific fields
+  @Prop({ default: false })
+  isAnonymous: boolean;
+
+  @Prop({ default: 0 })
+  repliesCount: number;
 
   @Prop({ default: false })
   isEdited: boolean;
@@ -41,8 +57,10 @@ export class Comment {
 
 export const CommentSchema = SchemaFactory.createForClass(Comment);
 
-// Indexes for efficient querying
+// Indexes for efficient querying (article + post + community)
 CommentSchema.index({ articleId: 1, status: 1, createdAt: -1 });
 CommentSchema.index({ postId: 1, status: 1, createdAt: -1 });
 CommentSchema.index({ status: 1, reports: -1 });
 CommentSchema.index({ authorId: 1, createdAt: -1 });
+CommentSchema.index({ parentId: 1 });
+CommentSchema.index({ parentCommentId: 1 });

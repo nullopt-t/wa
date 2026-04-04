@@ -20,7 +20,6 @@ import { ChatModule } from './chat/chat.module';
 import { VideoModule } from './video/video.module';
 import { CommentModule } from './comment/comment.module';
 import { StoryModule } from './story/story.module';
-import { AssessmentModule } from './assessment/assessment.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { NotificationModule } from './notification/notification.module';
 
@@ -72,7 +71,6 @@ import { NotificationModule } from './notification/notification.module';
     VideoModule,
     CommentModule,
     StoryModule,
-    AssessmentModule,
     FeedbackModule,
     NotificationModule,
   ],

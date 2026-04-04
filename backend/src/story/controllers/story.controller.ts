@@ -10,15 +10,39 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiOkResponse, ApiProperty } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { StoryService } from '../services/story.service';
 import { CreateStoryDto, UpdateStoryDto, StoryFilterDto } from '../dto/story.dto';
 
+export class StoryStatsDto {
+  @ApiProperty({ description: 'إجمالي القصص' })
+  totalStories: number;
+
+  @ApiProperty({ description: 'القصص الموافق عليها' })
+  approvedStories: number;
+
+  @ApiProperty({ description: 'القصص قيد المراجعة' })
+  pendingStories: number;
+
+  @ApiProperty({ description: 'القصص المرفوضة' })
+  rejectedStories: number;
+
+  @ApiProperty({ description: 'إجمالي المشاهدات' })
+  totalViews: number;
+
+  @ApiProperty({ description: 'إجمالي الإعجابات' })
+  totalLikes: number;
+}
+
+@ApiTags('القصص')
 @Controller('stories')
 export class StoryController {
   constructor(private readonly storyService: StoryService) {}
 
   // Get all stories (public)
+  @ApiOperation({ summary: 'عرض جميع القصص' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
   @Get()
   async findAll(@Query() query: StoryFilterDto, @Request() req) {
     const userId = req.user?.userId;
@@ -26,6 +50,9 @@ export class StoryController {
   }
 
   // Get single story (public)
+  @ApiOperation({ summary: 'عرض قصة واحدة' })
+  @ApiOkResponse({ description: 'تفاصيل العنصر' })
+  @ApiResponse({ status: 404, description: 'القصة غير موجودة' })
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req) {
     const userId = req.user?.userId;
@@ -33,6 +60,11 @@ export class StoryController {
   }
 
   // Create story (authenticated users)
+  @ApiOperation({ summary: 'إنشاء قصة جديدة' })
+  @ApiOkResponse({ description: 'تم الإنشاء بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Request() req, @Body() createStoryDto: CreateStoryDto) {
@@ -41,6 +73,9 @@ export class StoryController {
   }
 
   // Get user's stories
+  @ApiOperation({ summary: 'عرض قصص مستخدم معين' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiResponse({ status: 404, description: 'المستخدم غير موجود' })
   @Get('user/:userId')
   async findByUser(
     @Param('userId') userId: string,
@@ -51,6 +86,13 @@ export class StoryController {
   }
 
   // Update story (author only)
+  @ApiOperation({ summary: 'تحديث قصة' })
+  @ApiOkResponse({ description: 'تم التحديث بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - ليس الكاتب' })
+  @ApiResponse({ status: 404, description: 'القصة غير موجودة' })
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   async update(
@@ -63,6 +105,12 @@ export class StoryController {
   }
 
   // Delete story (author only)
+  @ApiOperation({ summary: 'حذف قصة' })
+  @ApiOkResponse({ description: 'تم الحذف بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - ليس الكاتب' })
+  @ApiResponse({ status: 404, description: 'القصة غير موجودة' })
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   async remove(@Request() req, @Param('id') id: string) {
@@ -71,6 +119,11 @@ export class StoryController {
   }
 
   // Like/Unlike story (authenticated users)
+  @ApiOperation({ summary: 'الإعجاب بقصة' })
+  @ApiOkResponse({ description: 'تم الإعجاب' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'القصة غير موجودة' })
   @Post(':id/like')
   @UseGuards(AuthGuard('jwt'))
   async like(@Request() req, @Param('id') id: string) {
@@ -79,6 +132,11 @@ export class StoryController {
   }
 
   // Save/Unsave story (authenticated users)
+  @ApiOperation({ summary: 'حفظ قصة' })
+  @ApiOkResponse({ description: 'تم بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'القصة غير موجودة' })
   @Post(':id/save')
   @UseGuards(AuthGuard('jwt'))
   async save(@Request() req, @Param('id') id: string) {
@@ -87,6 +145,10 @@ export class StoryController {
   }
 
   // Get user's saved stories
+  @ApiOperation({ summary: 'عرض القصص المحفوظة' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Get('saved/list')
   @UseGuards(AuthGuard('jwt'))
   async getSavedStories(
@@ -99,6 +161,11 @@ export class StoryController {
   }
 
   // Admin: Get all stories for moderation
+  @ApiOperation({ summary: 'عرض جميع القصص (إدارة)' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Get('admin/all')
   @UseGuards(AuthGuard('jwt'))
   async findAllForAdmin(
@@ -110,6 +177,12 @@ export class StoryController {
   }
 
   // Admin: Approve/Reject story
+  @ApiOperation({ summary: 'مراجعة قصة (موافقة/رفض)' })
+  @ApiOkResponse({ description: 'تمت المراجعة' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'حالة غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Patch('admin/:id/moderate')
   @UseGuards(AuthGuard('jwt'))
   async moderateStory(
@@ -122,6 +195,10 @@ export class StoryController {
   }
 
   // Admin: Get statistics
+  @ApiOperation({ summary: 'إحصائيات القصص' })
+  @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: StoryStatsDto, description: 'إحصائيات القصص' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Get('admin/stats')
   @UseGuards(AuthGuard('jwt'))
   async getStats() {

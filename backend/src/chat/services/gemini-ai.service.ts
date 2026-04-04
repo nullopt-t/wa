@@ -7,9 +7,15 @@ export interface AIAnalysis {
   response: string;
   crisisDetected: boolean;
   suggestions: string[];
-  quickTest?: {
-    title: string;
-    questions: string[];
+  resourceKeywords?: string[];
+  isReportRequest?: boolean;
+  reportData?: {
+    symptoms: string[];
+    duration: string;
+    impact: { work: string; sleep: string; relationships: string };
+    riskFactors: string[];
+    severity: string;
+    recommendations: string[];
   };
   recommendTherapist: boolean;
   disclaimer: string;
@@ -75,146 +81,25 @@ export class GeminiAIService {
   }
 
   /**
-   * Interpret test results with AI
-   */
-  async interpretTestResults(
-    testName: string,
-    score: any,
-    answers: any[],
-    chatContext: string = '',
-  ): Promise<TestInterpretation> {
-    try {
-      const prompt = `
-      You are a compassionate mental health support AI.
-
-      Test: ${testName}
-      Score: ${JSON.stringify(score)}
-      Answers: ${JSON.stringify(answers)}
-
-      ${chatContext ? `Recent conversation context: ${chatContext}` : ''}
-
-      Provide (in Arabic):
-      1. Interpretation of results (NOT a diagnosis)
-      2. What this might mean
-      3. 3-5 personalized coping suggestions
-      4. Whether to consider talking to a therapist
-      5. Encouraging, supportive message
-
-      IMPORTANT:
-      - This is NOT a medical diagnosis
-      - Include disclaimer
-      - Be warm and empathetic
-      - NO medication suggestions
-
-      Respond in JSON format.
-      `;
-
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-
-      return JSON.parse(response.text());
-    } catch (error) {
-      this.logger.error('Error interpreting test results:', error);
-      return this.getFallbackTestInterpretation(testName, score);
-    }
-  }
-
-  /**
    * Interpret assessment results (PHQ-9, GAD-7, etc.)
    */
   async interpretAssessmentResults(
     assessmentCode: string,
-    assessmentName: string,
+    _assessmentName: string,
     totalScore: number,
     maxScore: number,
     severity: string,
-    answers: Array<{ question: number; answer: number }>,
-  ): Promise<TestInterpretation> {
-    try {
-      const prompt = `
-You are a compassionate mental health AI assistant specializing in psychological assessments.
-
-Assessment: ${assessmentName} (${assessmentCode})
-Total Score: ${totalScore}/${maxScore}
-Severity Level: ${severity}
-Answers: ${JSON.stringify(answers)}
-
-Provide a comprehensive interpretation in BOTH English and Arabic:
-
-1. **Interpretation**: What does this score mean? (NOT a diagnosis)
-2. **Explanation**: Help them understand their results in a supportive way
-3. **Recommendations**: 3-5 personalized, actionable coping strategies
-4. **Therapist Recommendation**: Should they consider professional help? (boolean)
-5. **Disclaimer**: Brief disclaimer that this is not a medical diagnosis
-
-IMPORTANT RULES:
-- Be warm, empathetic, and non-judgmental
-- NEVER diagnose or prescribe medication
-- Use simple, accessible language
-- If severity is moderate or severe, gently suggest professional help
-- Include both English and Arabic for all fields
-- Be culturally sensitive
-
-Respond in JSON format:
-{
-  "interpretation": "English interpretation",
-  "interpretationAr": "التفسير بالعربية",
-  "recommendations": ["rec1", "rec2", "rec3"],
-  "recommendationsAr": ["توصية 1", "توصية 2", "توصية 3"],
-  "recommendTherapist": true/false,
-  "disclaimer": "English disclaimer",
-  "disclaimerAr": "إخلاء المسؤولية بالعربية"
-}
-`;
-
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text().trim();
-
-      // Clean response - remove markdown code blocks if present
-      const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
-      return JSON.parse(cleanText);
-    } catch (error) {
-      this.logger.error('Error interpreting assessment results:', error);
-      return this.getFallbackAssessmentInterpretation(assessmentCode, assessmentName, totalScore, maxScore, severity);
-    }
-  }
-
-  /**
-   * Fallback interpretation for assessments if AI fails
-   */
-  private getFallbackAssessmentInterpretation(
-    assessmentCode: string,
-    assessmentName: string,
-    totalScore: number,
-    maxScore: number,
-    severity: string,
-  ): TestInterpretation {
+    _answers: Array<{ question: number; answer: number }>,
+  ): Promise<any> {
     const percentage = Math.round((totalScore / maxScore) * 100);
     return {
-      interpretation: `Your score of ${totalScore}/${maxScore} (${percentage}%) indicates ${severity.toLowerCase()} symptoms.`,
-      interpretationAr: `نتيجتك ${totalScore} من ${maxScore} (${percentage}%) تشير إلى أعراض ${severity}.`,
-      suggestions: [
-        'Consider speaking with a mental health professional',
-        'Practice self-care activities',
-        'Maintain a healthy sleep schedule',
-      ],
-      recommendations: [
-        'Consider speaking with a mental health professional',
-        'Practice self-care activities',
-        'Maintain a healthy sleep schedule',
-        'Stay connected with loved ones',
-      ],
-      recommendationsAr: [
-        'فكر في التحدث إلى أخصائي صحة نفسية',
-        'مارس أنشطة العناية بالنفس',
-        'حافظ على جدول نوم صحي',
-        'ابق على تواصل مع الأحباب',
-      ],
-      recommendTherapist: severity.toLowerCase() === 'severe' || severity.toLowerCase() === 'moderate',
-      disclaimer: 'This is not a medical diagnosis. Please consult a healthcare professional.',
-      disclaimerAr: 'هذا ليس تشخيصاً طبياً. يرجى استشارة أخصائي رعاية صحية.',
+      interpretation: `نتيجتك ${totalScore} من ${maxScore} (${percentage}%) تشير إلى ${severity}`,
+      interpretationAr: `نتيجتك ${totalScore} من ${maxScore} (${percentage}%) تشير إلى ${severity}`,
+      recommendations: ['فكر في التحدث إلى أخصائي', 'مارس أنشطة العناية بالنفس', 'حافظ على نوم صحي'],
+      recommendationsAr: ['فكر في التحدث إلى أخصائي صحة نفسية', 'مارس أنشطة العناية بالنفس', 'حافظ على جدول نوم صحي'],
+      recommendTherapist: severity.toLowerCase().includes('شديد') || severity.toLowerCase().includes('متوسط'),
+      disclaimer: 'هذا ليس تشخيصاً طبياً',
+      disclaimerAr: 'هذا ليس تشخيصاً طبياً. يرجى استشارة أخصائي.',
     };
   }
 
@@ -322,9 +207,26 @@ ${historyText || 'لا يوجد سياق سابق — هذه أول رسالة'}
   "response": "ردك المتعاطف بالعربية — أعكس المشاعر، استمع فعّال، واسأل بلطف",
   "crisisDetected": false,
   "suggestions": ["اقتراح بسيط وداعم"],
+  "resourceKeywords": ["كلمة_مفتاحية_1", "كلمة_مفتاحية_2"],
+  "isReportRequest": false,
+  "reportData": null,
   "recommendTherapist": false,
   "disclaimer": "تذكير لطيف بأنك مساعد ذكي ولست معالجاً طبياً"
 }
+
+resourceKeywords: 0-3 كلمات مفتاحية بالعربية متعلقة بموضوع المحادثة للبحث في المنصة. استخدم كلمات بسيطة وواضحة مثل: "قلق"، "نوم"، "توتر"، "اكتئاب"، "علاقات"، "حزن"، "إدمان"، "صحة نفسية"، "استرخاء". أعد مصفوفة فارغة إذا لا يوجد موضوع محدد أو الموضوع عام جداً.
+
+isReportRequest: ضع true إذا طلب المستخدم تقرير عن المحادثة (كلمات مثل: تقرير، ملخص، report، summary).
+
+reportData: إذا كان isReportRequest = true، أعد كائن يحتوي على:
+- symptoms: قائمة الأعراض الرئيسية المذكورة في المحادثة
+- duration: المدة التي ذكرها المستخدم للمشكلة
+- impact: تأثير على الحياة (work, sleep, relationships) - قيم فارغة إذا لم تذكر
+- riskFactors: عوامل الخطورة المذكورة
+- severity: مستوى الخطورة (منخفض، متوسط، شديد)
+- recommendations: 3-5 توصيات عملية
+
+إذا لم يكن طلب تقرير، أعد isReportRequest: false و reportData: null.
 
 قواعد:
 - الرد بالعربية فقط
@@ -347,7 +249,9 @@ ${historyText || 'لا يوجد سياق سابق — هذه أول رسالة'}
         response: parsed.response || '',
         crisisDetected: parsed.crisisDetected || false,
         suggestions: parsed.suggestions || [],
-        quickTest: parsed.quickTest || null,
+        resourceKeywords: parsed.resourceKeywords || [],
+        isReportRequest: parsed.isReportRequest || false,
+        reportData: parsed.reportData || null,
         recommendTherapist: parsed.recommendTherapist || false,
         disclaimer: parsed.disclaimer || this.getDefaultDisclaimer(),
       };
@@ -366,43 +270,20 @@ ${historyText || 'لا يوجد سياق سابق — هذه أول رسالة'}
       response: 'أنا هنا للاستماع إليك. هل تريد مشاركة المزيد عما يدور في ذهنك؟',
       crisisDetected: false,
       suggestions: ['خذ نفساً عميقاً', 'تحدث إلى شخص تثق به'],
-      quickTest: null,
       recommendTherapist: false,
       disclaimer: this.getDefaultDisclaimer(),
     };
   }
 
-  private getFallbackTestInterpretation(testName: string, score: any): any {
-    return {
-      interpretation: `أكملت اختبار ${testName}. نتيجتك: ${score.total}/${score.maxScore}`,
-      suggestions: ['مارس تمارين التنفس', 'حافظ على روتين نوم صحي', 'تحدث إلى شخص تثق به'],
-      recommendTherapist: score.percentage > 70,
-      disclaimer: 'هذه ليست تشخيصاً طبياً',
-    };
+  private getDefaultDisclaimer(): string {
+    return '⚠️ مهم: أنا مساعد ذكي، لست معالجاً طبياً. لا يمكنني تشخيص الحالات أو وصف الأدوية.';
   }
 
   private getCrisisResources() {
     return [
-      {
-        name: 'خط المساعدة الوطني للانتحار',
-        phone: '988',
-        description: 'متاح 24/7 في الولايات المتحدة',
-      },
-      {
-        name: 'خط أزمة النص',
-        phone: 'HOME to 741741',
-        description: 'أرسل HOME إلى 741741',
-      },
-      {
-        name: 'الطوارئ',
-        phone: '911',
-        description: 'للحالات الطارئة الفورية',
-      },
+      { name: 'خط المساعدة', phone: '988', description: 'متاح 24/7' },
+      { name: 'الطوارئ', phone: '911', description: 'للحالات الطارئة' },
     ];
-  }
-
-  private getDefaultDisclaimer(): string {
-    return '⚠️ مهم: أنا مساعد ذكي، لست معالجاً طبياً. لا يمكنني تشخيص الحالات أو وصف الأدوية. للحصول على مساعدة مهنية، استشر معالجاً مرخصاً.';
   }
 }
 
@@ -416,15 +297,4 @@ export interface CrisisResource {
   name: string;
   phone: string;
   description: string;
-}
-
-export interface TestInterpretation {
-  interpretation: string;
-  interpretationAr?: string;
-  suggestions: string[];
-  recommendations?: string[];
-  recommendationsAr?: string[];
-  recommendTherapist: boolean;
-  disclaimer: string;
-  disclaimerAr?: string;
 }

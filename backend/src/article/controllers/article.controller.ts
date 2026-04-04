@@ -14,6 +14,7 @@ import {
   UseInterceptors,
   ForbiddenException,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiOkResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ArticleService } from '../services/article.service';
 import { CreateArticleDto, UpdateArticleDto } from '../dto/article.dto';
@@ -42,11 +43,14 @@ const getUserIdFromRequest = (req: any): string | undefined => {
   return undefined;
 };
 
+@ApiTags('المقالات')
 @Controller('articles')
 export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
 
   // Get all articles (public)
+  @ApiOperation({ summary: 'عرض جميع المقالات' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
   @Get()
   async findAll(@Query() query: any, @Request() req) {
     // Extract userId from JWT token (works for both authenticated and public requests)
@@ -59,6 +63,8 @@ export class ArticleController {
   }
 
   // Get featured articles (public)
+  @ApiOperation({ summary: 'عرض المقالات المميزة' })
+  @ApiOkResponse({ description: 'المميز', schema: { type: 'array', items: { type: 'object' } } })
   @Get('featured')
   async findFeatured(@Query('limit') limit = '3') {
     // Validate and sanitize limit parameter
@@ -68,6 +74,9 @@ export class ArticleController {
   }
 
   // Get article by slug (public)
+  @ApiOperation({ summary: 'عرض مقال بالرابط' })
+  @ApiOkResponse({ description: 'تفاصيل العنصر' })
+  @ApiResponse({ status: 404, description: 'المقال غير موجود' })
   @Get('slug/:slug')
   async findBySlug(@Param('slug') slug: string, @Request() req) {
     const article: any = await this.articleService.findBySlug(slug);
@@ -85,6 +94,9 @@ export class ArticleController {
   }
 
   // Get single article (public)
+  @ApiOperation({ summary: 'عرض مقال واحد' })
+  @ApiOkResponse({ description: 'تفاصيل العنصر' })
+  @ApiResponse({ status: 404, description: 'المقال غير موجود' })
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req) {
     const article: any = await this.articleService.findOne(id);
@@ -102,6 +114,12 @@ export class ArticleController {
   }
 
   // Create article (admins and therapists only)
+  @ApiOperation({ summary: 'إنشاء مقال جديد' })
+  @ApiOkResponse({ description: 'تم الإنشاء بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين والمعالجين فقط' })
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Request() req, @Body() createArticleDto: CreateArticleDto) {
@@ -117,6 +135,13 @@ export class ArticleController {
   }
 
   // Update article (author only)
+  @ApiOperation({ summary: 'تحديث مقال' })
+  @ApiOkResponse({ description: 'تم التحديث بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - ليس الكاتب' })
+  @ApiResponse({ status: 404, description: 'المقال غير موجود' })
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   async update(
@@ -129,6 +154,12 @@ export class ArticleController {
   }
 
   // Delete article (author only)
+  @ApiOperation({ summary: 'حذف مقال' })
+  @ApiOkResponse({ description: 'تم الحذف بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - ليس الكاتب' })
+  @ApiResponse({ status: 404, description: 'المقال غير موجود' })
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -138,6 +169,11 @@ export class ArticleController {
   }
 
   // Like article
+  @ApiOperation({ summary: 'الإعجاب بمقال' })
+  @ApiOkResponse({ description: 'تم الإعجاب' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'المقال غير موجود' })
   @Post(':id/like')
   @UseGuards(AuthGuard('jwt'))
   async like(@Request() req, @Param('id') id: string) {

@@ -12,9 +12,11 @@ import {
   ParseIntPipe,
   ForbiddenException,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiOkResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { TherapistService } from './therapist.service';
 
+@ApiTags('المعالجين')
 @Controller('therapists')
 export class TherapistController {
   constructor(private readonly therapistService: TherapistService) {}
@@ -22,6 +24,8 @@ export class TherapistController {
   /**
    * Public: Get all therapists (with filters)
    */
+  @ApiOperation({ summary: 'عرض جميع المعالجين' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
   @Get()
   async findAll(@Query() query: any) {
     return this.therapistService.findAll(query);
@@ -30,6 +34,10 @@ export class TherapistController {
   /**
    * Therapist: Get dashboard (MUST be before :id route!)
    */
+  @ApiOperation({ summary: 'عرض لوحة التحكم' })
+  @ApiOkResponse({ description: 'بيانات لوحة التحكم' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Get('dashboard')
   @UseGuards(AuthGuard('jwt'))
   async getDashboard(@Request() req) {
@@ -40,6 +48,9 @@ export class TherapistController {
   /**
    * Public: Get therapist by ID
    */
+  @ApiOperation({ summary: 'عرض معالج بالرقم' })
+  @ApiOkResponse({ description: 'تفاصيل العنصر' })
+  @ApiResponse({ status: 404, description: 'المعالج غير موجود' })
   @Get(':id')
   async findById(@Param('id') id: string) {
     return this.therapistService.findById(id);
@@ -48,6 +59,11 @@ export class TherapistController {
   /**
    * Therapist: Get own profile
    */
+  @ApiOperation({ summary: 'عرض الملف الشخصي للمعالج' })
+  @ApiOkResponse({ description: 'الملف الشخصي' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'الملف غير موجود' })
   @Get('profile/me')
   @UseGuards(AuthGuard('jwt'))
   async getOwnProfile(@Request() req) {
@@ -58,6 +74,12 @@ export class TherapistController {
   /**
    * Therapist: Create profile
    */
+  @ApiOperation({ summary: 'إنشاء ملف المعالج' })
+  @ApiOkResponse({ description: 'تم الإنشاء بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 409, description: 'الملف موجود مسبقاً' })
   @Post('profile')
   @UseGuards(AuthGuard('jwt'))
   async createProfile(@Request() req, @Body() profileData: any) {
@@ -68,6 +90,12 @@ export class TherapistController {
   /**
    * Therapist: Update profile
    */
+  @ApiOperation({ summary: 'تحديث ملف المعالج' })
+  @ApiOkResponse({ description: 'تم التحديث بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'الملف غير موجود' })
   @Patch('profile')
   @UseGuards(AuthGuard('jwt'))
   async updateProfile(@Request() req, @Body() updateData: any) {
@@ -78,6 +106,11 @@ export class TherapistController {
   /**
    * Therapist: Submit verification
    */
+  @ApiOperation({ summary: 'إرسال طلب التحقق' })
+  @ApiOkResponse({ description: 'تم الإرسال بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Post('profile/verify')
   @UseGuards(AuthGuard('jwt'))
   async submitVerification(@Request() req, @Body() data: { licenseImage: string }) {
@@ -88,6 +121,11 @@ export class TherapistController {
   /**
    * Therapist: Delete profile
    */
+  @ApiOperation({ summary: 'حذف ملف المعالج' })
+  @ApiOkResponse({ description: 'تم الحذف بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'الملف غير موجود' })
   @Delete('profile')
   @UseGuards(AuthGuard('jwt'))
   async deleteProfile(@Request() req) {
@@ -100,6 +138,11 @@ export class TherapistController {
   /**
    * Admin: Get all therapists (including unverified/unapproved)
    */
+  @ApiOperation({ summary: 'عرض جميع المعالجين (إدارة)' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Get('admin/all')
   @UseGuards(AuthGuard('jwt'))
   async findAllForAdmin(
@@ -123,6 +166,11 @@ export class TherapistController {
   /**
    * Admin: Get pending therapists (email verified, awaiting approval)
    */
+  @ApiOperation({ summary: 'عرض المعالجين المعلقين' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Get('admin/pending')
   @UseGuards(AuthGuard('jwt'))
   async findPendingForAdmin(@Request() req) {
@@ -135,6 +183,11 @@ export class TherapistController {
   /**
    * Admin: Verify therapist
    */
+  @ApiOperation({ summary: 'توثيق معالج' })
+  @ApiOkResponse({ description: 'تم بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Patch(':id/verify')
   @UseGuards(AuthGuard('jwt'))
   async verifyTherapist(@Request() req, @Param('id') therapistId: string) {
@@ -150,6 +203,11 @@ export class TherapistController {
   /**
    * Admin: Approve therapist
    */
+  @ApiOperation({ summary: 'موافقة على معالج' })
+  @ApiOkResponse({ description: 'تم بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
   @Patch(':id/approve')
   @UseGuards(AuthGuard('jwt'))
   async approveTherapist(@Request() req, @Param('id') therapistId: string) {

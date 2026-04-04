@@ -174,7 +174,7 @@ const PostDetailPage = () => {
                 to={`/community?category=${post.categoryId?._id}`}
                 className="px-3 py-1 bg-[var(--bg-secondary)] rounded-full hover:bg-[var(--primary-color)] hover:text-white transition-colors"
               >
-                {post.categoryId?.nameAr || 'عام'}
+                {post.categoryId?.name || 'عام'}
               </Link>
               <span>•</span>
               <span>{new Date(post.createdAt).toLocaleDateString('ar-EG', {

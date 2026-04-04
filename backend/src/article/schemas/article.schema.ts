@@ -63,3 +63,5 @@ ArticleSchema.index({ status: 1, publishedAt: -1 });
 ArticleSchema.index({ isFeatured: 1, publishedAt: -1 });
 ArticleSchema.index({ tags: 1 });
 ArticleSchema.index({ categoryId: 1, status: 1, publishedAt: -1 });
+// Full-text search index
+ArticleSchema.index({ title: 'text', excerpt: 'text', content: 'text', tags: 'text' });

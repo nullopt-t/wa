@@ -28,4 +28,4 @@ EXPOSE 8080
 #   CMD wget --quiet --tries=1 --spider http://localhost:8081/health || exit 1
 
 # Start application
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start"]

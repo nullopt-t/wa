@@ -76,11 +76,12 @@ function AppWrapper() {
   const isAdminRoute = location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/videos/manage') ||
     location.pathname.startsWith('/articles/manage');
+  const isChatbotRoute = location.pathname === '/chatbot';
 
   return (
     <div className="flex flex-col min-h-screen" dir="rtl">
       <ScrollToTop />
-      {!isAdminRoute && <Header />}
+      {!isAdminRoute && !isChatbotRoute && <Header />}
       <main className="flex-grow">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
@@ -378,7 +379,7 @@ function AppWrapper() {
           </Routes>
         </AnimatePresence>
       </main>
-      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && !isChatbotRoute && <Footer />}
     </div>
   );
 }

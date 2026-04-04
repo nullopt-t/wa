@@ -6,28 +6,28 @@ export type CategoryDocument = Category & Document;
 @Schema({ timestamps: true })
 export class Category {
   @Prop({ required: true })
-  name: string; // English name
+  name: string; // الاسم بالعربية
+
+  @Prop()
+  description?: string; // الوصف (اختياري)
 
   @Prop({ required: true })
-  nameAr: string; // Arabic name
+  icon: string; // كلاس أيقونة FontAwesome
 
   @Prop({ required: true })
-  icon: string; // FontAwesome icon class
-
-  @Prop({ required: true })
-  color: string; // Hex color code
+  color: string; // كود اللون
 
   @Prop({ default: 0 })
-  order: number; // Display order
+  order: number; // ترتيب العرض
 
   @Prop({ default: true })
-  isActive: boolean; // Active/inactive status
+  isActive: boolean; // نشط/غير نشط
 
   @Prop({ default: 0 })
-  articlesCount: number; // Number of articles in this category
+  articlesCount: number; // عدد المقالات
 
   @Prop({ default: 0 })
-  videosCount: number; // Number of videos in this category
+  videosCount: number; // عدد الفيديوهات
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

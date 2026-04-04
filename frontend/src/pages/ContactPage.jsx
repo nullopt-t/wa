@@ -61,29 +61,8 @@ const ContactPage = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="p-6 bg-[var(--bg-primary)] rounded-xl">
-                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4 text-right">تابعنا على وسائل التواصل</h3>
-                <div className="flex justify-center gap-4">
-                  <a href="https://www.facebook.com/waey.mentalhealth.egypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#1877F2] hover:text-white transition-colors">
-                    <i className="fab fa-facebook-f"></i>
-                  </a>
-                  <a href="https://www.instagram.com/waey.egypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#E4405F] hover:text-white transition-colors">
-                    <i className="fab fa-instagram"></i>
-                  </a>
-                  <a href="https://www.twitter.com/waey_egypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#1DA1F2] hover:text-white transition-colors">
-                    <i className="fab fa-twitter"></i>
-                  </a>
-                  <a href="https://www.youtube.com/waeyegypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#FF0000] hover:text-white transition-colors">
-                    <i className="fab fa-youtube"></i>
-                  </a>
-                  <a href="https://www.tiktok.com/@waey.egypt" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center text-[var(--primary-color)] hover:bg-[#000000] hover:text-white transition-colors">
-                    <i className="fab fa-tiktok"></i>
-                  </a>
-                </div>
-              </div>
             </div>
-            
+
             <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg">
               <h2 className="text-2xl font-bold text-[var(--primary-color)] mb-6 text-center lg:text-right">أرسل لنا رسالة</h2>
 

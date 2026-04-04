@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Patch, Delete, Param, Body, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, UseGuards, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiOkResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { User } from './schemas/user.schema';
 import { RegisterUserDto, RegisterTherapistDto, UpdateUserDto } from '../auth/dto/auth.dto';
@@ -10,22 +11,38 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
+@ApiTags('المستخدمين')
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) { }
 
+  @ApiOperation({ summary: 'عرض مستخدم بالرقم' })
+  @ApiOkResponse({ description: 'تفاصيل العنصر' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'المستخدم غير موجود' })
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   async findOne(@Param('id') id: string): Promise<Omit<User, 'password'>> {
     return this.userService.findById(id);
   }
 
+  @ApiOperation({ summary: 'عرض جميع المستخدمين' })
+  @ApiOkResponse({ description: 'قائمة البيانات', schema: { type: 'array', items: { type: 'object' } } })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Get()
   @UseGuards(AuthGuard('jwt'))
   async findAll(): Promise<{ users: Omit<User, 'password'>[]; total: number }> {
     return this.userService.findAll();
   }
 
+  @ApiOperation({ summary: 'تحديث مستخدم (PUT)' })
+  @ApiOkResponse({ description: 'تم التحديث بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'المستخدم غير موجود' })
   @Put(':id')
   @UseGuards(AuthGuard('jwt'))
   async update(
@@ -52,6 +69,12 @@ export class UserController {
     return this.userService.update(id, updateData);
   }
 
+  @ApiOperation({ summary: 'تحديث جزئي لمستخدم' })
+  @ApiOkResponse({ description: 'تم التحديث بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 404, description: 'المستخدم غير موجود' })
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   async patch(
@@ -78,12 +101,23 @@ export class UserController {
   }
 
 
+  @ApiOperation({ summary: 'حذف مستخدم' })
+  @ApiOkResponse({ description: 'تم الحذف بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع' })
+  @ApiResponse({ status: 404, description: 'المستخدم غير موجود' })
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
-  async delete(@Param('id') id: string): Promise<void> {
-    return this.userService.delete(id);
+  async delete(@Request() req, @Param('id') id: string): Promise<void> {
+    return this.userService.delete(id, req.user.userId);
   }
 
+  @ApiOperation({ summary: 'رفع صورة الملف الشخصي' })
+  @ApiOkResponse({ description: 'تم بنجاح' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 400, description: 'ملف غير صالح' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
   @Post(':id/avatar')
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('avatar', {

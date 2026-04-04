@@ -48,3 +48,5 @@ export const VideoSchema = SchemaFactory.createForClass(Video);
 VideoSchema.index({ isFeatured: 1, createdAt: -1 });
 VideoSchema.index({ isActive: 1, createdAt: -1 });
 VideoSchema.index({ category: 1, isActive: 1 });
+// Full-text search index
+VideoSchema.index({ title: 'text', description: 'text', tags: 'text' });

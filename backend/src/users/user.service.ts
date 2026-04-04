@@ -163,7 +163,12 @@ export class UserService {
     return result as Omit<User, 'password'>;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, requestingUserId?: string): Promise<void> {
+    // Prevent users from deleting their own account
+    if (requestingUserId && id === requestingUserId) {
+      throw new BadRequestException('لا يمكنك حذف حسابك الشخصي. استخدم خيار إلغاء الحساب بدلاً من ذلك.');
+    }
+
     const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
     if (!deletedUser) {
       throw new NotFoundException(`User with ID ${id} not found`);

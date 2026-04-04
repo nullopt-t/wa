@@ -327,7 +327,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
                   {post.isAnonymous ? 'مجهول' : authorName}
                 </p>
                 <p className="text-xs text-[var(--text-secondary)] break-words">
-                  {formatRelativeTime(post.createdAt)} • {post.categoryId?.nameAr || 'عام'}
+                  {formatRelativeTime(post.createdAt)} • {post.categoryId?.name || 'عام'}
                 </p>
               </div>
               {!post.isAnonymous && (

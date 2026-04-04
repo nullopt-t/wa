@@ -8,18 +8,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="footer-section">
             <h3 className="text-[#c5a98e] mb-4">منصة وعي</h3>
-            <p className="text-[var(--text-secondary)] mb-4">منصة متخصصة في تحسين الصحة النفسية وتقديم الدعم النفسي</p>
-            <div className="flex space-x-4">
-              <a href="https://www.facebook.com/waey" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center bg-[var(--bg-primary)] rounded-full hover:bg-[#c5a98e] transition-colors text-[var(--text-primary)]">
-                <i className="fab fa-facebook-f"></i>
-              </a>
-              <a href="https://www.instagram.com/waey" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center bg-[var(--bg-primary)] rounded-full hover:bg-[#c5a98e] transition-colors text-[var(--text-primary)]">
-                <i className="fab fa-instagram"></i>
-              </a>
-              <a href="https://www.youtube.com/waey" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center bg-[var(--bg-primary)] rounded-full hover:bg-[#c5a98e] transition-colors text-[var(--text-primary)]">
-                <i className="fab fa-youtube"></i>
-              </a>
-            </div>
+            <p className="text-[var(--text-secondary)]">منصة متخصصة في تحسين الصحة النفسية وتقديم الدعم النفسي</p>
           </div>
 
           <div className="footer-section">

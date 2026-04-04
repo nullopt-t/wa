@@ -6,7 +6,8 @@ import { ChatMessage, ChatMessageDocument, EmotionData } from '../schemas/chat-m
 import { EmotionLog, EmotionLogDocument } from '../schemas/emotion-log.schema';
 import { SendMessageDto } from '../dto/chat.dto';
 import { GeminiAIService, AIAnalysis } from '../services/gemini-ai.service';
-import { QuickTestSession, QuickTestSessionDocument } from '../schemas/quick-test-session.schema';
+import { Article } from '../../article/schemas/article.schema';
+import { Video } from '../../video/schemas/video.schema';
 
 @Injectable()
 export class ChatService {
@@ -16,7 +17,8 @@ export class ChatService {
     @InjectModel(ChatSession.name) private chatSessionModel: Model<ChatSessionDocument>,
     @InjectModel(ChatMessage.name) private chatMessageModel: Model<ChatMessageDocument>,
     @InjectModel(EmotionLog.name) private emotionLogModel: Model<EmotionLogDocument>,
-    @InjectModel(QuickTestSession.name) private quickTestSessionModel: Model<QuickTestSessionDocument>,
+    @InjectModel(Article.name) private articleModel: Model<any>,
+    @InjectModel(Video.name) private videoModel: Model<any>,
     private geminiAIService: GeminiAIService,
   ) {}
 
@@ -140,6 +142,16 @@ export class ChatService {
           await this.logEmotion(userId, analysis.emotions);
         }
 
+        // Find related resources from AI keywords
+        let relatedResources: any[] = [];
+        if (analysis.resourceKeywords?.length > 0) {
+          relatedResources = await this.findRelatedResources(analysis.resourceKeywords);
+        }
+
+        // Check if this is a report request
+        const isReportRequest = analysis.isReportRequest || false;
+        const reportData = analysis.reportData || null;
+
         // Save bot response with quick test
         const botMessage = await this.saveMessage(sessionId, userId, {
           role: 'assistant',
@@ -147,7 +159,9 @@ export class ChatService {
           analyzeEmotions: false,
           emotions: analysis.emotions,
           suggestions: analysis.suggestions,
-          quickTest: analysis.quickTest || null,
+          relatedResources,
+          reportData: isReportRequest ? reportData : null,
+          messageType: isReportRequest ? 'clinical-report' : 'text',
         });
 
         // Update session
@@ -175,7 +189,6 @@ export class ChatService {
           analyzeEmotions: false,
           emotions: fallbackResponse.emotions,
           suggestions: fallbackResponse.suggestions,
-          quickTest: fallbackResponse.quickTest,
         });
 
         // Update session
@@ -197,127 +210,51 @@ export class ChatService {
    */
   private async getFallbackChatResponse(
     message: string,
-    sessionId?: string,
-    userId?: string,
+    _sessionId?: string,
+    _userId?: string,
   ): Promise<{
     response: string;
     emotions: any[];
     suggestions: string[];
-    quickTest: any;
     crisisDetected: boolean;
     recommendTherapist: boolean;
     disclaimer: string;
-    testSessionId?: string;
   }> {
     const lowerMessage = message.toLowerCase();
-    
-    // Detect keywords
     const isAnxious = lowerMessage.includes('anxi') || lowerMessage.includes('قلق') || lowerMessage.includes('worr');
     const isSad = lowerMessage.includes('sad') || lowerMessage.includes('حزن') || lowerMessage.includes('depress');
     const isStressed = lowerMessage.includes('stress') || lowerMessage.includes('توتر') || lowerMessage.includes('overwhelm');
-    
-    // Check for crisis keywords
+
     const crisisKeywords = ['suicide', 'kill myself', 'end my life', 'want to die', 'self-harm', 'hurt myself'];
     const isCrisis = crisisKeywords.some(keyword => lowerMessage.includes(keyword));
-    
-    let response, quickTest, recommendTherapist, title, titleAr, questions, questionsAr;
-    
+
+    let response: string;
+    let recommendTherapist: boolean;
+
     if (isCrisis) {
       response = 'أنا قلق جداً مما تسمعه. أنا هنا لأدعمك، ولكن أعتقد أنك بحاجة إلى مساعدة فورية من مختص. هل يمكنك الاتصال بخط المساعدة أو التحدث إلى شخص تثق به الآن؟';
-      quickTest = null;
       recommendTherapist = true;
     } else if (isAnxious) {
-      response = 'أتفهم أنك تشعر بالقلق. إنه شعور صعب ومرهق، وأنا هنا لأستمع إليك. من الطبيعي أن تشعر بالقلق أحياناً، ولكن عندما يصبح مستمراً قد يكون من المفيد التحدث عنه.';
-      title = 'Quick Anxiety Assessment';
-      titleAr = 'تقييم سريع للقلق';
-      questions = [
-        'Over the past 2 weeks, how often have you felt nervous, anxious, or on edge? (1=Never, 10=Constantly)',
-        'Have you experienced physical symptoms like racing heart, sweating, trembling, or stomach issues due to anxiety?',
-        'How much has anxiety interfered with your work, relationships, or daily activities?',
-        'What situations or triggers make your anxiety worse? What helps calm you down?',
-      ];
-      questionsAr = [
-        'خلال الأسبوعين الماضيين، كم مرة شعرت بالتوتر أو القلق أو على حافة الانهيار؟ (1=أبداً، 10=باستمرار)',
-        'هل عانيت من أعراض جسدية مثل خفقان القلب، التعرّق، الرعشة، أو مشاكل في المعدة بسبب القلق؟',
-        'إلى أي مدى تداخل القلق مع عملك، علاقاتك، أو أنشطتك اليومية؟',
-        'ما هي المواقف أو المحفّزات التي تجعل قلقك أسوأ؟ ما الذي يساعدك على الهدوء؟',
-      ];
+      response = 'أتفهم أنك تشعر بالقلق. إنه شعور صعب ومرهق، وأنا هنا لأستمع إليك.';
       recommendTherapist = false;
     } else if (isSad) {
-      response = 'أشعر بحزنك وأتفهم ما تمر به. الحزن شعور ثقيل، ومن الشجاعة أن تعبر عنه. أنا هنا للاستماع دون حكم. تذكر أنك لست وحدك.';
-      title = 'Quick Depression Screening';
-      titleAr = 'فحص سريع للاكتئاب';
-      questions = [
-        'Over the past 2 weeks, how often have you felt down, depressed, or hopeless? (1=Rarely, 10=Always)',
-        'Have you lost interest or pleasure in activities you usually enjoy?',
-        'How has your sleep been? (Difficulty falling asleep, waking up too early, or sleeping too much?)',
-        'Who do you have for support?',
-      ];
-      questionsAr = [
-        'خلال الأسبوعين الماضيين، كم مرة شعرت بالحزن أو الاكتئاب أو اليأس؟ (1=نادراً، 10=دائماً)',
-        'هل فقدت الاهتمام أو المتعة في الأنشطة التي كنت تستمتع بها عادةً؟',
-        'كيف كان نومك؟ (صعوبة في النوم، الاستيقاظ مبكراً جداً، أو النوم كثيراً؟)',
-        'من لديك للدعم؟',
-      ];
+      response = 'أشعر بحزنك وأتفهم ما تمر به. الحزن شعور ثقيل، وأنا هنا للاستماع دون حكم.';
       recommendTherapist = false;
     } else if (isStressed) {
-      response = 'أدرك أنك تشعر بالإجهاد والضغط. الحياة قد تكون ساحقة أحياناً. أنا هنا لأستمع وأدعمك. من المهم أن تأخذ وقتاً للعناية بنفسك.';
-      title = 'Quick Stress Assessment';
-      titleAr = 'تقييم سريع للإجهاد';
-      questions = [
-        'On average, how would you rate your stress level over the past month? (1=Very Low, 10=Extremely High)',
-        'How often do you feel unable to control the important things in your life?',
-        'Have you experienced physical symptoms of stress like headaches, muscle tension, or fatigue?',
-        'What support do you have?',
-      ];
-      questionsAr = [
-        'في المتوسط، كيف تقيّم مستوى إجهادك خلال الشهر الماضي؟ (1=منخفض جداً، 10=مرتفع جداً)',
-        'كم مرة شعرت أنك غير قادر على التحكم في الأشياء المهمة في حياتك؟',
-        'هل عانيت من أعراض جسدية للإجهاد مثل الصداع، توتر العضلات، أو الإرهاق؟',
-        'ما هو الدعم المتاح لك؟',
-      ];
+      response = 'أدرك أنك تشعر بالإجهاد والضغط. أنا هنا لأستمع وأدعمك.';
       recommendTherapist = false;
     } else {
       response = 'أنا هنا للاستماع إليك. شاركني ما يدور في ذهنك، وسأبذل قصارى جهدي لدعمك.';
-      quickTest = null;
       recommendTherapist = false;
     }
-    
-    // Create a test session in database if we have quickTest and sessionId
-    let testSessionId;
-    if (quickTest && sessionId && userId) {
-      try {
-        const testSession = await this.quickTestSessionModel.create({
-          userId: new Types.ObjectId(userId),
-          chatSessionId: new Types.ObjectId(sessionId),
-          title,
-          titleAr,
-          symptom: message.substring(0, 200),
-          questions,
-          questionsAr,
-          answers: [],
-          answersAr: [],
-          currentQuestionIndex: 0,
-          isComplete: false,
-        });
-        testSessionId = testSession._id.toString();
-        
-        // Attach session ID to quickTest for frontend
-        quickTest.testSessionId = testSessionId;
-      } catch (error) {
-        this.logger.debug('Could not create test session:', error.message);
-      }
-    }
-    
+
     return {
       response,
       emotions: [],
       suggestions: ['خذ نفساً عميقاً', 'تحدث إلى شخص تثق به', 'خذ استراحة قصيرة'],
-      quickTest,
       crisisDetected: isCrisis,
       recommendTherapist,
       disclaimer: 'أنا مساعد ذكي، لست معالجاً طبياً. لا يمكنني تشخيص الحالات أو وصف الأدوية.',
-      testSessionId,
     };
   }
 
@@ -371,7 +308,9 @@ export class ChatService {
     dto: SendMessageDto & {
       emotions?: any[];
       suggestions?: string[];
-      quickTest?: any;
+      relatedResources?: any[];
+      reportData?: any;
+      messageType?: string;
     },
   ): Promise<ChatMessage> {
     const message = new this.chatMessageModel({
@@ -379,13 +318,72 @@ export class ChatService {
       userId: new Types.ObjectId(userId),
       role: dto.role,
       content: dto.content,
-      messageType: 'text',
+      messageType: dto.messageType || 'text',
       emotions: dto.emotions || [],
       suggestions: dto.suggestions || [],
-      quickTest: dto.quickTest || null,
+      relatedResources: dto.relatedResources || [],
+      reportData: dto.reportData || null,
     });
 
     return message.save();
+  }
+
+  /**
+   * Find related articles and videos for given keywords using full-text search
+   */
+  private async findRelatedResources(keywords: string[]): Promise<any[]> {
+    const resources: any[] = [];
+    const seen = new Set<string>();
+
+    // Search articles using $text index with each keyword
+    for (const keyword of keywords.slice(0, 3)) {
+      const articles = await this.articleModel
+        .find({
+          status: 'published',
+          $text: { $search: keyword },
+        }, { score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' } })
+        .limit(2)
+        .lean();
+
+      for (const article of articles) {
+        if (!seen.has(article._id.toString())) {
+          seen.add(article._id.toString());
+          resources.push({
+            _id: article._id.toString(),
+            type: 'article',
+            title: article.title,
+            excerpt: article.excerpt?.substring(0, 120) || '',
+            url: `/articles/${article._id}`,
+          });
+        }
+      }
+
+      // Search videos using $text index
+      const videos = await this.videoModel
+        .find({
+          isActive: true,
+          $text: { $search: keyword },
+        }, { score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' } })
+        .limit(1)
+        .lean();
+
+      for (const video of videos) {
+        if (!seen.has(video._id.toString())) {
+          seen.add(video._id.toString());
+          resources.push({
+            _id: video._id.toString(),
+            type: 'video',
+            title: video.title,
+            excerpt: video.description?.substring(0, 120) || '',
+            url: '/videos',
+          });
+        }
+      }
+    }
+
+    return resources.slice(0, 3);
   }
 
   /**
