@@ -94,6 +94,7 @@ const AdminDashboard = () => {
       icon: 'fa-flag',
       color: 'from-orange-500 to-orange-600',
       link: '/admin/reports',
+      hidden: true,
     },
     {
       title: 'القصص',
