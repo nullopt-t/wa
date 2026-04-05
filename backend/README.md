@@ -31,11 +31,3 @@ docker-compose -f docker-compose.dev.yml up --build
 # Production
 docker-compose up --build
 ```
-
-## Tech Stack
-
-- **Framework**: NestJS
-- **Database**: MongoDB
-- **Cache**: Redis
-- **Authentication**: JWT
-- **ORM**: Mongoose

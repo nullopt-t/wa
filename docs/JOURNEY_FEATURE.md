@@ -113,16 +113,9 @@ GET    /api/journey/admin/all               - Get all journeys
 
 ## Setup & Usage
 
-### 1. Seed the Journey
+### 1. Create Journey via Admin Panel
 
-Run the seed script to create the initial journey:
-
-```bash
-cd backend
-node seed-journey.js
-```
-
-This creates a journey with 4 levels and placeholder resource IDs.
+Use the admin journeys page (`/admin/journeys`) to create and manage journeys.
 
 ### 2. Update Resource IDs
 
