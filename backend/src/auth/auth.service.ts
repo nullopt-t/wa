@@ -96,8 +96,18 @@ export class AuthService {
   async register(userData: RegisterUserDto | RegisterTherapistDto) {
     const result = await this.userService.create(userData);
 
+    // If user already exists, auto-verify and return login tokens
     if (typeof result === 'object' && 'emailSent' in result) {
-      this.logger.warn(`Register attempt with existing email: ${userData.email}`);
+      const existingUser = await this.userService.findByEmail(userData.email);
+      if (existingUser) {
+        const userId = (existingUser as any)._id || (existingUser as any).id;
+        // Auto-verify if not already verified
+        if (!existingUser.isVerified) {
+          await this.userService.update(userId, { isVerified: true });
+        }
+        // Return login tokens so they can log in immediately
+        return this.authServiceLogin(existingUser);
+      }
       return {
         success: true,
         message: 'Verification link has been sent to your email',
@@ -113,6 +123,33 @@ export class AuthService {
     this.logger.log(`User registered and auto-verified: ${result.email}`);
 
     return result;
+  }
+
+  // Helper to generate login tokens (same as login method)
+  private authServiceLogin(user: any) {
+    const payload = { email: user.email, sub: user._id, role: user.role };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.REFRESH_TOKEN_SECRET || 'defaultRefreshSecret',
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '30d',
+    });
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        countryCode: user.countryCode,
+      },
+    };
   }
 
   async forgotPassword(email: string) {

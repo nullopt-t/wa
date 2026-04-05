@@ -57,6 +57,8 @@ tmp/
 temp/
 .cache/
 
+.qwen
+
 # Misc
 .eslintcache
 .stylelintcache

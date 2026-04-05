@@ -230,14 +230,11 @@ const SignupPage = () => {
       const result = await register(signupData);
 
       if (result.success) {
-        if (result.emailSent) {
-          showError('البريد الإلكتروني مستخدم مسبقاً، يرجى استخدام بريد آخر أو تسجيل الدخول');
-        } else {
-          // Auto-verified & auto-logged in — go to home page
-          setTimeout(() => {
-            navigate('/');
-          }, 1000);
-        }
+        // If emailSent is true, it's an existing user — they were auto-logged in via tokens
+        // The register() in AuthContext already stored the token if access_token was returned
+        setTimeout(() => {
+          navigate('/');
+        }, 1000);
       } else {
         showError(result.message || 'حدث خطأ أثناء إنشاء الحساب');
       }
