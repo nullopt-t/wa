@@ -233,10 +233,10 @@ const SignupPage = () => {
         if (result.emailSent) {
           showError('البريد الإلكتروني مستخدم مسبقاً، يرجى استخدام بريد آخر أو تسجيل الدخول');
         } else {
-          // Auto-verified — go straight to login
+          // Auto-verified & auto-logged in — go to home page
           setTimeout(() => {
-            navigate('/login');
-          }, 1500);
+            navigate('/');
+          }, 1000);
         }
       } else {
         showError(result.message || 'حدث خطأ أثناء إنشاء الحساب');
