@@ -48,7 +48,12 @@ export class JourneyController {
   @UseGuards(AuthGuard('jwt'))
   async getUserProgress(@Request() req) {
     const journey = await this.journeyService.findActive();
-    return this.journeyService.getProgress(req.user.userId, (journey._id as any).toString());
+    try {
+      return await this.journeyService.getProgress(req.user.userId, (journey._id as any).toString());
+    } catch {
+      // User hasn't started the journey yet — return null
+      return { started: false, journey: null };
+    }
   }
 
   @ApiOperation({ summary: 'Start the journey' })
