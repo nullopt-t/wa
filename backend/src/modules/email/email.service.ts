@@ -1,45 +1,68 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class EmailService {
-  private transporter: any;
+  private resend: Resend | null = null;
   private readonly logger = new Logger(EmailService.name);
 
   constructor(private configService: ConfigService) {
-    // Configure nodemailer transporter with Railway-friendly settings
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get('SMTP_HOST', 'smtp.gmail.com'),
-      port: this.configService.get('SMTP_PORT', 587),
-      secure: false,
-      auth: {
-        user: this.configService.get('SMTP_USER'),
-        pass: this.configService.get('SMTP_PASSWORD'),
-      },
-      // Railway-specific settings to avoid connection timeouts
-      connectionTimeout: 10000, // 10s timeout
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-      pool: true, // Reuse connections
-      maxConnections: 1, // Railway: use single connection
-      maxMessages: 5, // Reconnect after 5 messages to avoid stale connections
-    });
-
-    // Verify transporter configuration
-    this.transporter.verify((error: any, success: any) => {
-      if (error) {
-        this.logger.error('Email service verification failed:', error);
-      } else {
-        this.logger.log('Email service ready to send messages');
-      }
-    });
+    const apiKey = this.configService.get('RESEND_API_KEY');
+    if (apiKey) {
+      this.resend = new Resend(apiKey);
+      this.logger.log('Email service initialized with Resend');
+    } else {
+      this.logger.warn('RESEND_API_KEY not set — emails will not be sent');
+    }
   }
 
-  async sendVerificationEmail(email: string, firstName: string, verificationToken: string) {
+  private get fromEmail() {
+    return this.configService.get(
+      'SMTP_FROM_EMAIL',
+      'noreply@waey.com',
+    );
+  }
+
+  private get fromName() {
+    return this.configService.get('SMTP_FROM_NAME', 'Waey Platform');
+  }
+
+  private get fromAddress() {
+    return `${this.fromName} <${this.fromEmail}>`;
+  }
+
+  private async send(to: string, subject: string, html: string) {
+    if (!this.resend) {
+      this.logger.error('Resend not configured — email not sent');
+      return null;
+    }
+
+    const { data, error } = await this.resend.emails.send({
+      from: this.fromAddress,
+      to: [to],
+      subject,
+      html,
+    });
+
+    if (error) {
+      this.logger.error(`Failed to send email to ${to}:`, error.message);
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
+
+    this.logger.log(`Email sent to ${to}: ${data.id}`);
+    return data;
+  }
+
+  // ==================== Email Templates ====================
+
+  async sendVerificationEmail(
+    email: string,
+    firstName: string,
+    verificationToken: string,
+  ) {
     const verificationUrl = `${this.configService.get('CLIENT_URL', 'http://localhost:5173')}/verify-email?token=${verificationToken}`;
 
-    // Simple HTML email
     const html = `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -82,23 +105,7 @@ export class EmailService {
     `;
 
     this.logger.log(`Sending verification email to ${email}`);
-    this.logger.log(`HTML length: ${html.length} chars`);
-
-    const mailOptions = {
-      from: `"Waey Platform" <${this.configService.get('SMTP_FROM_EMAIL', 'noreply@waey.com')}>`,
-      to: email,
-      subject: 'Verify Your Email - Waey Platform',
-      html,
-    };
-
-    try {
-      const info = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Verification email sent to ${email}: ${info.messageId}`);
-      return { success: true, messageId: info.messageId };
-    } catch (error) {
-      this.logger.error(`Failed to send verification email to ${email}:`, error.message);
-      throw new Error('Failed to send verification email');
-    }
+    return this.send(email, 'Verify Your Email - Waey Platform', html);
   }
 
   async sendWelcomeEmail(email: string, firstName: string) {
@@ -119,22 +126,14 @@ export class EmailService {
 </html>
     `;
 
-    const mailOptions = {
-      from: `"Waey Platform" <${this.configService.get('SMTP_FROM_EMAIL', 'noreply@waey.com')}>`,
-      to: email,
-      subject: 'Welcome to Waey Platform!',
-      html,
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Welcome email sent to ${email}`);
-    } catch (error) {
-      this.logger.error(`Failed to send welcome email:`, error.message);
-    }
+    return this.send(email, 'Welcome to Waey Platform!', html);
   }
 
-  async sendPasswordResetEmail(email: string, firstName: string, resetToken: string) {
+  async sendPasswordResetEmail(
+    email: string,
+    firstName: string,
+    resetToken: string,
+  ) {
     const resetUrl = `${this.configService.get('CLIENT_URL', 'http://localhost:5173')}/reset-password?token=${resetToken}`;
 
     const html = `
@@ -165,19 +164,7 @@ export class EmailService {
 </html>
     `;
 
-    const mailOptions = {
-      from: `"Waey Platform" <${this.configService.get('SMTP_FROM_EMAIL', 'noreply@waey.com')}>`,
-      to: email,
-      subject: 'Password Reset Request',
-      html,
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Password reset email sent to ${email}`);
-    } catch (error) {
-      this.logger.error(`Failed to send password reset email:`, error.message);
-    }
+    return this.send(email, 'Password Reset Request', html);
   }
 
   async sendFutureMessageEmail(
@@ -219,18 +206,6 @@ export class EmailService {
 </html>
     `;
 
-    const mailOptions = {
-      from: `"Waey Platform" <${this.configService.get('SMTP_FROM_EMAIL', 'noreply@waey.com')}>`,
-      to: recipientEmail,
-      subject: title,
-      html,
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Future message email sent to ${recipientEmail}`);
-    } catch (error) {
-      this.logger.error(`Failed to send future message email:`, error.message);
-    }
+    return this.send(recipientEmail, title, html);
   }
 }
