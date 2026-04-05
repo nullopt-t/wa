@@ -96,7 +96,7 @@ export class AuthService {
   async register(userData: RegisterUserDto | RegisterTherapistDto) {
     const result = await this.userService.create(userData);
 
-    // If user already exists, auto-verify and return login tokens
+    // If user already exists, auto-verify, update password, and return login tokens
     if (typeof result === 'object' && 'emailSent' in result) {
       const existingUser = await this.userService.findByEmail(userData.email);
       if (existingUser) {
@@ -105,8 +105,12 @@ export class AuthService {
         if (!existingUser.isVerified) {
           await this.userService.update(userId, { isVerified: true });
         }
-        // Return login tokens so they can log in immediately
-        return this.authServiceLogin(existingUser);
+        // Update password to the new one they just entered
+        const hashedPassword = await this.hashService.hash(userData.password, 10);
+        await this.userService.update(userId, { password: hashedPassword });
+        // Return login tokens with fresh password
+        const updatedUser = await this.userService.findByEmail(userData.email);
+        return this.authServiceLogin(updatedUser);
       }
       return {
         success: true,
