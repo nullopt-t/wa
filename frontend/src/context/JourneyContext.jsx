@@ -67,7 +67,7 @@ export const JourneyProvider = ({ children }) => {
     startJourney: startMutation.mutateAsync,
     completeResource: completeResourceMutation.mutateAsync,
     completeLevel: completeLevelMutation.mutateAsync,
-    hasStarted: !!progress,
+    hasStarted: progress?.currentLevel > 0 || false,
     currentLevel: progress?.currentLevel || 1,
     overallProgress: progress?.overallProgress || 0,
     isCompleted: progress?.isCompleted || false,

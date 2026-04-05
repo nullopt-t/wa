@@ -51,8 +51,13 @@ export class JourneyController {
     try {
       return await this.journeyService.getProgress(req.user.userId, (journey._id as any).toString());
     } catch {
-      // User hasn't started the journey yet — return null
-      return { started: false, journey: null };
+      // User hasn't started the journey yet — return zeroed progress
+      return {
+        currentLevel: 0,
+        overallProgress: 0,
+        isCompleted: false,
+        levelProgress: [],
+      };
     }
   }
 
