@@ -1,5 +1,5 @@
 # Production Dockerfile for Render (via Docker Hub)
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
