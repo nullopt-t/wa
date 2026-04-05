@@ -2,7 +2,6 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
-  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -18,7 +17,6 @@ import {
   AccountDeactivatedException,
 } from '../exceptions/business.exceptions';
 import { HashService } from '../modules/hash/hash.service';
-import { EmailService } from '../modules/email/email.service';
 import { NotificationService } from '../notification/services/notification.service';
 
 @Injectable()
@@ -29,7 +27,6 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private hashService: HashService,
-    private emailService: EmailService,
     private notificationService: NotificationService,
   ) {}
 
@@ -113,34 +110,6 @@ export class AuthService {
     // Auto-verify users — no email verification required
     await this.userService.update(resultAny._id || resultAny.id, { isVerified: true });
 
-    // Send verification email in background (optional — won't block registration)
-    const verificationToken = this.jwtService.sign(
-      {
-        email: result.email,
-        sub: resultAny._id || resultAny.id,
-        type: 'verification',
-      },
-      { expiresIn: '24h' },
-    );
-
-    this.emailService
-      .sendVerificationEmail(result.email, result.firstName, verificationToken)
-      .catch((err) => {
-        this.logger.warn(
-          `Verification email failed (non-critical) for ${result.email}:`,
-          err.message,
-        );
-      });
-
-    this.emailService
-      .sendWelcomeEmail(result.email, result.firstName)
-      .catch((err) => {
-        this.logger.warn(
-          `Welcome email failed (non-critical) for ${result.email}:`,
-          err.message,
-        );
-      });
-
     this.logger.log(`User registered and auto-verified: ${result.email}`);
 
     return result;
@@ -158,33 +127,12 @@ export class AuthService {
       };
     }
 
-    const token = this.jwtService.sign(
-      { email: user.email, type: 'reset' },
-      { expiresIn: '1h' },
-    );
-
-    try {
-      await this.emailService.sendPasswordResetEmail(
-        user.email,
-        user.firstName,
-        token,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to send password reset email to ${email}`,
-        error.stack,
-      );
-      throw new InternalServerErrorException(
-        'Failed to send password reset email',
-      );
-    }
-
-    this.logger.log(`Password reset email sent: ${email}`);
-
+    // Email sending disabled — password reset not available
+    this.logger.warn(`Password reset requested for ${email} — email sending disabled`);
     return {
       success: true,
       message:
-        'If your email exists in our system, you will receive a password reset link',
+        'Password reset via email is currently disabled. Please contact support.',
     };
   }
 
@@ -340,11 +288,12 @@ export class AuthService {
     } catch (error) {
       this.logger.error(
         `Resend verification failed for ${email}`,
-        error.stack,
+        error.message,
       );
-      throw new InternalServerErrorException(
-        'Failed to resend verification email',
-      );
+      return {
+        success: true,
+        message: 'Account is verified',
+      };
     }
   }
 }
