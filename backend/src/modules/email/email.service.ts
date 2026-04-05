@@ -8,7 +8,7 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
   constructor(private configService: ConfigService) {
-    // Configure nodemailer transporter
+    // Configure nodemailer transporter with Railway-friendly settings
     this.transporter = nodemailer.createTransport({
       host: this.configService.get('SMTP_HOST', 'smtp.gmail.com'),
       port: this.configService.get('SMTP_PORT', 587),
@@ -17,6 +17,13 @@ export class EmailService {
         user: this.configService.get('SMTP_USER'),
         pass: this.configService.get('SMTP_PASSWORD'),
       },
+      // Railway-specific settings to avoid connection timeouts
+      connectionTimeout: 10000, // 10s timeout
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+      pool: true, // Reuse connections
+      maxConnections: 1, // Railway: use single connection
+      maxMessages: 5, // Reconnect after 5 messages to avoid stale connections
     });
 
     // Verify transporter configuration
