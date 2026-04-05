@@ -36,7 +36,9 @@ export const apiRequest = async (endpoint, options = {}) => {
           throw new Error(userMessage);
         } else {
           // Fallback for any other error format
-          if (response.status === 400) {
+          if (data?.message) {
+            throw new Error(Array.isArray(data.message) ? data.message[0] : data.message);
+          } else if (response.status === 400) {
             throw new Error('طلب غير صحيح، يرجى التحقق من البيانات المدخلة');
           } else if (response.status === 401) {
             throw new Error('غير مصرح بالوصول، يرجى تسجيل الدخول');

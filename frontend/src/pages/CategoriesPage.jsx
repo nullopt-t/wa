@@ -5,6 +5,14 @@ import AnimatedItem from '../components/AnimatedItem.jsx';
 const CategoriesPage = () => {
   const categories = [
     {
+      id: 11,
+      title: 'رحلة وعي',
+      description: 'رحلة تعليمية مكونة من 4 مستويات للوعي النفسي',
+      icon: 'fas fa-road',
+      path: '/journey',
+      featured: true
+    },
+    {
       id: 1,
       title: 'مجتمع وعي',
       description: 'انضم إلى مجتمع الدعم والمشاركة',
@@ -47,6 +55,13 @@ const CategoriesPage = () => {
       path: '/stories'
     },
     {
+      id: 9,
+      title: 'كتب',
+      description: 'كتب مختارة في الصحة النفسية وتطوير الذات',
+      icon: 'fas fa-book-open',
+      path: '/books'
+    },
+    {
       id: 7,
       title: 'اراء وفيدباك',
       description: 'شاركنا رأيك وملاحظاتك',
@@ -58,7 +73,15 @@ const CategoriesPage = () => {
       title: 'ابحث عن معالج',
       description: 'ابحث واتصل بأفضل المعالجين النفسيين',
       icon: 'fas fa-search',
-      path: '/find-therapist'
+      path: '/find-therapist',
+      hidden: true,
+    },
+    {
+      id: 10,
+      title: 'جهات الاتصال الطبية',
+      description: 'دليل المستشفيات والعيادات والأطباء',
+      icon: 'fas fa-phone-alt',
+      path: '/medical-contacts'
     }
   ];
 
@@ -83,17 +106,27 @@ const CategoriesPage = () => {
           </AnimatedItem>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {categories.map((category, index) => (
+            {categories.filter(c => !c.hidden).map((category, index) => (
               <AnimatedItem key={category.id} type="slideUp" delay={0.1 * index}>
                 <Link
                   to={category.path}
-                  className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)] hover:shadow-xl transition-shadow duration-300 block h-full"
+                  className={`
+                    relative p-8 rounded-xl text-center transition-all duration-300 block h-full
+                    ${category.featured
+                      ? 'bg-[var(--bg-secondary)] shadow-xl border-2 border-[var(--primary-color)]/40 hover:shadow-2xl hover:border-[var(--primary-color)]/60 hover:scale-105'
+                      : 'bg-[var(--bg-secondary)] shadow-lg border border-[var(--border-color)] hover:shadow-xl hover:border-[var(--primary-color)]/50'
+                    }
+                  `}
                 >
-                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] text-white">
                     <i className={category.icon}></i>
                   </div>
-                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{category.title}</h3>
-                  <p className="text-[var(--text-secondary)]">{category.description}</p>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">
+                    {category.title}
+                  </h3>
+                  <p className="text-[var(--text-secondary)]">
+                    {category.description}
+                  </p>
                 </Link>
               </AnimatedItem>
             ))}

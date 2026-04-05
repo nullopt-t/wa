@@ -283,7 +283,7 @@ const CommunityPage = () => {
               <p className="text-sm md:text-base text-[var(--text-secondary)]">شارك تجاربك واحصل على الدعم من المجتمع</p>
             </div>
 
-            {isAuthenticated && (
+            {isAuthenticated && user?.role !== 'admin' && (
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="w-full md:w-auto px-4 md:px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors flex items-center justify-center gap-2"
@@ -322,7 +322,7 @@ const CommunityPage = () => {
                   <i className="fas fa-newspaper text-5xl md:text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
                   <h3 className="text-xl md:text-2xl font-bold text-[var(--text-primary)] mb-2">لا توجد منشورات بعد</h3>
                   <p className="text-sm md:text-base text-[var(--text-secondary)] mb-6">كن أول من ينشر منشوراً في المجتمع</p>
-                  {isAuthenticated && (
+                  {isAuthenticated && user?.role !== 'admin' && (
                     <button
                       onClick={() => setShowCreateModal(true)}
                       className="w-full md:w-auto px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors"
@@ -345,6 +345,7 @@ const CommunityPage = () => {
                       onEdit={() => handleEditPost(post)}
                       onDelete={() => handleDeletePostClick(post)}
                       isAuthenticated={isAuthenticated}
+                      isAdmin={user?.role === 'admin'}
                     />
                   </AnimatedItem>
                 ))}

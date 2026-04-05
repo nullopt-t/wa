@@ -28,6 +28,9 @@ export class Category {
 
   @Prop({ default: 0 })
   videosCount: number; // عدد الفيديوهات
+
+  @Prop({ default: 0 })
+  booksCount: number; // عدد الكتب
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

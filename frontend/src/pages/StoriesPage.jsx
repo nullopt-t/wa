@@ -239,6 +239,8 @@ const StoriesPage = () => {
                   قصتك قد تكون الأمل الذي يحتاجه شخص آخر. شارك رحلتك وألهم الآخرين للشفاء والتعافي
                 </p>
 
+                {user?.role !== 'admin' && (
+                <>
                 <button
                   onClick={() => setShowSubmitForm(!showSubmitForm)}
                   className="px-10 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-amber-500/40 transition-all hover:scale-105 inline-flex items-center gap-3"
@@ -251,6 +253,8 @@ const StoriesPage = () => {
                   <div className="mt-12 text-right">
                     <StoryForm onClose={() => setShowSubmitForm(false)} onSuccess={() => { setShowSubmitForm(false); loadStories(); }} />
                   </div>
+                )}
+                </>
                 )}
               </div>
             </div>

@@ -14,8 +14,11 @@ const AdminDashboard = () => {
     videos: 0,
     reports: 0,
     stories: 0,
+    books: 0,
     feedback: 0,
     therapists: 0,
+    medicalContacts: 0,
+    journeys: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -34,11 +37,14 @@ const AdminDashboard = () => {
         apiRequest('/videos/admin/all?page=1&limit=1', { method: 'GET' }).catch(() => ({ videos: [], total: 0 })),
         apiRequest('/community/reports?page=1&limit=1', { method: 'GET' }).catch(() => ({ reports: [], total: 0 })),
         apiRequest('/stories/admin/all?page=1&limit=1', { method: 'GET' }).catch(() => ({ stories: [], pagination: { total: 0 } })),
+        apiRequest('/books/admin/all?page=1&limit=1', { method: 'GET' }).catch(() => ({ books: [], total: 0 })),
         apiRequest('/feedback/admin?page=1&limit=1', { method: 'GET' }).catch(() => ({ data: [], pagination: { total: 0 } })),
         apiRequest('/therapists/admin/all?page=1&limit=1', { method: 'GET' }).catch(() => ({ therapists: [], total: 0 })),
+        apiRequest('/medical-contacts/admin?page=1&limit=1', { method: 'GET' }).catch(() => ({ data: [], pagination: { total: 0 } })),
+        apiRequest('/journey/admin/all', { method: 'GET' }).catch(() => []),
       ];
 
-      const [usersData, articlesData, videosData, reportsData, storiesData, feedbackData, therapistsData] = await Promise.all(promises);
+      const [usersData, articlesData, videosData, reportsData, storiesData, booksData, feedbackData, therapistsData, medicalContactsData, journeysData] = await Promise.all(promises);
 
       // Get counts from API responses
       setStats({
@@ -47,8 +53,11 @@ const AdminDashboard = () => {
         videos: videosData?.total || 0,
         reports: reportsData?.total || 0,
         stories: storiesData?.pagination?.total || 0,
+        books: booksData?.total || 0,
         feedback: feedbackData?.pagination?.total || 0,
         therapists: therapistsData?.total || 0,
+        medicalContacts: medicalContactsData?.pagination?.total || 0,
+        journeys: Array.isArray(journeysData) ? journeysData.length : 0,
       });
     } catch (error) {
       
@@ -94,6 +103,13 @@ const AdminDashboard = () => {
       link: '/admin/stories',
     },
     {
+      title: 'الكتب',
+      value: stats.books,
+      icon: 'fa-book',
+      color: 'from-indigo-500 to-violet-600',
+      link: '/admin/books',
+    },
+    {
       title: 'التغذية الراجعة',
       value: stats.feedback || 0,
       icon: 'fa-comments',
@@ -106,13 +122,28 @@ const AdminDashboard = () => {
       icon: 'fa-user-md',
       color: 'from-teal-500 to-cyan-500',
       link: '/admin/therapists',
+      hidden: true,
+    },
+    {
+      title: 'جهات الاتصال الطبية',
+      value: stats.medicalContacts || 0,
+      icon: 'fa-phone-alt',
+      color: 'from-rose-500 to-pink-600',
+      link: '/admin/medical-contacts',
+    },
+    {
+      title: 'الرحلات',
+      value: stats.journeys || 0,
+      icon: 'fa-road',
+      color: 'from-violet-500 to-purple-600',
+      link: '/admin/journeys',
     },
   ];
 
   return (
     <AdminLayout title="لوحة التحكم">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {statCards.map((stat, index) => (
+        {statCards.filter(s => !s.hidden).map((stat, index) => (
           <AnimatedItem key={stat.title} type="slideUp" delay={index * 0.05}>
             <div
               onClick={() => navigate(stat.link)}

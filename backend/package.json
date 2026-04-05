@@ -54,6 +54,7 @@
     "dotenv": "^16.0.0",
     "ejs": "^5.0.1",
     "exceljs": "^4.4.0",
+    "groq-sdk": "^1.1.2",
     "helmet": "^7.0.0",
     "json2csv": "^6.0.0-alpha.2",
     "mongoose": "^7.0.0",

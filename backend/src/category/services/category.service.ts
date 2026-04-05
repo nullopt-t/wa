@@ -59,8 +59,9 @@ export class CategoryService {
   }
 
   // Update category counts
-  async updateCounts(id: string, type: 'articles' | 'videos', increment: number): Promise<void> {
-    const field = type === 'articles' ? 'articlesCount' : 'videosCount';
+  async updateCounts(id: string, type: 'articles' | 'videos' | 'books', increment: number): Promise<void> {
+    const fieldMap = { articles: 'articlesCount', videos: 'videosCount', books: 'booksCount' };
+    const field = fieldMap[type];
     await this.categoryModel.findByIdAndUpdate(id, {
       $inc: { [field]: increment },
     });

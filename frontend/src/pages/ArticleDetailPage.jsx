@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 import ArticleCard from '../components/articles/ArticleCard.jsx';
+import ContextualChatPrompt from '../components/ContextualChatPrompt.jsx';
 import { articlesAPI } from '../services/communityApi.js';
 import { getApiUrl } from '../config.js';
 
@@ -208,6 +209,16 @@ const ArticleDetailPage = () => {
                   hyphens: 'auto'
                 }}
               />
+            </div>
+          </div>
+        </AnimatedItem>
+
+        {/* Chat Prompt */}
+        <AnimatedItem type="slideUp" delay={0.4}>
+          <div className="mt-12 bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-6 border border-[var(--border-color)]/30 text-center">
+            <p className="text-[var(--text-secondary)] mb-4">عندك أسئلة عن المقال؟ اسأل المساعد الذكي</p>
+            <div className="flex justify-center">
+              <ContextualChatPrompt message={`قريت المقال ده: "${article?.title}" - ممكن تشرحلي أكتر؟`} icon="fa-question-circle" text="اسأل المساعد" />
             </div>
           </div>
         </AnimatedItem>

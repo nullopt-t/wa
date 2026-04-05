@@ -198,6 +198,7 @@ const PostDetailPage = () => {
                   post={post}
                   onLike={handleLikePost}
                   onSave={handleSavePost}
+                  isAdmin={user?.role === 'admin'}
                   onEdit={handleEditPost}
                   onDelete={handleDeletePost}
                   isAuthenticated={isAuthenticated}
@@ -206,6 +207,7 @@ const PostDetailPage = () => {
             </AnimatedItem>
 
             {/* Comments Section */}
+            {user?.role !== 'admin' && (
             <AnimatedItem type="slideUp" delay={0.3}>
               <div className="mt-6">
                 <CommentSection
@@ -216,6 +218,7 @@ const PostDetailPage = () => {
                 />
               </div>
             </AnimatedItem>
+            )}
           </div>
 
           {/* Sidebar - Community Guidelines Only */}

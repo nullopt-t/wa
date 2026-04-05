@@ -102,29 +102,29 @@ export const postsAPI = {
 // Comments API
 export const commentsAPI = {
   // Get comments for a post
-  getByPost: (postId, page = 1) => apiRequest(`/community/comments/post/${postId}?page=${page}`, {
+  getByPost: (postId, page = 1) => apiRequest(`/comments/post/${postId}?page=${page}`, {
     method: 'GET',
   }),
 
   // Create comment
-  create: (commentData) => apiRequest('/community/comments', {
+  create: (commentData) => apiRequest('/comments', {
     method: 'POST',
     body: JSON.stringify(commentData),
   }),
 
   // Update comment
-  update: (id, commentData, postId) => apiRequest(`/community/comments/${id}${postId ? `?postId=${postId}` : ''}`, {
+  update: (id, commentData, postId) => apiRequest(`/comments/${id}${postId ? `?postId=${postId}` : ''}`, {
     method: 'PATCH',
     body: JSON.stringify(commentData),
   }),
 
   // Delete comment
-  delete: (id) => apiRequest(`/community/comments/${id}`, {
+  delete: (id) => apiRequest(`/comments/${id}`, {
     method: 'DELETE',
   }),
 
   // Like/Unlike comment
-  like: (id) => apiRequest(`/community/comments/${id}/like`, {
+  like: (id) => apiRequest(`/comments/${id}/like`, {
     method: 'POST',
   }),
 };
@@ -304,6 +304,49 @@ export const videosAPI = {
   getAllForAdmin: (params = {}) => apiRequest(`/videos/admin/all?${new URLSearchParams(params).toString()}`, {
     method: 'GET',
   }),
+};
+
+// Books API
+export const booksAPI = {
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/books${queryString ? `?${queryString}` : ''}`, {
+      method: 'GET',
+    });
+  },
+
+  getFeatured: (limit = 6) => apiRequest(`/books/featured?limit=${limit}`, {
+    method: 'GET',
+  }),
+
+  getBySlug: (slug) => apiRequest(`/books/slug/${slug}`, {
+    method: 'GET',
+  }),
+
+  getById: (id) => apiRequest(`/books/${id}`, {
+    method: 'GET',
+  }),
+
+  create: (bookData) => apiRequest('/books', {
+    method: 'POST',
+    body: JSON.stringify(bookData),
+  }),
+
+  update: (id, bookData) => apiRequest(`/books/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(bookData),
+  }),
+
+  delete: (id) => apiRequest(`/books/${id}`, {
+    method: 'DELETE',
+  }),
+
+  getAllForAdmin: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/books/admin/all?${queryString}`, {
+      method: 'GET',
+    });
+  },
 };
 
 // Future Messages API

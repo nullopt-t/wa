@@ -130,6 +130,7 @@ async function flushAndSeed() {
       { name: 'Mental Health', nameAr: 'الصحة النفسية', icon: 'fa-brain', color: '#10b981', order: 1 },
       { name: 'Relaxation', nameAr: 'الاسترخاء', icon: 'fa-spa', color: '#3b82f6', order: 2 },
       { name: 'Self Care', nameAr: 'العناية بالذات', icon: 'fa-heart', color: '#f59e0b', order: 3 },
+      { name: 'Books & Resources', nameAr: 'كتب ومصادر', icon: 'fa-book-open', color: '#8b5cf6', order: 4 },
     ];
 
     for (const cat of categories) {
@@ -421,6 +422,118 @@ async function flushAndSeed() {
       console.log('  ✅ Created article comment');
     }
 
+    // ==================== Seed Books ====================
+    console.log('\n📚 Seeding Books...');
+    const Book = mongoose.model('Book', new mongoose.Schema({
+      title: { type: String, required: true },
+      slug: { type: String, required: true, unique: true },
+      author: { type: String, required: true },
+      coverImage: String,
+      description: { type: String, required: true },
+      categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+      isbn: String,
+      publishYear: Number,
+      rating: { type: Number, default: 0 },
+      pages: Number,
+      language: { type: String, default: 'ar' },
+      readLink: String,
+      isFeatured: { type: Boolean, default: false },
+      isActive: { type: Boolean, default: true },
+      order: { type: Number, default: 0 },
+      tags: { type: [String], default: [] },
+      addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      views: { type: Number, default: 0 },
+    }, { timestamps: true }));
+
+    const allCategories = await Category.find();
+    const booksCategory = allCategories.find(c => c.nameAr === 'كتب ومصادر');
+
+    const books = [
+      {
+        title: 'القوة الآن',
+        slug: 'the-power-of-now',
+        author: 'إيكهارت تول',
+        coverImage: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1671302154i/6708.jpg',
+        description: 'كتاب يعلمك كيف تعيش في اللحظة الحالية وتتحرر من سيطرة العقل على أفكارك ومشاعرك. يقدم تول مفهوم الحضور الذهني وكيف يمكن أن يكون مفتاحاً للسلام الداخلي والسعادة الحقيقية.',
+        categoryId: booksCategory?._id,
+        isbn: '978-1577314806',
+        publishYear: 1997,
+        rating: 4.5,
+        pages: 236,
+        language: 'ar',
+        readLink: 'https://www.goodreads.com/book/show/6708.The_Power_of_Now',
+        isFeatured: true,
+        tags: ['وعي ذاتي', 'حاضر', 'سلام داخلي', 'تأمل'],
+      },
+      {
+        title: 'العادات الذرية',
+        slug: 'atomic-habits',
+        author: 'جيمس كلير',
+        coverImage: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1655988385i/40121378.jpg',
+        description: 'طريقة سهلة ومثبتة علمياً لبناء عادات جيدة والتخلص من العادات السيئة. يوضح كلير كيف أن التغييرات الصغيرة جداً (ذرية) يمكن أن تؤدي إلى نتائج مذهلة بمرور الوقت.',
+        categoryId: booksCategory?._id,
+        isbn: '978-0735211292',
+        publishYear: 2018,
+        rating: 5,
+        pages: 320,
+        language: 'ar',
+        readLink: 'https://www.goodreads.com/book/show/40121378-atomic-habits',
+        isFeatured: true,
+        tags: ['عادات', 'تطوير ذات', 'نجاح', 'انضباط'],
+      },
+      {
+        title: 'الذكاء العاطفي',
+        slug: 'emotional-intelligence',
+        author: 'دانيال جولمان',
+        coverImage: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1615748863i/2066.jpg',
+        description: 'كتاب رائد يشرح كيف أن الذكاء العاطفي قد يكون أهم من الذكاء العقادي في تحقيق النجاح والسعادة. يغطي الكتاب مهارات مثل الوعي الذاتي، إدارة المشاعر، والتعاطف.',
+        categoryId: booksCategory?._id,
+        isbn: '978-0553383713',
+        publishYear: 1995,
+        rating: 4,
+        pages: 352,
+        language: 'ar',
+        tags: ['ذكاء عاطفي', 'مشاعر', 'علاقات', 'وعي ذاتي'],
+      },
+      {
+        title: 'فن اللامبالاة',
+        slug: 'subtle-art-of-not-giving-a-fck',
+        author: 'مارك مانسون',
+        coverImage: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1465759544i/28257707.jpg',
+        description: 'كتاب يتحدث عن أهمية اختيار ما يستحق اهتمامك في الحياة. بدلاً من محاولة أن تكون إيجابياً طوال الوقت، يقترح مانسون إن تقبل جوانب حياتك السلبية يساعدك على أن تصبح أكثر شجاعة ومثابرة.',
+        categoryId: booksCategory?._id,
+        isbn: '978-0062457714',
+        publishYear: 2016,
+        rating: 4,
+        pages: 224,
+        language: 'ar',
+        isFeatured: true,
+        tags: ['واقعية', 'أولويات', 'حرية', 'صحة نفسية'],
+      },
+      {
+        title: 'الرجل الذي ظن أنه على حق',
+        slug: 'the-man-who-mistook-his-wife-for-a-hat',
+        author: 'أوليفر ساكس',
+        coverImage: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1388186125i/63697.jpg',
+        description: 'مجموعة من القصص السريرية المذهلة عن مرضى يعانون من اضطرابات عصبية غريبة. يستكشف ساكس كيف يتعامل الدماغ مع الخلل ويكشف عن مرونة العقل البشري.',
+        categoryId: booksCategory?._id,
+        isbn: '978-0684853949',
+        publishYear: 1985,
+        rating: 4.5,
+        pages: 243,
+        language: 'ar',
+        tags: ['أعصاب', 'قصص سريرية', 'عقل', 'طب نفسي'],
+      },
+    ];
+
+    for (const book of books) {
+      await Book.create({
+        ...book,
+        addedBy: adminUser._id,
+      });
+      console.log(`  ✅ Created book: ${book.title}`);
+    }
+
     // ==================== Seed Videos ====================
     console.log('\n🎥 Seeding Videos...');
     const Video = mongoose.model('Video', new mongoose.Schema({
@@ -473,13 +586,14 @@ async function flushAndSeed() {
     console.log('\n📋 Summary:');
     console.log('  - 2 Users (admin + test)');
     console.log('  - 4 Community categories');
-    console.log('  - 3 Categories');
+    console.log('  - 4 Categories');
     console.log('  - 3 Community posts');
     console.log('  - 3 Community comments');
     console.log('  - 1 Report');
     console.log('  - 5 Stories');
     console.log('  - 2 Articles');
     console.log('  - 1 Article comment');
+    console.log('  - 5 Books');
     console.log('  - 2 Videos');
     
     await mongoose.disconnect();

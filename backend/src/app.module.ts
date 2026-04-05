@@ -20,8 +20,11 @@ import { ChatModule } from './chat/chat.module';
 import { VideoModule } from './video/video.module';
 import { CommentModule } from './comment/comment.module';
 import { StoryModule } from './story/story.module';
+import { BookModule } from './book/book.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { NotificationModule } from './notification/notification.module';
+import { MedicalContactModule } from './medical-contact/medical-contact.module';
+import { JourneyModule } from './journey/journey.module';
 
 @Module({
   imports: [
@@ -71,8 +74,11 @@ import { NotificationModule } from './notification/notification.module';
     VideoModule,
     CommentModule,
     StoryModule,
+    BookModule,
     FeedbackModule,
     NotificationModule,
+    MedicalContactModule,
+    JourneyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

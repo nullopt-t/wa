@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
+import ContextualChatPrompt from '../components/ContextualChatPrompt.jsx';
 import { storiesAPI } from '../services/communityApi.js';
 import { getApiUrl } from '../config.js';
 
@@ -202,6 +203,16 @@ const StoryDetailPage = () => {
                 <i className="fas fa-list"></i>
                 تصفح القصص
               </Link>
+            </div>
+          </div>
+        </AnimatedItem>
+
+        {/* Chat Prompt */}
+        <AnimatedItem type="slideUp" delay={0.5}>
+          <div className="mt-12 bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-6 border border-[var(--border-color)]/30 text-center">
+            <p className="text-[var(--text-secondary)] mb-4">القصة دي لمستك؟ احكي للمساعد عن تجربتك 💬</p>
+            <div className="flex justify-center">
+              <ContextualChatPrompt message={`قريت القصة دي: "${story?.title}" - عايز أحكي عن تجربتي`} icon="fa-book-open" text="احكي للمساعد" />
             </div>
           </div>
         </AnimatedItem>

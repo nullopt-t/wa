@@ -7,7 +7,7 @@ import ReportModal from './ReportModal.jsx';
 import { createPortal } from 'react-dom';
 import { getApiUrl } from '../../config.js';
 
-const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) => {
+const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete, isAdmin }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -241,14 +241,15 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
         </div>
 
         {/* Save Button */}
+        {!isAdmin && (
         <div className="relative group">
           <button
             onClick={handleSave}
             disabled={!isAuthenticated || isSaving}
             className={`w-10 h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
               isAuthenticated && !isSaving
-                ? isSaved 
-                  ? 'text-[var(--primary-color)] border-[var(--primary-color)] bg-[var(--primary-color)]/10 hover:scale-110' 
+                ? isSaved
+                  ? 'text-[var(--primary-color)] border-[var(--primary-color)] bg-[var(--primary-color)]/10 hover:scale-110'
                   : 'text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] hover:scale-110'
                 : 'text-[var(--text-secondary)]/50 border-[var(--border-color)] cursor-not-allowed'
             }`}
@@ -269,6 +270,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Post Header */}
@@ -298,6 +300,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
           )}
           
           {/* Report Button */}
+          {!isAdmin && (
           <button
             onClick={() => setShowReportModal(true)}
             className="w-10 h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 hover:border-red-500 hover:scale-110 transition-all duration-300 shadow-lg"
@@ -305,6 +308,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
           >
             <i className="fas fa-flag"></i>
           </button>
+          )}
         </div>
 
         <div className="flex items-center justify-between mb-4">
@@ -471,6 +475,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
       </div>
 
       {/* Post Actions */}
+      {!isAdmin && (
       <div className="px-6 py-4 border-t border-[var(--border-color)]/30 bg-[var(--bg-secondary)]/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -532,6 +537,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
             )}
             
             {/* Report Button */}
+            {!isAdmin && (
             <button
               onClick={() => setShowReportModal(true)}
               className="w-9 h-9 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500"
@@ -539,9 +545,11 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete }) =
             >
               <i className="fas fa-flag text-sm"></i>
             </button>
+            )}
           </div>
         </div>
       </div>
+      )}
 
       {/* Comments Section removed - clicks navigate to post detail page */}
 

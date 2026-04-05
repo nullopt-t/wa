@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ChatSession, ChatSessionDocument } from '../schemas/chat-session.schema';
 import { ChatMessage, ChatMessageDocument, EmotionData } from '../schemas/chat-message.schema';
 import { EmotionLog, EmotionLogDocument } from '../schemas/emotion-log.schema';
 import { SendMessageDto } from '../dto/chat.dto';
-import { GeminiAIService, AIAnalysis } from '../services/gemini-ai.service';
+import { IAIProvider, AIAnalysis } from '../services/ai-provider.interface';
 import { Article } from '../../article/schemas/article.schema';
 import { Video } from '../../video/schemas/video.schema';
 
@@ -19,7 +19,7 @@ export class ChatService {
     @InjectModel(EmotionLog.name) private emotionLogModel: Model<EmotionLogDocument>,
     @InjectModel(Article.name) private articleModel: Model<any>,
     @InjectModel(Video.name) private videoModel: Model<any>,
-    private geminiAIService: GeminiAIService,
+    @Inject('IAIProvider') private aiProvider: IAIProvider,
   ) {}
 
   /**
@@ -115,15 +115,15 @@ export class ChatService {
         const recentMessages = await this.getRecentMessages(sessionId, 5);
         const recentEmotions = await this.getRecentEmotions(userId, 1);
 
-        // Analyze with Gemini AI
-        analysis = await this.geminiAIService.analyzeMessage(
+        // Analyze with AI provider
+        analysis = await this.aiProvider.analyzeMessage(
           dto.content,
           recentMessages,
-          recentEmotions[0]?.emotions || [],
+          userId,
         );
 
         // Check for crisis
-        const crisisDetection = await this.geminiAIService.detectCrisis(dto.content);
+        const crisisDetection = await this.aiProvider.detectCrisis(dto.content);
         if (crisisDetection.isCrisis) {
           analysis.crisisDetected = true;
           analysis.suggestions = crisisDetection.resources.map((r) => r.name + ': ' + r.phone);
@@ -232,26 +232,26 @@ export class ChatService {
     let recommendTherapist: boolean;
 
     if (isCrisis) {
-      response = 'أنا قلق جداً مما تسمعه. أنا هنا لأدعمك، ولكن أعتقد أنك بحاجة إلى مساعدة فورية من مختص. هل يمكنك الاتصال بخط المساعدة أو التحدث إلى شخص تثق به الآن؟';
+      response = 'أنا قلق أوي على اللي بيسمعه. أنا هنا عشانك بس محتاج تتكلم مع مختص حالاً. ممكن تتصل بخط المساعدة أو تكلم حد قريب منك دلوقتي؟';
       recommendTherapist = true;
     } else if (isAnxious) {
-      response = 'أتفهم أنك تشعر بالقلق. إنه شعور صعب ومرهق، وأنا هنا لأستمع إليك.';
+      response = 'فاهم إنك قلقان. ده شعور تقيل بس أنا هنا عشان أسمعك.';
       recommendTherapist = false;
     } else if (isSad) {
-      response = 'أشعر بحزنك وأتفهم ما تمر به. الحزن شعور ثقيل، وأنا هنا للاستماع دون حكم.';
+      response = 'حاسس بوجعك وبعرف اللي أنت فيه ده صعب. أنا هنا عشانك من غير أي حكم.';
       recommendTherapist = false;
     } else if (isStressed) {
-      response = 'أدرك أنك تشعر بالإجهاد والضغط. أنا هنا لأستمع وأدعمك.';
+      response = 'عارف إنك مجهد وضغوطاتك كتير. أنا هنا عشانك.';
       recommendTherapist = false;
     } else {
-      response = 'أنا هنا للاستماع إليك. شاركني ما يدور في ذهنك، وسأبذل قصارى جهدي لدعمك.';
+      response = 'أنا هنا عشانك. احكي لي اللي في دماغك وأنا هحاول أساندك.';
       recommendTherapist = false;
     }
 
     return {
       response,
       emotions: [],
-      suggestions: ['خذ نفساً عميقاً', 'تحدث إلى شخص تثق به', 'خذ استراحة قصيرة'],
+      suggestions: ['خد نفس عميق', 'كلم حد قريب منك', 'خد بريك صغير'],
       crisisDetected: isCrisis,
       recommendTherapist,
       disclaimer: 'أنا مساعد ذكي، لست معالجاً طبياً. لا يمكنني تشخيص الحالات أو وصف الأدوية.',
@@ -562,9 +562,8 @@ ${conversationText}
 - استخدم true/false (ليس نعم/لا)
 `;
 
-      const result = await this.geminiAIService['model'].generateContent(prompt);
-      const response = await result.response;
-      let text = response.text().trim();
+      const result = await this.aiProvider.generateFromPrompt(prompt);
+      let text = result.trim();
       
       // Extract JSON from response (remove markdown code blocks if present)
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();

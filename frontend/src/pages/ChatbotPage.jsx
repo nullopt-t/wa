@@ -406,7 +406,7 @@ const ChatbotPage = () => {
 
                   {/* Message Bubble */}
                   <div
-                    className={`group relative px-4 py-2.5 rounded-2xl shadow-sm text-sm sm:text-base ${
+                    className={`group relative px-4 py-2.5 rounded-2xl shadow-sm text-sm sm:text-base flex flex-col items-end ${
                       message.sender === 'user'
                         ? 'bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-br-md'
                         : 'bg-[var(--card-bg)] text-[var(--text-primary)] rounded-bl-md border border-[var(--border-color)]/20'
@@ -414,14 +414,14 @@ const ChatbotPage = () => {
                     onMouseEnter={() => setHoveredMessageId(message.id)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    {/* Copy button on hover (bot messages) */}
+                    {/* Copy button on hover (bot messages) — inside bubble, top-right corner */}
                     {message.sender === 'bot' && hoveredMessageId === message.id && !message.isError && !message.isCrisis && (
                       <button
                         onClick={() => copyToClipboard(message.text)}
-                        className="absolute -top-2 -left-2 w-7 h-7 bg-[var(--primary-color)] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                        className="absolute -top-1.5 -left-1.5 w-6 h-6 bg-[var(--primary-color)] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-transform z-10"
                         title="نسخ"
                       >
-                        <i className="fas fa-copy text-xs"></i>
+                        <i className="fas fa-copy text-[9px]"></i>
                       </button>
                     )}
 
@@ -632,6 +632,13 @@ const ChatbotPage = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyPress}
+                onFocus={() => {
+                  setTimeout(() => {
+                    if (messagesEndRef.current) {
+                      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
+                  }, 100);
+                }}
                 placeholder="اكتب رسالتك هنا... (Enter للإرسال)"
                 rows={1}
                 className="flex-1 min-w-0 px-3 sm:px-5 py-3 sm:py-4 bg-[var(--card-bg)] border-2 border-[var(--border-color)] rounded-lg sm:rounded-xl focus:border-[var(--primary-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all text-[var(--text-primary)] placeholder-[var(--text-secondary)] text-sm sm:text-base resize-none overflow-hidden max-h-[120px]"

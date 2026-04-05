@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import { JourneyProvider } from './context/JourneyContext.jsx';
 import { ErrorProvider } from './context/ErrorContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import './styles/App.css';
@@ -45,15 +46,22 @@ import SavedPostsPage from './pages/SavedPostsPage.jsx';
 import ArticlesPage from './pages/ArticlesPage.jsx';
 import ArticleDetailPage from './pages/ArticleDetailPage.jsx';
 import ArticleManagementPage from './pages/ArticleManagementPage.jsx';
+import BooksPage from './pages/BooksPage.jsx';
+import BookDetailPage from './pages/BookDetailPage.jsx';
+import BookManagementPage from './pages/BookManagementPage.jsx';
 import VideoManagementPage from './pages/VideoManagementPage.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
 import AdminArticles from './pages/admin/AdminArticles.jsx';
 import AdminReports from './pages/admin/AdminReports.jsx';
 import AdminStories from './pages/admin/AdminStories.jsx';
+import AdminBooks from './pages/admin/AdminBooks.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
 import AdminFeedback from './pages/admin/AdminFeedback.jsx';
 import AdminTherapistsPage from './pages/admin/AdminTherapistsPage.jsx';
+import AdminMedicalContacts from './pages/admin/AdminMedicalContacts.jsx';
+import AdminJourneysPage from './pages/admin/AdminJourneysPage.jsx';
+import MedicalContactsPage from './pages/MedicalContactsPage.jsx';
 import CreateFutureMessagePage from './pages/CreateFutureMessagePage.jsx';
 import FutureMessagesPage from './pages/FutureMessagesPage.jsx';
 import AnimatedRoute from './components/AnimatedRoute.jsx';
@@ -61,6 +69,8 @@ import NotificationsPage from './pages/NotificationsPage.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
 import FloatingChatButton from './components/FloatingChatButton.jsx';
+import JourneyPage from './pages/JourneyPage.jsx';
+import JourneyLevelPage from './pages/JourneyLevelPage.jsx';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -76,7 +86,8 @@ function AppWrapper() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/videos/manage') ||
-    location.pathname.startsWith('/articles/manage');
+    location.pathname.startsWith('/articles/manage') ||
+    location.pathname.startsWith('/books/manage');
   const isChatbotRoute = location.pathname === '/chatbot';
 
   return (
@@ -135,6 +146,25 @@ function AppWrapper() {
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
+            <Route path="/books" element={
+              <AnimatedRoute>
+                <BooksPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/books/:bookId" element={
+              <AnimatedRoute>
+                <BookDetailPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/books/manage" element={
+              <AnimatedRoute>
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout title="إدارة الكتب">
+                    <BookManagementPage />
+                  </AdminLayout>
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
             <Route path="/videos" element={
               <AnimatedRoute>
                 <VideosPage />
@@ -175,6 +205,13 @@ function AppWrapper() {
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
+            <Route path="/admin/books" element={
+              <AnimatedRoute>
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminBooks />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
             <Route path="/admin/settings" element={
               <AnimatedRoute>
                 <ProtectedRoute allowedRoles={['admin']}>
@@ -193,6 +230,20 @@ function AppWrapper() {
               <AnimatedRoute>
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminTherapistsPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/admin/medical-contacts" element={
+              <AnimatedRoute>
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminMedicalContacts />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/admin/journeys" element={
+              <AnimatedRoute>
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminJourneysPage />
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
@@ -222,6 +273,11 @@ function AppWrapper() {
             <Route path="/contact" element={
               <AnimatedRoute>
                 <ContactPage />
+              </AnimatedRoute>
+            } />
+            <Route path="/medical-contacts" element={
+              <AnimatedRoute>
+                <MedicalContactsPage />
               </AnimatedRoute>
             } />
             <Route path="/about" element={
@@ -324,6 +380,20 @@ function AppWrapper() {
                 <StoryDetailPage />
               </AnimatedRoute>
             } />
+            <Route path="/journey" element={
+              <AnimatedRoute>
+                <ProtectedRoute>
+                  <JourneyPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/journey/level/:levelNumber" element={
+              <AnimatedRoute>
+                <ProtectedRoute>
+                  <JourneyLevelPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
             <Route path="/feedback" element={
               <AnimatedRoute>
                 <ProtectedRoute>
@@ -422,9 +492,11 @@ function App() {
         <ThemeProvider>
           <ToastProvider>
             <QueryClientProvider client={queryClient}>
-              <Router>
-                <AppWrapper />
-              </Router>
+              <JourneyProvider>
+                <Router>
+                  <AppWrapper />
+                </Router>
+              </JourneyProvider>
             </QueryClientProvider>
           </ToastProvider>
         </ThemeProvider>

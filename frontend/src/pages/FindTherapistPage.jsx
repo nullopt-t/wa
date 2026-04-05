@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { therapistsAPI } from '../services/therapistsApi.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
+import ContextualChatPrompt from '../components/ContextualChatPrompt.jsx';
 
 const FindTherapistPage = () => {
   const [therapists, setTherapists] = useState([]);
@@ -324,6 +325,20 @@ const FindTherapistPage = () => {
               </AnimatedItem>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Chat Prompt */}
+      <section className="py-12 bg-[var(--bg-secondary)]">
+        <div className="max-w-4xl mx-auto px-4">
+          <AnimatedItem type="slideUp" delay={0.1}>
+            <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-6 border border-[var(--border-color)]/30 text-center">
+              <p className="text-[var(--text-secondary)] mb-4">محتار تختار مين؟ اسأل المساعد يساعدك</p>
+              <div className="flex justify-center">
+                <ContextualChatPrompt message="محتاج مساعدة أختار معالج مناسب" icon="fa-user-md" text="اسأل المساعد" />
+              </div>
+            </div>
+          </AnimatedItem>
         </div>
       </section>
     </div>

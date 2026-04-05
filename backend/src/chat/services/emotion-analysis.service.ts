@@ -1,24 +1,24 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { GeminiAIService, EmotionData } from './gemini-ai.service';
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { IAIProvider, EmotionData } from './ai-provider.interface';
 
 @Injectable()
 export class EmotionAnalysisService {
   private readonly logger = new Logger(EmotionAnalysisService.name);
 
   constructor(
-    private geminiAIService: GeminiAIService,
+    @Inject('IAIProvider') private aiProvider: IAIProvider,
   ) {}
 
   /**
-   * Analyze emotions from text using Gemini AI
+   * Analyze emotions from text using AI provider
    */
   async analyze(text: string, context?: string): Promise<EmotionData[]> {
     try {
-      const analysis = await this.geminiAIService.analyzeMessage(text, [], []);
+      const analysis = await this.aiProvider.analyzeMessage(text, [], undefined);
       return analysis.emotions;
     } catch (error) {
       this.logger.error('Error analyzing emotions:', error);
-      
+
       // Fallback: return neutral emotion
       return [
         {
@@ -33,7 +33,7 @@ export class EmotionAnalysisService {
   /**
    * Get dominant emotion from list
    */
-  getDominantEmotion(emotions: EmotionData[]): EmotionData | null {
+  getDominantEmion(emotions: EmotionData[]): EmotionData | null {
     if (!emotions || emotions.length === 0) {
       return null;
     }

@@ -27,7 +27,12 @@
       "Bash(npx *)",
       "Bash(docker inspect *)",
       "Bash(python3 *)",
-      "Bash(rm *)"
+      "Bash(rm *)",
+      "Bash(mkdir *)",
+      "Bash(grep *)",
+      "Bash(cd *)",
+      "Bash(head *)",
+      "Bash(npm install *)"
     ]
   },
   "$version": 3

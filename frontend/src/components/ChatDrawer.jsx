@@ -255,29 +255,30 @@ const ChatDrawer = ({ isOpen, onClose, initialMessage }) => {
                 </div>
 
                 {/* Bubble */}
-                <div className="group relative px-3 py-2 rounded-xl text-sm shadow-sm"
+                <div className={`group relative px-3 py-2 rounded-xl text-sm shadow-sm flex flex-col items-end ${
+                  message.sender === 'user'
+                    ? 'bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-br-md'
+                    : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-bl-md border border-[var(--border-color)]/20'
+                }`}
                   onMouseEnter={() => setHoveredMessageId(message.id)}
                   onMouseLeave={() => setHoveredMessageId(null)}>
 
-                  {/* Copy button */}
+                  {/* Copy button — inside bubble, top-right */}
                   {message.sender === 'bot' && hoveredMessageId === message.id && !message.isError && (
                     <button onClick={() => { navigator.clipboard.writeText(message.text); }}
-                      className="absolute -top-2 -left-2 w-6 h-6 bg-[var(--primary-color)] text-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform">
-                      <i className="fas fa-copy text-[10px]"></i>
+                      className="absolute -top-1.5 -left-1.5 w-6 h-6 bg-[var(--primary-color)] text-white rounded-full flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-transform z-10">
+                      <i className="fas fa-copy text-[9px]"></i>
                     </button>
                   )}
 
                   {message.isError ? (
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2">
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 w-full">
                       <p className="text-yellow-500 text-xs">{message.text}</p>
                     </div>
                   ) : message.sender === 'user' ? (
-                    <div className="bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-hover)] text-white rounded-br-md">
-                      <p className="leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
-                    </div>
+                    <p className="leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
                   ) : (
-                    <div className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-bl-md border border-[var(--border-color)]/20">
-                      <p className="leading-relaxed whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.text) }} />
+                    <p className="leading-relaxed whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.text) }} />
 
                       {/* Emotions */}
                       {message.emotions?.length > 0 && (
@@ -397,9 +398,16 @@ const ChatDrawer = ({ isOpen, onClose, initialMessage }) => {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyPress}
+              onFocus={() => {
+                setTimeout(() => {
+                  if (textareaRef.current && messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                  }
+                }, 100);
+              }}
               placeholder="اكتب رسالتك هنا..."
               rows={1}
-              className="flex-1 px-3 py-2 bg-[var(--card-bg)] border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none transition-all text-[var(--text-primary)] placeholder-[var(--text-secondary)] text-sm resize-none overflow-hidden max-h-[80px]"
+              className="flex-1 px-3 py-2 bg-[var(--card-bg)] border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all text-[var(--text-primary)] placeholder-[var(--text-secondary)] text-sm resize-none overflow-hidden max-h-[80px]"
               disabled={isLoading}
             />
             <button
