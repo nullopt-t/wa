@@ -20,7 +20,7 @@ export class EmailService {
   private get fromEmail() {
     return this.configService.get(
       'SMTP_FROM_EMAIL',
-      'noreply@waey.com',
+      'onboarding@resend.dev',
     );
   }
 

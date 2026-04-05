@@ -233,10 +233,10 @@ const SignupPage = () => {
         if (result.emailSent) {
           showError('البريد الإلكتروني مستخدم مسبقاً، يرجى استخدام بريد آخر أو تسجيل الدخول');
         } else {
-          // Navigate to verify email page with user type
+          // Auto-verified — go straight to login
           setTimeout(() => {
-            navigate('/verify-email', { state: { userType, email: formData.email } });
-          }, 2000);
+            navigate('/login');
+          }, 1500);
         }
       } else {
         showError(result.message || 'حدث خطأ أثناء إنشاء الحساب');

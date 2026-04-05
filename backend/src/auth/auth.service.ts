@@ -47,10 +47,11 @@ export class AuthService {
         throw new AccountDeactivatedException();
       }
 
-      if (user.isVerified === false) {
-        this.logger.warn(`Login attempt for unverified email: ${email}`);
-        throw new EmailNotVerifiedException(user.email);
-      }
+      // Email verification is not required — users can log in immediately
+      // if (user.isVerified === false) {
+      //   this.logger.warn(`Login attempt for unverified email: ${email}`);
+      //   throw new EmailNotVerifiedException(user.email);
+      // }
 
       const isPasswordValid = await this.hashService.compare(password, user.password);
 
@@ -109,9 +110,13 @@ export class AuthService {
 
     const resultAny = result as any;
 
+    // Auto-verify users — no email verification required
+    await this.userService.update(resultAny._id || resultAny.id, { isVerified: true });
+
+    // Send verification email in background (optional — won't block registration)
     const verificationToken = this.jwtService.sign(
       {
-        email: resultAny.email,
+        email: result.email,
         sub: resultAny._id || resultAny.id,
         type: 'verification',
       },
@@ -121,22 +126,22 @@ export class AuthService {
     this.emailService
       .sendVerificationEmail(result.email, result.firstName, verificationToken)
       .catch((err) => {
-        this.logger.error(
-          `Failed to send verification email to ${result.email}`,
-          err.stack,
+        this.logger.warn(
+          `Verification email failed (non-critical) for ${result.email}:`,
+          err.message,
         );
       });
 
     this.emailService
       .sendWelcomeEmail(result.email, result.firstName)
       .catch((err) => {
-        this.logger.error(
-          `Failed to send welcome email to ${result.email}`,
-          err.stack,
+        this.logger.warn(
+          `Welcome email failed (non-critical) for ${result.email}:`,
+          err.message,
         );
       });
 
-    this.logger.log(`User registered successfully: ${result.email}`);
+    this.logger.log(`User registered and auto-verified: ${result.email}`);
 
     return result;
   }
@@ -314,7 +319,6 @@ export class AuthService {
       const user = await this.userService.findByEmail(email);
 
       if (!user || (typeof user === 'object' && 'success' in user)) {
-        this.logger.warn(`Resend verification requested for non-existing email: ${email}`);
         return {
           success: true,
           message:
@@ -322,36 +326,16 @@ export class AuthService {
         };
       }
 
-      if (user.isVerified) {
-        this.logger.log(`Resend skipped, already verified: ${email}`);
-        return {
-          success: true,
-          message: 'Email already verified',
-        };
+      // Auto-verify if not verified
+      if (!user.isVerified) {
+        const userId = (user as any)._id || (user as any).id;
+        await this.userService.update(userId, { isVerified: true });
+        this.logger.log(`Auto-verified user on resend: ${email}`);
       }
-
-      const userId = (user as any)._id || (user as any).id;
-
-      const verificationToken = this.jwtService.sign(
-        {
-          email: user.email,
-          sub: userId,
-          type: 'verification',
-        },
-        { expiresIn: '24h' },
-      );
-
-      await this.emailService.sendVerificationEmail(
-        user.email,
-        user.firstName,
-        verificationToken,
-      );
-
-      this.logger.log(`Verification email resent: ${email}`);
 
       return {
         success: true,
-        message: 'Verification email sent successfully',
+        message: 'Account is verified',
       };
     } catch (error) {
       this.logger.error(
