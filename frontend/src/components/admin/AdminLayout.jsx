@@ -32,7 +32,7 @@ const AdminLayout = ({ children, title }) => {
     { path: '/admin/users', icon: 'fa-users', label: 'المستخدمين' },
     { path: '/admin/articles', icon: 'fa-newspaper', label: 'المقالات' },
     { path: '/videos/manage', icon: 'fa-video', label: 'الفيديوهات' },
-    { path: '/admin/reports', icon: 'fa-flag', label: 'البلاغات' },
+    { path: '/admin/reports', icon: 'fa-flag', label: 'البلاغات', hidden: true },
     { path: '/admin/journeys', icon: 'fa-road', label: 'الرحلات' },
     { path: '/admin/medical-contacts', icon: 'fa-phone-alt', label: 'جهات الاتصال' },
   ];
@@ -65,7 +65,7 @@ const AdminLayout = ({ children, title }) => {
 
           {/* Menu */}
           <nav className="space-y-2">
-            {menuItems.map((item) => (
+            {menuItems.filter(item => !item.hidden).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
