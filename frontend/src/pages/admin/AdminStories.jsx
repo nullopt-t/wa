@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../../context/ToastContext.jsx';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import AnimatedItem from '../../components/AnimatedItem.jsx';
@@ -10,16 +10,17 @@ const AdminStories = () => {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('pending');
-  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 });
+  const [stats, setStats] = useState(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showHideDialog, setShowHideDialog] = useState(false);
   const [storyToModerate, setStoryToModerate] = useState(null);
 
-  const loadStories = async () => {
+  const loadStories = async (status = filterStatus) => {
     try {
       setLoading(true);
       const data = await storiesAPI.getAllForAdmin({
-        status: filterStatus,
+        status: status,
         sort: 'newest'
       });
       setStories(data.stories || []);
@@ -39,26 +40,36 @@ const AdminStories = () => {
         pending: data.pendingStories || 0,
         approved: data.approvedStories || 0,
         rejected: data.rejectedStories || 0,
+        hidden: data.hiddenStories || 0,
       });
     } catch (error) {
-      // Stats failed, ignore
+
+      setStats({ pending: 0, approved: 0, rejected: 0, hidden: 0 });
     }
   };
 
   useEffect(() => {
     loadStories();
+  }, [filterStatus]);
+
+  useEffect(() => {
     loadStats();
+  }, []);
+
+  const handleRefreshStories = useCallback(() => {
+    loadStories();
   }, [filterStatus]);
 
   const handleApprove = async () => {
     if (!storyToModerate) return;
-    
+
     try {
       await storiesAPI.moderate(storyToModerate._id, 'approved');
       success('تم اعتماد القصة بنجاح');
       setShowApproveDialog(false);
       setStoryToModerate(null);
-      loadStories();
+      handleRefreshStories();
+      loadStats();
     } catch (error) {
       showError('فشل اعتماد القصة');
     }
@@ -66,15 +77,31 @@ const AdminStories = () => {
 
   const handleReject = async () => {
     if (!storyToModerate) return;
-    
+
     try {
       await storiesAPI.moderate(storyToModerate._id, 'rejected');
       success('تم رفض القصة');
       setShowRejectDialog(false);
       setStoryToModerate(null);
-      loadStories();
+      handleRefreshStories();
+      loadStats();
     } catch (error) {
       showError('فشل رفض القصة');
+    }
+  };
+
+  const handleHide = async () => {
+    if (!storyToModerate) return;
+
+    try {
+      await storiesAPI.moderate(storyToModerate._id, 'hidden');
+      success('تم إخفاء القصة');
+      setShowHideDialog(false);
+      setStoryToModerate(null);
+      handleRefreshStories();
+      loadStats();
+    } catch (error) {
+      showError('فشل إخفاء القصة');
     }
   };
 
@@ -117,9 +144,10 @@ const AdminStories = () => {
         <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-4 md:p-6 border border-[var(--border-color)]/30 mb-6">
           <div className="flex gap-2 md:gap-3 flex-wrap justify-center md:flex-nowrap">
             {[
-              { id: 'pending', label: 'قيد المراجعة', icon: 'fa-clock', count: stats.pending },
-              { id: 'approved', label: 'المعتمدة', icon: 'fa-check-circle', count: stats.approved },
-              { id: 'rejected', label: 'المرفوضة', icon: 'fa-times-circle', count: stats.rejected },
+              { id: 'pending', label: 'قيد المراجعة', icon: 'fa-clock', count: stats?.pending },
+              { id: 'approved', label: 'المعتمدة', icon: 'fa-check-circle', count: stats?.approved },
+              { id: 'rejected', label: 'المرفوضة', icon: 'fa-times-circle', count: stats?.rejected },
+              { id: 'hidden', label: 'المخفية', icon: 'fa-eye-slash', count: stats?.hidden },
             ].map(filter => (
               <button
                 key={filter.id}
@@ -132,8 +160,12 @@ const AdminStories = () => {
               >
                 <i className={`fas ${filter.icon}`}></i>
                 <span className="hidden sm:inline">{filter.label}</span>
-                <span className="sm:hidden">{filter.count}</span>
-                <span className="hidden sm:inline px-2 py-0.5 bg-white/20 rounded-full text-xs">{filter.count}</span>
+                <span className="sm:hidden">{filter.count !== undefined ? filter.count : '...'}</span>
+                {stats !== null ? (
+                  <span className="hidden sm:inline px-2 py-0.5 bg-white/20 rounded-full text-xs">{filter.count}</span>
+                ) : (
+                  <span className="hidden sm:inline w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                )}
               </button>
             ))}
           </div>
@@ -238,16 +270,59 @@ const AdminStories = () => {
                 )}
 
                 {story.status === 'approved' && (
-                  <div className="text-center py-3 text-green-500 text-sm md:text-base">
-                    <i className="fas fa-check-circle ml-2"></i>
-                    معتمدة
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 text-center py-3 text-green-500 text-sm md:text-base">
+                      <i className="fas fa-check-circle ml-2"></i>
+                      معتمدة
+                    </div>
+                    <button
+                      onClick={() => {
+                        setStoryToModerate(story);
+                        setShowHideDialog(true);
+                      }}
+                      className="flex-1 px-4 md:px-6 py-3 border-2 border-gray-500 text-gray-500 rounded-xl font-semibold hover:bg-gray-500/10 transition-all flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap"
+                    >
+                      <i className="fas fa-eye-slash"></i>
+                      إخفاء
+                    </button>
                   </div>
                 )}
 
                 {story.status === 'rejected' && (
-                  <div className="text-center py-3 text-red-500 text-sm md:text-base">
-                    <i className="fas fa-times-circle ml-2"></i>
-                    مرفوضة
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 text-center py-3 text-red-500 text-sm md:text-base">
+                      <i className="fas fa-times-circle ml-2"></i>
+                      مرفوضة
+                    </div>
+                    <button
+                      onClick={() => {
+                        setStoryToModerate(story);
+                        setShowHideDialog(true);
+                      }}
+                      className="flex-1 px-4 md:px-6 py-3 border-2 border-gray-500 text-gray-500 rounded-xl font-semibold hover:bg-gray-500/10 transition-all flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap"
+                    >
+                      <i className="fas fa-eye-slash"></i>
+                      إخفاء
+                    </button>
+                  </div>
+                )}
+
+                {story.status === 'hidden' && (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 text-center py-3 text-gray-500 text-sm md:text-base">
+                      <i className="fas fa-eye-slash ml-2"></i>
+                      مخفية
+                    </div>
+                    <button
+                      onClick={() => {
+                        setStoryToModerate(story);
+                        setShowApproveDialog(true);
+                      }}
+                      className="flex-1 px-4 md:px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap"
+                    >
+                      <i className="fas fa-check-circle"></i>
+                      اعتماد
+                    </button>
                   </div>
                 )}
               </div>
@@ -282,6 +357,21 @@ const AdminStories = () => {
         onConfirm={handleReject}
         onCancel={() => {
           setShowRejectDialog(false);
+          setStoryToModerate(null);
+        }}
+      />
+
+      {/* Hide Dialog */}
+      <ConfirmDialog
+        isOpen={showHideDialog}
+        title="إخفاء القصة"
+        message="هل أنت متأكد من إخفاء هذه القصة؟ لن تظهر للمستخدمين ولكن تبقى مخزنة."
+        confirmText="إخفاء"
+        cancelText="إلغاء"
+        confirmColor="gray"
+        onConfirm={handleHide}
+        onCancel={() => {
+          setShowHideDialog(false);
           setStoryToModerate(null);
         }}
       />

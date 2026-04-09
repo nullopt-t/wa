@@ -16,6 +16,8 @@ const AdminMedicalContacts = () => {
   const [contactToAction, setContactToAction] = useState(null);
   const [stats, setStats] = useState({ total: 0, hospitals: 0, clinics: 0, doctors: 0 });
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, total: 0 });
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -66,11 +68,44 @@ const AdminMedicalContacts = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setSelectedIds([]);
     setPagination(prev => ({ ...prev, currentPage: 1 }));
     loadContacts();
   };
 
+  const toggleSelectAll = () => {
+    if (selectedIds.length === contacts.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(contacts.map(c => c._id));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(i => i !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      await medicalContactsAPI.deleteMany(selectedIds);
+      success(`تم حذف ${selectedIds.length} جهة اتصال بنجاح`);
+      setShowBulkDeleteDialog(false);
+      setSelectedIds([]);
+      loadContacts();
+      loadStats();
+    } catch (error) {
+      showError('فشل حذف جهات الاتصال');
+    }
+  };
+
   const openCreateModal = () => {
+    setSelectedIds([]);
     setFormData({
       name: '',
       phone: '',
@@ -85,6 +120,7 @@ const AdminMedicalContacts = () => {
   };
 
   const openEditModal = (contact) => {
+    setSelectedIds([]);
     setFormData({
       name: contact.name || '',
       phone: contact.phone || '',
@@ -263,6 +299,23 @@ const AdminMedicalContacts = () => {
               <i className="fas fa-plus"></i> إضافة
             </button>
           </div>
+
+          {/* Bulk Actions Bar */}
+          {selectedIds.length > 0 && (
+            <div className="mt-4 flex items-center justify-between px-4 py-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+              <span className="text-blue-500 font-medium">
+                <i className="fas fa-check-circle ml-1"></i>
+                تم اختيار {selectedIds.length} جهة اتصال
+              </span>
+              <button
+                onClick={() => setShowBulkDeleteDialog(true)}
+                className="px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
+              >
+                <i className="fas fa-trash"></i>
+                حذف المحدد
+              </button>
+            </div>
+          )}
         </div>
       </AnimatedItem>
 
@@ -295,6 +348,14 @@ const AdminMedicalContacts = () => {
               <table className="w-full">
                 <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
                   <tr>
+                    <th className="px-6 py-4 text-center text-sm font-bold text-[var(--text-primary)] w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.length === contacts.length && contacts.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary-color)] focus:ring-[var(--primary-color)] cursor-pointer"
+                      />
+                    </th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">النوع</th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">الاسم</th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-[var(--text-primary)]">الهاتف</th>
@@ -306,7 +367,17 @@ const AdminMedicalContacts = () => {
                 </thead>
                 <tbody className="divide-y divide-[var(--border-color)]/30">
                   {contacts.map((contact) => (
-                    <tr key={contact._id} className="hover:bg-[var(--bg-secondary)]/50 transition-colors">
+                    <tr key={contact._id} className={`hover:bg-[var(--bg-secondary)]/50 transition-colors ${
+                      selectedIds.includes(contact._id) ? 'bg-blue-500/10' : ''
+                    }`}>
+                      <td className="px-6 py-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(contact._id)}
+                          onChange={() => toggleSelect(contact._id)}
+                          className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary-color)] focus:ring-[var(--primary-color)] cursor-pointer"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeColor(contact.type)}`}>
                           <i className={`fas ${getTypeIcon(contact.type)} ml-1`}></i>
@@ -509,6 +580,20 @@ const AdminMedicalContacts = () => {
         onCancel={() => {
           setShowDeleteDialog(false);
           setContactToAction(null);
+        }}
+      />
+
+      {/* Bulk Delete Confirm */}
+      <ConfirmDialog
+        isOpen={showBulkDeleteDialog}
+        title="حذف جهات الاتصال المحددة"
+        message={`هل أنت متأكد من حذف ${selectedIds.length} جهة اتصال؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmText="حذف المحدد"
+        cancelText="إلغاء"
+        isDanger={true}
+        onConfirm={handleBulkDelete}
+        onCancel={() => {
+          setShowBulkDeleteDialog(false);
         }}
       />
     </AdminLayout>

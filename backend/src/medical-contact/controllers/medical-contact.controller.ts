@@ -192,4 +192,33 @@ export class MedicalContactController {
       message: 'تم حذف جهة الاتصال بنجاح',
     };
   }
+
+  /**
+   * Admin: Bulk Delete
+   */
+  @ApiOperation({ summary: 'حذف متعدد (إدارة)' })
+  @ApiOkResponse({ description: 'تم الحذف' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمسؤولين فقط' })
+  @Post('admin/bulk-delete')
+  @UseGuards(AuthGuard('jwt'))
+  async bulkDelete(
+    @Request() req,
+    @Body('ids') ids: string[],
+  ) {
+    if (req.user.role !== 'admin') {
+      return { success: false, message: 'غير مصرح' };
+    }
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return { success: false, message: 'معرفات غير صالحة' };
+    }
+
+    await this.medicalContactService.deleteMany(ids);
+    return {
+      success: true,
+      message: `تم حذف ${ids.length} جهة اتصال بنجاح`,
+    };
+  }
 }

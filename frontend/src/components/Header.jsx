@@ -174,7 +174,7 @@ const Header = () => {
                           ) : (
                             <>
                               <Link
-                                to={user?.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard'}
+                                to={user?.role === 'therapist' ? '/therapist/dashboard' : user?.role === 'admin' ? '/admin' : '/user-dashboard'}
                                 className="flex items-center gap-3 px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300 group"
                                 onClick={() => setShowAccountDropdown(false)}
                               >
@@ -299,7 +299,7 @@ const Header = () => {
               ) : (
                 <>
                   <Link
-                    to={user?.role === 'therapist' ? '/therapist/dashboard' : '/user-dashboard'}
+                    to={user?.role === 'therapist' ? '/therapist/dashboard' : user?.role === 'admin' ? '/admin' : '/user-dashboard'}
                     className="flex items-center gap-3 px-4 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-300"
                     onClick={() => setShowAccountDropdown(false)}
                   >

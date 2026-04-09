@@ -56,7 +56,6 @@ import AdminArticles from './pages/admin/AdminArticles.jsx';
 import AdminReports from './pages/admin/AdminReports.jsx';
 import AdminStories from './pages/admin/AdminStories.jsx';
 import AdminBooks from './pages/admin/AdminBooks.jsx';
-import AdminSettings from './pages/admin/AdminSettings.jsx';
 import AdminFeedback from './pages/admin/AdminFeedback.jsx';
 import AdminTherapistsPage from './pages/admin/AdminTherapistsPage.jsx';
 import AdminMedicalContacts from './pages/admin/AdminMedicalContacts.jsx';
@@ -209,13 +208,6 @@ function AppWrapper() {
               <AnimatedRoute>
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminBooks />
-                </ProtectedRoute>
-              </AnimatedRoute>
-            } />
-            <Route path="/admin/settings" element={
-              <AnimatedRoute>
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminSettings />
                 </ProtectedRoute>
               </AnimatedRoute>
             } />

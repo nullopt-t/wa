@@ -86,6 +86,10 @@ export class MedicalContactService {
     }
   }
 
+  async deleteMany(ids: string[]): Promise<void> {
+    await this.medicalContactModel.deleteMany({ _id: { $in: ids } }).exec();
+  }
+
   async getStats(): Promise<{ total: number; hospitals: number; clinics: number; doctors: number }> {
     const [total, hospitals, clinics, doctors] = await Promise.all([
       this.medicalContactModel.countDocuments(),

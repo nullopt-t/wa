@@ -43,6 +43,12 @@ export const medicalContactsAPI = {
   delete: (id) => apiRequest(`/medical-contacts/${id}`, {
     method: 'DELETE',
   }),
+
+  // Admin: bulk delete
+  deleteMany: (ids) => apiRequest('/medical-contacts/admin/bulk-delete', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  }),
 };
 
 export default medicalContactsAPI;

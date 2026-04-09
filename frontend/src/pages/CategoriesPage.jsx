@@ -78,7 +78,7 @@ const CategoriesPage = () => {
     },
     {
       id: 10,
-      title: 'جهات الاتصال الطبية',
+      title: 'دليل وعي',
       description: 'دليل المستشفيات والعيادات والأطباء',
       icon: 'fas fa-phone-alt',
       path: '/medical-contacts'

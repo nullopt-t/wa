@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
@@ -9,6 +9,12 @@ const VideosPage = () => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [featuredVideos, setFeaturedVideos] = useState([]);
+  const [allVideos, setAllVideos] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [filters, setFilters] = useState({ category: 'all', tag: 'all' });
+  const [allCategories, setAllCategories] = useState([]);
+  const [allTags, setAllTags] = useState([]);
 
   // Check if user is admin
   const isAdmin = user?.role === 'admin';
@@ -23,22 +29,78 @@ const VideosPage = () => {
       const data = await videosAPI.getFeatured(6);
       setFeaturedVideos(data);
     } catch (error) {
-      
+
     }
   };
 
   const loadVideos = async () => {
     try {
       setLoading(true);
-      // Exclude featured videos from main list (they're shown separately)
-      const data = await videosAPI.getAll({ limit: 50, excludeFeatured: 'true' });
-      setVideos(data.videos);
+      const data = await videosAPI.getAll({ limit: 100, excludeFeatured: 'true' });
+      const allVids = data.videos || [];
+      setAllVideos(allVids);
+      setVideos(allVids);
+
+      // Extract unique categories
+      const categories = [...new Set(allVids.map(v => v.category).filter(Boolean))];
+      setAllCategories(categories);
+
+      // Extract unique tags
+      const tagsSet = new Set();
+      allVids.forEach(v => {
+        if (v.tags && Array.isArray(v.tags)) {
+          v.tags.forEach(t => tagsSet.add(t));
+        }
+      });
+      setAllTags(Array.from(tagsSet));
     } catch (error) {
-      
+
     } finally {
       setLoading(false);
     }
   };
+
+  // Apply filters whenever they change
+  useEffect(() => {
+    let filtered = [...allVideos];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(v =>
+        v.title?.toLowerCase().includes(query) ||
+        v.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Category filter
+    if (filters.category !== 'all') {
+      filtered = filtered.filter(v => v.category === filters.category);
+    }
+
+    // Tag filter
+    if (filters.tag !== 'all') {
+      filtered = filtered.filter(v => v.tags?.includes(filters.tag));
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'newest':
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
+      case 'most-viewed':
+        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+        break;
+      case 'a-z':
+        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'ar'));
+        break;
+    }
+
+    setVideos(filtered);
+  }, [searchQuery, sortBy, filters, allVideos]);
 
   const getYouTubeEmbed = (url) => {
     const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
@@ -73,8 +135,77 @@ const VideosPage = () => {
         </div>
       </section>
 
+      {/* Filters Bar */}
+      <section className="py-6 bg-[var(--card-bg)] border-y border-[var(--border-color)]/30 sticky top-0 z-40 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            {/* Search */}
+            <div className="flex-1 w-full md:w-auto">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="ابحث عن فيديو..."
+                  className="w-full px-4 py-2.5 pr-10 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none transition-colors text-[var(--text-primary)]"
+                />
+                <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"></i>
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            {allCategories.length > 0 && (
+              <select
+                value={filters.category}
+                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                className="px-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none transition-colors text-[var(--text-primary)]"
+              >
+                <option value="all">كل الفئات</option>
+                {allCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Tag Filter */}
+            {allTags.length > 0 && (
+              <select
+                value={filters.tag}
+                onChange={(e) => setFilters(prev => ({ ...prev, tag: e.target.value }))}
+                className="px-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none transition-colors text-[var(--text-primary)]"
+              >
+                <option value="all">كل الوسوم</option>
+                {allTags.map(tag => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none transition-colors text-[var(--text-primary)]"
+            >
+              <option value="newest">الأحدث أولاً</option>
+              <option value="oldest">الأقدم أولاً</option>
+              <option value="most-viewed">الأكثر مشاهدة</option>
+              <option value="a-z">أبجدياً</option>
+            </select>
+          </div>
+
+          {/* Results count */}
+          {(searchQuery || filters.category !== 'all' || filters.tag !== 'all') && (
+            <div className="mt-3 text-sm text-[var(--text-secondary)]">
+              <span className="text-[var(--primary-color)] font-medium">{videos.length}</span> نتيجة
+              {searchQuery && <span> عن "{searchQuery}"</span>}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Featured Videos */}
-      {featuredVideos.length > 0 && (
+      {featuredVideos.length > 0 && !searchQuery && filters.category === 'all' && (
         <section className="py-12 bg-[var(--bg-secondary)]">
           <div className="max-w-6xl mx-auto px-4">
             <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-8 text-right">
@@ -105,10 +236,16 @@ const VideosPage = () => {
               <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--primary-color)]"></div>
             </div>
           ) : videos.length === 0 ? (
-            <div className="text-center py-20">
+            <div className="text-center py-20 bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)]/30">
               <i className="fas fa-video text-6xl text-[var(--text-secondary)]/30 mb-4"></i>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">لا توجد فيديوهات بعد</h3>
-              <p className="text-[var(--text-secondary)]">تابعنا للحصول على فيديوهات جديدة قريباً</p>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                {searchQuery || filters.category !== 'all' ? 'لا توجد نتائج' : 'لا توجد فيديوهات بعد'}
+              </h3>
+              <p className="text-[var(--text-secondary)]">
+                {searchQuery || filters.category !== 'all'
+                  ? 'جرب تغيير معايير البحث'
+                  : 'تابعنا للحصول على فيديوهات جديدة قريباً'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

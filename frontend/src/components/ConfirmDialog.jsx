@@ -49,6 +49,7 @@ const ConfirmDialog = ({
     <AnimatePresence>
       {/* Animated Backdrop */}
       <motion.div
+        key="confirm-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -58,12 +59,15 @@ const ConfirmDialog = ({
       />
 
       {/* Animated Dialog */}
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
+      <div
+        key="confirm-dialog"
+        className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: -20, rotate: -5 }}
           animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20, rotate: 5 }}
-          transition={{ 
+          transition={{
             type: "spring",
             damping: 25,
             stiffness: 500,

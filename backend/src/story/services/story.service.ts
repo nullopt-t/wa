@@ -453,7 +453,8 @@ export class StoryService {
       const approvedStories = await this.storyModel.countDocuments({ status: 'approved' });
       const pendingStories = await this.storyModel.countDocuments({ status: 'pending' });
       const rejectedStories = await this.storyModel.countDocuments({ status: 'rejected' });
-      
+      const hiddenStories = await this.storyModel.countDocuments({ status: 'hidden' });
+
       const totalViews = await this.storyModel.aggregate([
         { $group: { _id: null, total: { $sum: '$views' } } },
       ]);
@@ -467,6 +468,7 @@ export class StoryService {
         approvedStories,
         pendingStories,
         rejectedStories,
+        hiddenStories,
         totalViews: totalViews[0]?.total || 0,
         totalLikes: totalLikes[0]?.total || 0,
       };
