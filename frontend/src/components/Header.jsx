@@ -59,17 +59,17 @@ const Header = () => {
     <>
       <header className="bg-[var(--bg-secondary)]/80 backdrop-blur-md shadow-md sticky top-0 z-[70] border-b border-[var(--border-color)]/30">
         <nav className="py-3">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-4">
           {/* Right Side - Logo + Desktop Navigation */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 lg:gap-6">
             {/* Logo */}
             <Link to="/" className="flex-shrink-0">
-              <img src="/logo192.png" alt="منصة وعي" className="h-10 w-auto" />
+              <img src="/logo192.png" alt="منصة وعي" className="h-9 sm:h-10 w-auto" />
             </Link>
 
             {/* Desktop Navigation */}
             {user?.role !== 'admin' && (
-            <div className="hidden xl:flex items-center gap-6">
+            <div className="hidden lg:flex items-center gap-6">
               <Link to="/" className={`font-medium ${location.pathname === '/' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الرئيسية</Link>
               <Link to="/categories" className={`font-medium ${location.pathname === '/categories' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الأقسام</Link>
               <Link to="/about" className={`font-medium ${location.pathname === '/about' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>عن وعي</Link>
@@ -83,7 +83,7 @@ const Header = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={toggleMenu}
-              className="xl:hidden text-[var(--text-primary)] p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-colors"
+              className="lg:hidden text-[var(--text-primary)] p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Toggle menu"
             >
               {isMenuOpen ? (
@@ -126,7 +126,7 @@ const Header = () => {
                   
                   {/* Desktop Dropdown Card */}
                   {showAccountDropdown && (
-                    <div className="hidden xl:block absolute left-0 mt-2 w-80 bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 overflow-hidden z-[80]">
+                    <div className="hidden lg:block absolute left-0 mt-2 w-80 bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 overflow-hidden z-[80]">
                       {/* User Info Header */}
                       <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] p-6 text-white">
                         <div className="flex items-center gap-4">
@@ -222,9 +222,10 @@ const Header = () => {
                         
                         {/* Logout */}
                         <button
+                          type="button"
                           onClick={() => {
                             setShowAccountDropdown(false);
-                            handleLogoutClick();
+                            setShowLogoutDialog(true);
                           }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-500/10 rounded-xl transition-all duration-300"
                         >
@@ -240,10 +241,10 @@ const Header = () => {
               </>
             ) : (
               <>
-                <Link to="/login" className="hidden sm:block px-4 py-2 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[#4a5d5e] hover:text-white transition-colors">
+                <Link to="/login" className="hidden sm:block px-3 md:px-4 py-2 border-2 border-[var(--border-color)] text-[var(--text-primary)] rounded-lg font-medium hover:bg-[#4a5d5e] hover:text-white transition-colors min-h-[44px] flex items-center justify-center">
                   تسجيل دخول
                 </Link>
-                <Link to="/signup" className="hidden sm:block px-4 py-2 bg-[#3d5a5a] text-white rounded-lg font-medium hover:bg-[#2c4a4a] transition-colors">
+                <Link to="/signup" className="hidden sm:block px-3 md:px-4 py-2 bg-[#3d5a5a] text-white rounded-lg font-medium hover:bg-[#2c4a4a] transition-colors min-h-[44px] flex items-center justify-center">
                   انضم إلينا
                 </Link>
               </>
@@ -253,7 +254,7 @@ const Header = () => {
 
         {/* Mobile Account Dropdown */}
         {showAccountDropdown && (
-          <div className="xl:hidden bg-[var(--card-bg)] backdrop-blur-md border-t border-[var(--border-color)]/30 py-4 px-4 z-[80] relative">
+          <div className="lg:hidden bg-[var(--card-bg)] backdrop-blur-md border-t border-[var(--border-color)]/30 py-4 px-4 z-[80] relative">
             {/* User Info */}
             <div className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--secondary-color)] rounded-xl p-4 text-white mb-4">
               <div className="flex items-center gap-3">
@@ -346,9 +347,15 @@ const Header = () => {
 
               {/* Logout */}
               <button
+                type="button"
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  setShowAccountDropdown(false);
+                  setShowLogoutDialog(true);
+                }}
                 onClick={() => {
                   setShowAccountDropdown(false);
-                  handleLogoutClick();
+                  setShowLogoutDialog(true);
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-all duration-300"
               >
@@ -363,7 +370,7 @@ const Header = () => {
 
         {/* Mobile Menu Sidebar */}
         {isMenuOpen && (
-          <div className="fixed inset-0 z-40 bg-[var(--bg-primary)] bg-opacity-90 flex xl:hidden">
+          <div className="fixed inset-0 z-40 bg-[var(--bg-primary)] bg-opacity-90 flex lg:hidden">
             <div
               className="bg-[var(--bg-secondary)]/90 backdrop-blur-md w-64 h-screen overflow-y-auto border-r border-[var(--border-color)]/30 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
             >
@@ -373,7 +380,7 @@ const Header = () => {
                 </Link>
                 <button
                   onClick={toggleMenu}
-                  className="text-[var(--text-primary)] focus:outline-none"
+                  className="text-[var(--text-primary)] focus:outline-none min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="Close menu"
                 >
                   <i className="fas fa-times text-xl"></i>

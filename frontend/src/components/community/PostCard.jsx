@@ -215,12 +215,12 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete, isA
         className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/30 transition-all duration-300 relative"
       >
       {/* Top Action Buttons (Share & Save) - Top Left Corner */}
-      <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10 flex items-center gap-1 md:gap-2">
+      <div className="absolute top-2 md:top-4 left-1 md:left-4 z-10 flex items-center gap-1 md:gap-2">
         {/* Share Button (Copy Link) */}
         <div className="relative group">
           <button
             onClick={handleShare}
-            className="w-8 h-8 md:w-10 md:h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] hover:scale-110 transition-all duration-300 shadow-lg"
+            className="w-9 h-9 md:w-10 md:h-10 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] hover:scale-110 transition-all duration-300 shadow-lg"
             title="نسخ رابط المنشور"
           >
             <i className="fas fa-link text-sm md:text-base"></i>
@@ -274,8 +274,43 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete, isA
       </div>
 
       {/* Post Header */}
-      <div className="p-6 pb-4 overflow-hidden pt-16">
+      <div className="p-4 md:p-6 pb-3 md:pb-4 overflow-hidden pt-14 md:pt-16">
         {/* Top Right Action Buttons */}
+        <div className="flex md:hidden absolute top-2 right-2 gap-1">
+          {/* Edit Button (Author Only) */}
+          {isPostAuthor && (
+            <button
+              onClick={() => onEdit && onEdit(post)}
+              className="w-9 h-9 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] hover:scale-110 transition-all duration-300 shadow-lg"
+              title="تعديل المنشور"
+            >
+              <i className="fas fa-pen text-sm"></i>
+            </button>
+          )}
+
+          {/* Delete Button (Author Only) */}
+          {isPostAuthor && (
+            <button
+              onClick={() => onDelete && onDelete(post)}
+              className="w-9 h-9 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 hover:border-red-500 hover:scale-110 transition-all duration-300 shadow-lg"
+              title="حذف المنشور"
+            >
+              <i className="fas fa-trash text-sm"></i>
+            </button>
+          )}
+
+          {/* Report Button */}
+          {!isAdmin && (
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="w-9 h-9 bg-[var(--card-bg)]/90 backdrop-blur-sm border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 hover:border-red-500 hover:scale-110 transition-all duration-300 shadow-lg"
+            title="الإبلاغ عن المنشور"
+          >
+            <i className="fas fa-flag text-sm"></i>
+          </button>
+          )}
+        </div>
+
         <div className="hidden md:flex absolute top-4 right-4 gap-2">
           {/* Edit Button (Author Only) */}
           {isPostAuthor && (
@@ -512,41 +547,7 @@ const PostCard = ({ post, onLike, onSave, isAuthenticated, onEdit, onDelete, isA
             </button>
           </div>
 
-          {/* Mobile Action Buttons */}
-          <div className="md:hidden flex items-center gap-2">
-            {/* Edit Button (Author Only) */}
-            {isPostAuthor && (
-              <button
-                onClick={() => onEdit && onEdit(post)}
-                className="w-9 h-9 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary-color)]"
-                title="تعديل المنشور"
-              >
-                <i className="fas fa-pen text-sm"></i>
-              </button>
-            )}
-            
-            {/* Delete Button (Author Only) */}
-            {isPostAuthor && (
-              <button
-                onClick={() => onDelete && onDelete(post)}
-                className="w-9 h-9 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500"
-                title="حذف المنشور"
-              >
-                <i className="fas fa-trash text-sm"></i>
-              </button>
-            )}
-            
-            {/* Report Button */}
-            {!isAdmin && (
-            <button
-              onClick={() => setShowReportModal(true)}
-              className="w-9 h-9 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500"
-              title="الإبلاغ عن المنشور"
-            >
-              <i className="fas fa-flag text-sm"></i>
-            </button>
-            )}
-          </div>
+          {/* Mobile Action Buttons - REMOVED: Now shown at top right */}
         </div>
       </div>
       )}

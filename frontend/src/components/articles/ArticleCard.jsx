@@ -39,7 +39,7 @@ const ArticleCard = ({ article, featured = false }) => {
       >
         {/* Cover Image */}
         {coverImage && (
-          <div className="relative h-64 md:h-80 overflow-hidden flex-shrink-0">
+          <div className="relative h-48 md:h-64 lg:h-80 overflow-hidden flex-shrink-0">
             <img
               src={coverImage}
               alt={article.title}
@@ -55,8 +55,8 @@ const ArticleCard = ({ article, featured = false }) => {
         )}
 
         {/* Content */}
-        <div className="p-6 flex flex-col flex-grow">
-          <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-3 group-hover:text-[var(--primary-color)] transition-colors line-clamp-2 min-h-[4rem]">
+        <div className="p-4 md:p-6 flex flex-col flex-grow">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-[var(--text-primary)] mb-3 group-hover:text-[var(--primary-color)] transition-colors line-clamp-2 min-h-[3rem] md:min-h-[4rem]">
             {article.title}
           </h2>
           <p className="text-[var(--text-secondary)] mb-4 line-clamp-3 flex-grow">
@@ -86,7 +86,7 @@ const ArticleCard = ({ article, featured = false }) => {
     >
       {/* Cover Image */}
       {coverImage && (
-        <div className="relative h-48 overflow-hidden flex-shrink-0">
+        <div className="relative h-40 md:h-48 overflow-hidden flex-shrink-0">
           <img
             src={coverImage}
             alt={article.title}
@@ -96,7 +96,7 @@ const ArticleCard = ({ article, featured = false }) => {
       )}
 
       {/* Content */}
-      <div className="p-5 flex flex-col flex-grow">
+      <div className="p-4 md:p-5 flex flex-col flex-grow">
         {/* Tags */}
         {article.tags && article.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
@@ -111,7 +111,7 @@ const ArticleCard = ({ article, featured = false }) => {
           </div>
         )}
 
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 group-hover:text-[var(--primary-color)] transition-colors line-clamp-2 min-h-[3rem]">
+        <h3 className="text-base md:text-lg font-bold text-[var(--text-primary)] mb-2 group-hover:text-[var(--primary-color)] transition-colors line-clamp-2 min-h-[2.5rem] md:min-h-[3rem]">
           {article.title}
         </h3>
         <p className="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2 flex-grow">

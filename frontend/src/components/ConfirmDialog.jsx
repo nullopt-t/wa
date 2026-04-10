@@ -54,14 +54,14 @@ const ConfirmDialog = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm"
         onClick={onCancel}
       />
 
       {/* Animated Dialog */}
       <div
         key="confirm-dialog"
-        className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none"
+        className="fixed inset-0 z-[10000] flex items-center justify-center p-4 pointer-events-none"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: -20, rotate: -5 }}

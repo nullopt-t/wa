@@ -46,13 +46,13 @@ const AdminLayout = ({ children, title }) => {
       {/* Mobile Sidebar Toggle */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="lg:hidden fixed top-4 right-4 z-50 w-12 h-12 bg-[var(--primary-color)] text-white rounded-xl flex items-center justify-center shadow-lg"
+        className="lg:hidden fixed top-4 right-4 z-50 w-11 h-11 bg-[var(--primary-color)] text-white rounded-xl flex items-center justify-center shadow-lg"
       >
         <i className={`fas ${isSidebarOpen ? 'fa-times' : 'fa-bars'} text-xl`}></i>
       </button>
 
       {/* Sidebar */}
-      <aside className={`fixed lg:sticky top-0 right-0 h-screen w-72 bg-[var(--card-bg)] backdrop-blur-md border-l border-[var(--border-color)]/30 shadow-2xl transform transition-transform duration-300 z-40 ${
+      <aside className={`fixed lg:sticky top-0 right-0 h-screen w-64 lg:w-72 bg-[var(--card-bg)] backdrop-blur-md border-l border-[var(--border-color)]/30 shadow-2xl transform transition-transform duration-300 z-40 overflow-y-auto ${
         isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
       }`}>
         <div className="p-6">
@@ -97,13 +97,13 @@ const AdminLayout = ({ children, title }) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-8 overflow-auto">
+      <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{title}</h1>
-              <p className="text-[var(--text-secondary)]">إدارة المحتوى والمستخدمين</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-2">{title}</h1>
+              <p className="text-sm md:text-base text-[var(--text-secondary)]">إدارة المحتوى والمستخدمين</p>
             </div>
             <div className="flex items-center gap-4">
               <button

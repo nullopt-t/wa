@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { sessionsAPI } from '../services/sessionsApi.js';
+// TODO: Create sessionsApi.js - temporarily commented out for build
+// import { sessionsAPI } from '../services/sessionsApi.js';
 import { useToast } from '../context/ToastContext.jsx';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 

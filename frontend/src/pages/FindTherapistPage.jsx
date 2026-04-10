@@ -82,8 +82,8 @@ const FindTherapistPage = () => {
       <section className="py-8 bg-[var(--bg-secondary)]">
         <div className="max-w-6xl mx-auto px-4">
           <AnimatedItem type="slideUp" delay={0.3}>
-            <form onSubmit={handleSearch} className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-6 border border-[var(--border-color)]/30 shadow-lg">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form onSubmit={handleSearch} className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl p-4 md:p-6 border border-[var(--border-color)]/30 shadow-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {/* Search */}
                 <div className="relative">
                   <input
@@ -91,7 +91,7 @@ const FindTherapistPage = () => {
                     placeholder="ابحث بالاسم أو التخصص أو المدينة..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-3 pr-10 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-[var(--text-primary)] bg-[var(--bg-primary)]"
+                    className="w-full px-3 md:px-4 py-2.5 md:py-3 pr-10 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-sm md:text-base text-[var(--text-primary)] bg-[var(--bg-primary)]"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">
                     <i className="fas fa-search"></i>
@@ -102,7 +102,7 @@ const FindTherapistPage = () => {
                 <select
                   value={selectedCity}
                   onChange={(e) => { setSelectedCity(e.target.value); setPage(1); }}
-                  className="w-full px-4 py-3 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-[var(--text-primary)] bg-[var(--bg-primary)]"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-sm md:text-base text-[var(--text-primary)] bg-[var(--bg-primary)]"
                 >
                   <option value="">كل المدن</option>
                   {uniqueCities.map(city => (
@@ -114,7 +114,7 @@ const FindTherapistPage = () => {
                 <select
                   value={selectedLanguage}
                   onChange={(e) => { setSelectedLanguage(e.target.value); setPage(1); }}
-                  className="w-full px-4 py-3 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-[var(--text-primary)] bg-[var(--bg-primary)]"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border-2 border-[var(--border-color)] rounded-xl focus:border-[var(--primary-color)] focus:outline-none text-sm md:text-base text-[var(--text-primary)] bg-[var(--bg-primary)]"
                 >
                   <option value="">كل اللغات</option>
                   {languages.map(lang => (
@@ -136,10 +136,10 @@ const FindTherapistPage = () => {
                 </select>
               </div>
 
-              <div className="flex gap-3 mt-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 mt-4 justify-center">
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-[var(--primary-color)] text-white rounded-xl font-semibold hover:bg-[var(--primary-hover)] transition-colors flex items-center gap-2"
+                  className="w-full sm:w-auto px-6 md:px-8 py-3 bg-[var(--primary-color)] text-white rounded-xl font-semibold hover:bg-[var(--primary-hover)] transition-colors flex items-center justify-center gap-2 min-h-[44px]"
                 >
                   <i className="fas fa-search"></i> بحث
                 </button>
@@ -147,7 +147,7 @@ const FindTherapistPage = () => {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="px-6 py-3 border-2 border-[var(--border-color)] text-[var(--text-secondary)] rounded-xl font-medium hover:bg-[var(--bg-secondary)] transition-colors"
+                    className="w-full sm:w-auto px-4 md:px-6 py-3 border-2 border-[var(--border-color)] text-[var(--text-secondary)] rounded-xl font-medium hover:bg-[var(--bg-secondary)] transition-colors min-h-[44px]"
                   >
                     إعادة تعيين
                   </button>
@@ -180,7 +180,7 @@ const FindTherapistPage = () => {
               </div>
             </AnimatedItem>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {therapists.map((therapist, index) => (
                 <AnimatedItem key={therapist._id || therapist.userId?._id} type="slideUp" delay={index * 0.05}>
                   <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/50 transition-all overflow-hidden flex flex-col">
@@ -299,28 +299,28 @@ const FindTherapistPage = () => {
       </section>
 
       {/* How It Works */}
-      <section className="py-16 bg-[var(--bg-primary)]">
+      <section className="py-10 md:py-12 lg:py-16 bg-[var(--bg-primary)]">
         <div className="max-w-6xl mx-auto px-4">
           <AnimatedItem type="slideUp" delay={0.1}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-[var(--primary-color)] mb-4">كيفية استخدام خدمة البحث عن المعالجين</h2>
-              <p className="text-xl text-[var(--text-secondary)]">خطوات بسيطة للوصول إلى الدعم النفسي المناسب</p>
+            <div className="text-center mb-8 md:mb-12">
+              <h2 className="text-2xl md:text-3xl font-bold text-[var(--primary-color)] mb-4">كيفية استخدام خدمة البحث عن المعالجين</h2>
+              <p className="text-base md:text-xl text-[var(--text-secondary)]">خطوات بسيطة للوصول إلى الدعم النفسي المناسب</p>
             </div>
           </AnimatedItem>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
               { icon: 'fa-search', title: 'ابحث عن المعالج', desc: 'استخدم أدوات البحث لتحديد التخصص والمدينة واللغة' },
               { icon: 'fa-user-md', title: 'قارن الخيارات', desc: 'اطلع على ملفات المعالجين وقراءة النبذات التعريفية' },
               { icon: 'fa-phone', title: 'تواصل مباشرة', desc: 'استخدم معلومات التواصل المتاحة لبدء رحلتك نحو الصحة النفسية' },
             ].map((step, i) => (
               <AnimatedItem key={i} type="slideUp" delay={0.2 + i * 0.1}>
-                <div className="bg-[var(--bg-secondary)] p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
-                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl">
+                <div className="bg-[var(--bg-secondary)] p-4 md:p-6 lg:p-8 rounded-xl shadow-lg text-center border border-[var(--border-color)]">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-amber-500 to-[var(--secondary-color)] rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 text-white text-lg md:text-2xl">
                     <i className={`fas ${step.icon}`}></i>
                   </div>
-                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{step.title}</h3>
-                  <p className="text-[var(--text-secondary)]">{step.desc}</p>
+                  <h3 className="text-lg md:text-xl font-bold text-[var(--text-primary)] mb-3 md:mb-4">{step.title}</h3>
+                  <p className="text-sm md:text-base text-[var(--text-secondary)]">{step.desc}</p>
                 </div>
               </AnimatedItem>
             ))}

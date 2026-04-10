@@ -163,22 +163,22 @@ const LoginPage = () => {
 
   return (
     <div className="bg-[var(--bg-primary)] min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-lg mx-auto p-4 sm:p-6">
+      <div className="w-full max-w-lg mx-auto p-3 sm:p-4 md:p-6 mx-4 sm:mx-0">
         <AnimatedItem type="scale" delay={0.1}>
-          <div className="bg-[var(--card-bg)] backdrop-blur-md p-6 sm:p-8 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-2xl mb-4">
-                <i className="fas fa-sign-in-alt text-white text-2xl"></i>
+          <div className="bg-[var(--card-bg)] backdrop-blur-md p-5 sm:p-6 md:p-8 rounded-2xl shadow-xl border border-[var(--border-color)]/30">
+            <div className="text-center mb-8 md:mb-10">
+              <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-[var(--primary-color)] to-[var(--secondary-color)] rounded-2xl mb-3 md:mb-4">
+                <i className="fas fa-sign-in-alt text-white text-xl md:text-2xl"></i>
               </div>
-              <h1 className="text-3xl font-bold text-[var(--primary-color)] mb-4">مرحباً بعودتك!</h1>
-              <p className="text-[var(--text-secondary)]">الرجاء إدخال بياناتك لتسجيل الدخول</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-[var(--primary-color)] mb-3 md:mb-4">مرحباً بعودتك!</h1>
+              <p className="text-sm md:text-base text-[var(--text-secondary)]">الرجاء إدخال بياناتك لتسجيل الدخول</p>
             </div>
 
             <form className="space-y-6" onSubmit={handleSubmit} noValidate>
               {/* Email */}
               <AnimatedItem type="slideUp" delay={0.2}>
                 <div className="text-right">
-                  <label htmlFor="email" className="block text-lg font-medium text-[var(--text-primary)] mb-3">
+                  <label htmlFor="email" className="block text-base md:text-lg font-medium text-[var(--text-primary)] mb-2 md:mb-3">
                     البريد الإلكتروني
                   </label>
                   <div className="relative">
@@ -190,7 +190,7 @@ const LoginPage = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="أدخل البريد الإلكتروني"
-                      className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.email ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                      className={`w-full px-4 md:px-6 py-3 md:py-4 pr-10 md:pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-sm md:text-base text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.email ? 'border-red-500' : 'border-[var(--border-color)]'}`}
                     />
                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
                       <i className="fas fa-envelope"></i>
@@ -203,7 +203,7 @@ const LoginPage = () => {
               {/* Password */}
               <AnimatedItem type="slideUp" delay={0.3}>
                 <div className="text-right">
-                  <label htmlFor="password" className="block text-lg font-medium text-[var(--text-primary)] mb-3">
+                  <label htmlFor="password" className="block text-base md:text-lg font-medium text-[var(--text-primary)] mb-2 md:mb-3">
                     كلمة المرور
                   </label>
                   <div className="relative">
@@ -214,7 +214,7 @@ const LoginPage = () => {
                       value={formData.password}
                       onChange={handleInputChange}
                       placeholder="أدخل كلمة المرور"
-                      className={`w-full px-6 py-4 pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.password ? 'border-red-500' : 'border-[var(--border-color)]'}`}
+                      className={`w-full px-4 md:px-6 py-3 md:py-4 pr-10 md:pr-12 border-2 rounded-xl focus:border-[#c5a98e] focus:outline-none transition-all duration-300 text-sm md:text-base text-[var(--text-primary)] bg-[var(--bg-secondary)] ${errors.password ? 'border-red-500' : 'border-[var(--border-color)]'}`}
                     />
                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]">
                       <i className="fas fa-lock"></i>
@@ -289,7 +289,7 @@ const LoginPage = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-4 bg-[var(--primary-color)] text-white rounded-xl font-bold text-lg hover:bg-[var(--primary-hover)] transition-all duration-300 flex items-center justify-center gap-2 ${
+                  className={`w-full py-3 md:py-4 bg-[var(--primary-color)] text-white rounded-xl font-bold text-base md:text-lg hover:bg-[var(--primary-hover)] transition-all duration-300 flex items-center justify-center gap-2 min-h-[44px] ${
                     loading ? 'opacity-75 cursor-not-allowed' : ''
                   }`}
                 >
