@@ -47,16 +47,24 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     @ConnectedSocket() client: Socket,
     payload: { userId: string },
   ) {
-    this.logger.debug(`User ${payload.userId} authenticated on socket ${client.id}`);
+    // Try payload first, fallback to handshake auth (from socket.io auth option)
+    const userId = payload?.userId || client.handshake.auth?.userId;
     
+    if (!userId) {
+      this.logger.warn(`Authentication failed: missing userId on socket ${client.id}`);
+      return { success: false, error: 'Missing userId' };
+    }
+
+    this.logger.debug(`User ${userId} authenticated on socket ${client.id}`);
+
     // Store socket ID for this user
-    const sockets = this.userSockets.get(payload.userId) || [];
+    const sockets = this.userSockets.get(userId) || [];
     sockets.push(client.id);
-    this.userSockets.set(payload.userId, sockets);
-    
+    this.userSockets.set(userId, sockets);
+
     // Join user's personal room
-    client.join(`user:${payload.userId}`);
-    
+    client.join(`user:${userId}`);
+
     return { success: true };
   }
 
