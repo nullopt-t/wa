@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray, ValidateNested, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class EmotionDto {
@@ -9,12 +9,12 @@ export class EmotionDto {
   emotion: string;
 
   @ApiProperty({ description: 'مستوى الثقة', required: true })
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
   confidence: number;
 
   @ApiProperty({ description: 'الشدة', required: true })
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
   intensity: number;
 }

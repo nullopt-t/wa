@@ -8,33 +8,16 @@ export const therapistAPI = {
     method: 'GET',
   }),
 
-  // Get therapist stats only
-  getStats: () => apiRequest('/therapist/stats', {
-    method: 'GET',
-  }),
-
   // Get therapist profile
-  getProfile: () => apiRequest('/therapist/profile', {
+  getProfile: () => apiRequest('/therapists/profile/me', {
     method: 'GET',
   }),
 
   // Update therapist profile
-  updateProfile: (profileData) => apiRequest('/therapist/profile', {
+  updateProfile: (profileData) => apiRequest('/therapists/profile', {
     method: 'PATCH',
     body: JSON.stringify(profileData),
   }),
-
-  // Upload avatar
-  uploadAvatar: (formData) => {
-    const token = localStorage.getItem('token');
-    return fetch(`${API_URL}/therapist/profile/avatar`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-  },
 };
 
 export default therapistAPI;

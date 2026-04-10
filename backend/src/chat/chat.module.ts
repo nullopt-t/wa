@@ -6,7 +6,6 @@ import { ChatController } from './controllers/chat.controller';
 import { ChatService } from './services/chat.service';
 import { GeminiProvider } from './services/gemini-ai.service';
 import { GroqProvider } from './services/groq-ai.service';
-import { EmotionAnalysisService } from './services/emotion-analysis.service';
 import { ChatGateway } from './gateways/chat.gateway';
 import { ChatSession, ChatSessionSchema } from './schemas/chat-session.schema';
 import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
@@ -50,11 +49,10 @@ export const aiProviderFactory = {
     ChatService,
     GeminiProvider,
     GroqProvider,
-    EmotionAnalysisService,
     ChatGateway,
     aiProviderFactory,
   ],
-  exports: [ChatService, EmotionAnalysisService, ChatGateway, aiProviderFactory],
+  exports: [ChatService, ChatGateway, aiProviderFactory],
 })
 export class ChatModule implements OnModuleInit {
   onModuleInit() {

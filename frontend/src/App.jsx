@@ -38,7 +38,6 @@ import TherapistDashboard from './pages/TherapistDashboard.jsx';
 import ProfileSettingsPage from './pages/ProfileSettingsPage.jsx';
 import AccountSettingsPage from './pages/AccountSettingsPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
-import SessionsPage from './pages/SessionsPage.jsx';
 import ComingSoonPage from './pages/ComingSoonPage.jsx';
 import PostDetailPage from './pages/PostDetailPage.jsx';
 import UserProfilePage from './pages/UserProfilePage.jsx';
@@ -70,6 +69,7 @@ import AdminLayout from './components/admin/AdminLayout.jsx';
 import FloatingChatButton from './components/FloatingChatButton.jsx';
 import JourneyPage from './pages/JourneyPage.jsx';
 import JourneyLevelPage from './pages/JourneyLevelPage.jsx';
+import WaeyAddictionPage from './pages/WaeyAddictionPage.jsx';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -336,13 +336,6 @@ function AppWrapper() {
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
-            <Route path="/videos" element={
-              <AnimatedRoute>
-                <ProtectedRoute>
-                  <VideosPage />
-                </ProtectedRoute>
-              </AnimatedRoute>
-            } />
             <Route path="/find-therapist" element={
               <AnimatedRoute>
                 <FindTherapistPage />
@@ -384,6 +377,11 @@ function AppWrapper() {
                 <ProtectedRoute>
                   <JourneyLevelPage />
                 </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/waey-addiction" element={
+              <AnimatedRoute>
+                <WaeyAddictionPage />
               </AnimatedRoute>
             } />
             <Route path="/feedback" element={

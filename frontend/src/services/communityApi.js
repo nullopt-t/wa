@@ -232,11 +232,6 @@ export const storiesAPI = {
   moderate: (id, status) => apiRequest(`/stories/admin/${id}/moderate?status=${status}`, {
     method: 'PATCH',
   }),
-
-  // Admin: Get statistics
-  getStats: () => apiRequest('/stories/admin/stats', {
-    method: 'GET',
-  }),
 };
 
 export default {

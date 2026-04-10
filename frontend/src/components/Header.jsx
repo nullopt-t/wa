@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import ThemeToggle from './ThemeToggle';
-import NotificationsBell from './dashboard/NotificationsBell.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { getApiUrl } from '../config.js';
 import NotificationBell from './NotificationBell.jsx';

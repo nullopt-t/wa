@@ -63,7 +63,7 @@ const CategoriesPage = () => {
     },
     {
       id: 7,
-      title: 'اراء وفيدباك',
+      title: 'آراء وملاحظات',
       description: 'شاركنا رأيك وملاحظاتك',
       icon: 'fas fa-comments',
       path: '/feedback'
@@ -82,6 +82,13 @@ const CategoriesPage = () => {
       description: 'دليل المستشفيات والعيادات والأطباء',
       icon: 'fas fa-phone-alt',
       path: '/medical-contacts'
+    },
+    {
+      id: 12,
+      title: 'وعي للإدمان',
+      description: 'توعية علمية وعلاج آمن للإدمان',
+      icon: 'fas fa-brain',
+      path: '/waey-addiction'
     }
   ];
 

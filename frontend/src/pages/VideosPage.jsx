@@ -313,10 +313,6 @@ const VideoCard = ({ video, getYouTubeEmbed, formatDuration }) => {
 
         {/* Meta */}
         <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-          <div className="flex items-center gap-2">
-            <i className="fas fa-eye"></i>
-            <span>{video.views || 0} مشاهدة</span>
-          </div>
           {video.category && (
             <span className="px-2 py-1 bg-[var(--bg-secondary)] rounded-full">{video.category}</span>
           )}

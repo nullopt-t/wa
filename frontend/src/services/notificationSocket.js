@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import { API_URL } from '../config.js';
+import { API_URL, SOCKET_URL } from '../config.js';
 
 class NotificationSocket {
   constructor() {
@@ -17,8 +17,11 @@ class NotificationSocket {
     }
 
     this.userId = userId;
-    
-    this.socket = io(`${API_URL}/notifications`, {
+
+    // Socket.io gateways are NOT affected by setGlobalPrefix('api'),
+    // so we need to connect to the base URL without /api
+    const baseUrl = API_URL.replace('/api', '');
+    this.socket = io(`${baseUrl}/notifications`, {
       auth: { userId },
       transports: ['websocket', 'polling'],
       reconnection: true,

@@ -14,7 +14,7 @@ import * as express from 'express';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Enable CORS for all origins (graduation project)
+  // Enable CORS for all origins
   app.enableCors({
     origin: true,
     credentials: true,
@@ -22,7 +22,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  // Security middleware - disable for graduation project
+  // Security middleware 
   // app.use(helmet());
 
   app.use(compression());

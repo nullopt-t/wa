@@ -341,10 +341,6 @@ const VideoManagementPage = () => {
               <div className="space-y-4">
                 <p className="text-[var(--text-primary)]">{previewVideo.description}</p>
                 <div className="flex flex-wrap gap-4 text-sm text-[var(--text-secondary)]">
-                  <div className="flex items-center gap-2">
-                    <i className="fas fa-eye"></i>
-                    <span>{previewVideo.views || 0} مشاهدة</span>
-                  </div>
                   {previewVideo.duration && (
                     <div className="flex items-center gap-2">
                       <i className="fas fa-clock"></i>
